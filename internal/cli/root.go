@@ -38,5 +38,10 @@ func init() {
 	rootCmd.AddCommand(profileCmd)
 	rootCmd.AddCommand(teachCmd)
 	rootCmd.AddCommand(mcpCmd)
+	rootCmd.AddCommand(hashCmd)
+	rootCmd.AddCommand(evtxCmd)
+	rootCmd.AddCommand(registryCmd)
+	rootCmd.AddCommand(timelineCmd)
+	rootCmd.AddCommand(sigmaCmd)
 	rootCmd.AddCommand(versionCmd)
 }
