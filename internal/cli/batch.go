@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/supunhg/filo-go/internal/batch"
 )
 
 var (
@@ -18,10 +19,7 @@ var batchCmd = &cobra.Command{
 	Use:   "batch [directory]",
 	Short: "Batch analyze all files in a directory",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Batch analysis of %s (workers: %d, recursive: %v)\n", args[0], batchWorkers, batchRecursive)
-		fmt.Println("Not yet implemented")
-	},
+	RunE:  runBatch,
 }
 
 func init() {
@@ -30,4 +28,23 @@ func init() {
 	batchCmd.Flags().IntVar(&batchMaxSize, "max-size", 100, "Max file size in MB")
 	batchCmd.Flags().StringVar(&batchExport, "export", "", "Export format: json or sarif")
 	batchCmd.Flags().StringVarP(&batchOutput, "output", "o", "", "Output file for export")
+}
+
+func runBatch(cmd *cobra.Command, args []string) error {
+	dir := args[0]
+
+	fmt.Printf("Batch analysis of %s (workers: %d, recursive: %v)\n\n", dir, batchWorkers, batchRecursive)
+
+	result, err := batch.Process(dir, &batch.Options{
+		Recursive:  batchRecursive,
+		Workers:    batchWorkers,
+		MaxSizeMB:  batchMaxSize,
+		FormatsDir: getFormatsDir(),
+	})
+	if err != nil {
+		return fmt.Errorf("batch processing failed: %w", err)
+	}
+
+	batch.PrintResults(result)
+	return nil
 }
