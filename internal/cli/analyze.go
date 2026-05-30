@@ -53,6 +53,7 @@ func runAnalyze(cmd *cobra.Command, args []string) error {
 		ExplainMode:  explainMode,
 		EntropyViz:   entropyViz,
 		YaraRules:    yaraRules,
+		FormatsDir:   getFormatsDir(),
 	})
 	if err != nil {
 		return fmt.Errorf("analysis failed: %w", err)

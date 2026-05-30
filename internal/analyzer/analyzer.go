@@ -10,17 +10,19 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/h2non/filetype"
+	"github.com/supunhg/filo-go/internal/formats"
 )
 
 // Options controls analysis behavior.
 type Options struct {
-	DeepScan    bool
-	NoML        bool
-	AllEvidence bool
-	AllEmbedded bool
-	ExplainMode bool
-	EntropyViz  bool
-	YaraRules   []string
+	DeepScan     bool
+	NoML         bool
+	AllEvidence  bool
+	AllEmbedded  bool
+	ExplainMode  bool
+	EntropyViz   bool
+	YaraRules    []string
+	FormatsDir   string
 }
 
 // Result holds the full analysis output.
@@ -137,7 +139,7 @@ func Analyze(data []byte, filePath string, opts *Options) (*Result, error) {
 		result.EntropyChunks = computeEntropyChunks(data, 256)
 	}
 
-	detectFileType(data, result)
+	detectFileType(data, result, opts)
 	detectEmbeddedObjects(data, result)
 	detectContradictions(data, result)
 	detectArchitecture(data, result)
@@ -157,7 +159,7 @@ func Analyze(data []byte, filePath string, opts *Options) (*Result, error) {
 }
 
 // detectFileType identifies the file format using multiple strategies.
-func detectFileType(data []byte, r *Result) {
+func detectFileType(data []byte, r *Result, opts *Options) {
 	// Strategy 1: h2non/filetype (magic bytes)
 	kind, _ := filetype.Match(data)
 	if kind.MIME.Value != "" {
@@ -172,7 +174,28 @@ func detectFileType(data []byte, r *Result) {
 		return
 	}
 
-	// Strategy 2: mimetype (content-aware, good for text)
+	// Strategy 2: YAML format database (signature matching)
+	if opts != nil && opts.FormatsDir != "" {
+		if db, err := formats.NewDatabase(opts.FormatsDir); err == nil {
+			results := db.Match(data)
+			if len(results) > 0 {
+				best := results[0]
+				r.PrimaryFormat = best.Format.Format
+				if len(best.Format.MIME) > 0 {
+					r.PrimaryMIME = best.Format.MIME[0]
+				}
+				r.Confidence = best.Confidence
+				r.Evidence = append(r.Evidence, Evidence{
+					Source:     "yaml_signatures",
+					Confidence: best.Confidence,
+					Details:    fmt.Sprintf("YAML signature match: %s (%s)", best.Format.Format, strings.Join(best.MatchedSigs, ", ")),
+				})
+				return
+			}
+		}
+	}
+
+	// Strategy 3: mimetype (content-aware, good for text)
 	mime := mimetype.Detect(data)
 	if mime != nil && mime.String() != "application/octet-stream" {
 		ext := mime.Extension()
@@ -856,61 +879,73 @@ func peMachineName(machine uint16) string {
 
 // --- Print Methods ---
 
+const (
+	colorReset  = "\033[0m"
+	colorRed    = "\033[31m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorBlue   = "\033[34m"
+	colorPurple = "\033[35m"
+	colorCyan   = "\033[36m"
+	colorWhite  = "\033[37m"
+	colorBold   = "\033[1m"
+)
+
 func (r *Result) Print() {
 	fmt.Println()
-	fmt.Printf("  File Analysis: %s\n", r.FileName)
+	fmt.Printf("  %s%sFile Analysis:%s %s\n", colorBold, colorCyan, colorReset, r.FileName)
 	fmt.Println()
-	fmt.Printf("  Detected Format: %s\n", r.PrimaryFormat)
-	fmt.Printf("  MIME Type: %s\n", r.PrimaryMIME)
-	fmt.Printf("  Confidence: %.1f%%\n", r.Confidence*100)
+	fmt.Printf("  %sDetected Format:%s %s%s%s\n", colorBold, colorReset, colorGreen, r.PrimaryFormat, colorReset)
+	fmt.Printf("  %sMIME Type:%s %s\n", colorBold, colorReset, r.PrimaryMIME)
+	fmt.Printf("  %sConfidence:%s %.1f%%\n", colorBold, colorReset, r.Confidence*100)
 	fmt.Println()
-	fmt.Printf("  File Size: %d bytes\n", r.FileSize)
-	fmt.Printf("  SHA256: %s\n", r.SHA256[:16])
-	fmt.Printf("  Entropy: %.2f bits/byte (%s)\n", r.Entropy, r.EntropyLabel)
+	fmt.Printf("  %sFile Size:%s %d bytes\n", colorBold, colorReset, r.FileSize)
+	fmt.Printf("  %sSHA256:%s %s\n", colorBold, colorReset, r.SHA256[:16])
+	fmt.Printf("  %sEntropy:%s %.2f bits/byte (%s)\n", colorBold, colorReset, r.Entropy, r.EntropyLabel)
 	fmt.Println()
 
 	if len(r.Evidence) > 0 {
-		fmt.Println("  Detection Evidence:")
+		fmt.Printf("  %sDetection Evidence:%s\n", colorBold, colorReset)
 		for _, e := range r.Evidence {
-			fmt.Printf("    %s (confidence: %.1f%%)\n", e.Source, e.Confidence*100)
+			fmt.Printf("    %s%s%s (confidence: %.1f%%)%s\n", colorPurple, e.Source, colorReset, e.Confidence*100, colorReset)
 			fmt.Printf("      %s\n", e.Details)
 		}
 		fmt.Println()
 	}
 
 	if r.Architecture != nil {
-		fmt.Println("  CPU Architecture:")
-		fmt.Printf("    %s (%d-bit, %s-endian)\n", r.Architecture.Machine, r.Architecture.Bits, r.Architecture.Endian)
+		fmt.Printf("  %sCPU Architecture:%s\n", colorBold, colorReset)
+		fmt.Printf("    %s%s%s (%d-bit, %s-endian)\n", colorBlue, r.Architecture.Machine, colorReset, r.Architecture.Bits, r.Architecture.Endian)
 		fmt.Printf("    Format: %s\n", r.Architecture.Format)
 		fmt.Println()
 	}
 
 	if r.CryptoIndicators != nil && r.CryptoIndicators.Detected {
-		fmt.Println("  Encryption Detected:")
+		fmt.Printf("  %sEncryption Detected:%s\n", colorBold, colorReset)
 		for _, h := range r.CryptoIndicators.CipherHints {
-			fmt.Printf("    %s\n", h)
+			fmt.Printf("    %s%s%s\n", colorYellow, h, colorReset)
 		}
 		fmt.Println()
 	}
 
 	if len(r.Contradictions) > 0 {
-		fmt.Println("  Contradictions:")
+		fmt.Printf("  %sContradictions:%s\n", colorBold, colorReset)
 		for _, c := range r.Contradictions {
-			fmt.Printf("    ⚠  %s\n", c)
+			fmt.Printf("    %s⚠  %s%s\n", colorRed, c, colorReset)
 		}
 		fmt.Println()
 	}
 
 	if len(r.EmbeddedObjects) > 0 {
-		fmt.Println("  Embedded Objects:")
+		fmt.Printf("  %sEmbedded Objects:%s\n", colorBold, colorReset)
 		for _, e := range r.EmbeddedObjects {
-			fmt.Printf("    %s at offset %d (%.1f%%)\n", e.Format, e.Offset, e.Confidence*100)
+			fmt.Printf("    %s%s%s at offset %d (%.1f%%)%s\n", colorPurple, e.Format, colorReset, e.Offset, e.Confidence*100, colorReset)
 		}
 		fmt.Println()
 	}
 
 	if r.ToolFingerprint != nil {
-		fmt.Println("  Tool Fingerprint:")
+		fmt.Printf("  %sTool Fingerprint:%s\n", colorBold, colorReset)
 		if r.ToolFingerprint.Producer != "" {
 			fmt.Printf("    Producer: %s\n", r.ToolFingerprint.Producer)
 		}
