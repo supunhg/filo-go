@@ -6,6 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/supunhg/filo-go/internal/analyzer"
+	"github.com/supunhg/filo-go/internal/crypto"
+	"github.com/supunhg/filo-go/internal/metadata"
 )
 
 var (
@@ -45,24 +47,41 @@ func runAnalyze(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("cannot read %s: %w", filePath, err)
 	}
 
+	// Core analysis
 	result, err := analyzer.Analyze(data, filePath, &analyzer.Options{
-		DeepScan:     deepScan,
-		NoML:         noML,
-		AllEvidence:  allEvidence,
-		AllEmbedded:  allEmbedded,
-		ExplainMode:  explainMode,
-		EntropyViz:   entropyViz,
-		YaraRules:    yaraRules,
-		FormatsDir:   getFormatsDir(),
+		DeepScan:    deepScan,
+		NoML:        noML,
+		AllEvidence: allEvidence,
+		AllEmbedded: allEmbedded,
+		ExplainMode: explainMode,
+		EntropyViz:  entropyViz,
+		YaraRules:   yaraRules,
+		FormatsDir:  getFormatsDir(),
 	})
 	if err != nil {
 		return fmt.Errorf("analysis failed: %w", err)
 	}
 
+	// Crypto analysis
+	cryptoResult := crypto.Analyze(data)
+
+	// Metadata extraction (for supported formats)
+	metaResult, _ := metadata.Extract(data, filePath)
+
 	if jsonOutput {
 		fmt.Println(result.JSON())
 	} else {
 		result.Print()
+
+		// Print crypto results
+		if cryptoResult.Detected {
+			crypto.Print(cryptoResult)
+		}
+
+		// Print metadata
+		if metaResult != nil && len(metaResult.Metadata) > 0 {
+			metadata.Print(metaResult)
+		}
 	}
 	return nil
 }
