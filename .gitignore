@@ -34,3 +34,10 @@ Thumbs.db
 carved/
 repaired/
 *.filo-backup
+
+# Agent instruction files (local only)
+AGENTS.md
+CLAUDE.md
+.cursor/
+.cursorrules
+.github/copilot-instructions.md

@@ -2,7 +2,11 @@
 
 **Forensic Intelligence & Learning Operator** - Go implementation
 
+> *"When you need to know not just what something is, but why it's that, and how to fix it."*
+
 A high-performance file forensics platform for security professionals. Analyzes unknown binaries, detects formats, repairs corrupted files, and tracks hash lineage.
+
+> **Note:** This is a complete rewrite of the original [Python filo](https://github.com/supunhg/filo) (now archived). The Go port delivers the same forensic capabilities with significantly better performance, single-binary deployment, and zero runtime dependencies.
 
 ## Features
 
