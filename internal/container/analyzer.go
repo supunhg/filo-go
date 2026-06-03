@@ -122,7 +122,6 @@ func analyzeZIP(data []byte, result *Result, maxDepth, currentDepth int) (*Resul
 			Path:   file.Name,
 			Size:   int64(file.UncompressedSize64),
 			IsDir:  file.FileInfo().IsDir(),
-			Offset: int64(file.Header.Offset),
 		}
 
 		if !file.FileInfo().IsDir() {
@@ -191,7 +190,6 @@ func analyzeTarFromReader(reader io.Reader, result *Result, maxDepth, currentDep
 			Path:   header.Name,
 			Size:   header.Size,
 			IsDir:  header.Typeflag == tar.TypeDir,
-			Offset: header.Offset,
 		}
 
 		if header.Typeflag != tar.TypeDir {

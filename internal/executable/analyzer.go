@@ -328,7 +328,7 @@ func Print(r *Result) {
 
 func printPE(r *pe.Result) {
 	fmt.Println("  PE Analysis:")
-	fmt.Printf("    Machine: %s\n", r.Machine)
+	fmt.Printf("    Machine: %s\n", r.MachineStr)
 	fmt.Printf("    Bits: %d\n", r.Bits)
 	fmt.Printf("    Subsystem: %s\n", r.Subsystem)
 	fmt.Printf("    Image Base: 0x%X\n", r.ImageBase)

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math"
 	"strings"
 )
 
@@ -178,30 +177,26 @@ func analyzeSingleMachO(data []byte, deepScan bool) (*Result, error) {
 
 	// Parse header
 	var cputype, cpusubtype uint32
-	var ncmds, sizeofcmds uint32
+	var ncmds uint32
 	if isSwap {
 		if is64 {
 			cputype = binary.BigEndian.Uint32(data[4:8])
 			cpusubtype = binary.BigEndian.Uint32(data[8:12])
 			ncmds = binary.BigEndian.Uint32(data[16:20])
-			sizeofcmds = binary.BigEndian.Uint32(data[20:24])
 		} else {
 			cputype = binary.BigEndian.Uint32(data[4:8])
 			cpusubtype = binary.BigEndian.Uint32(data[8:12])
 			ncmds = binary.BigEndian.Uint32(data[12:16])
-			sizeofcmds = binary.BigEndian.Uint32(data[16:20])
 		}
 	} else {
 		if is64 {
 			cputype = binary.LittleEndian.Uint32(data[4:8])
 			cpusubtype = binary.LittleEndian.Uint32(data[8:12])
 			ncmds = binary.LittleEndian.Uint32(data[16:20])
-			sizeofcmds = binary.LittleEndian.Uint32(data[20:24])
 		} else {
 			cputype = binary.LittleEndian.Uint32(data[4:8])
 			cpusubtype = binary.LittleEndian.Uint32(data[8:12])
 			ncmds = binary.LittleEndian.Uint32(data[12:16])
-			sizeofcmds = binary.LittleEndian.Uint32(data[16:20])
 		}
 	}
 
@@ -272,7 +267,6 @@ func parseSegment(data []byte, offset int, cmdType uint32, isSwap, is64 bool) *S
 	seg := &Segment{}
 
 	var nameOffset int
-	var addrSize int
 	var segName string
 
 	if is64 {
@@ -296,7 +290,6 @@ func parseSegment(data []byte, offset int, cmdType uint32, isSwap, is64 bool) *S
 		}
 		seg.Address = addr
 		seg.Size = size
-		_ = addrSize
 	} else {
 		nameOffset = offset + 8
 		if nameOffset+16 > len(data) {
@@ -432,12 +425,8 @@ func cpuString(cputype uint32) string {
 		return "X86 ALL"
 	case 0x02000007:
 		return "x86 ALL"
-	case 0x0100000C:
-		return "ARM64 ALL"
 	case 0xFF00000C:
 		return "ARM ALL"
-	case 0x0100000E:
-		return "PowerPC ALL"
 	case 0x01000006:
 		return "MC680x0 ALL"
 	case 0x01000015:

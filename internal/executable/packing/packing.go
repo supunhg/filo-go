@@ -252,7 +252,6 @@ func findCodeSections(data []byte) []CodeSection {
 
 // hasUnusualImports checks for unusual import patterns.
 func hasUnusualImports(data []byte) bool {
-	dataStr := string(data)
 	unusualPatterns := []string{
 		"GetTickCount", "QueryPerformanceCounter",
 		"IsDebuggerPresent", "CheckRemoteDebuggerPresent",
@@ -282,7 +281,6 @@ func hasAntiDebug(data []byte) bool {
 		"rdtsc",
 	}
 
-	dataStr := string(data)
 	count := 0
 	for _, pattern := range antiDebugPatterns {
 		if bytes.Contains(data, []byte(pattern)) {

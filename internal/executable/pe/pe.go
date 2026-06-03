@@ -230,10 +230,8 @@ func checkSuspiciousSection(sec Section) (bool, string) {
 	}
 
 	// Check for writable + executable sections (W^X violation)
-	if sec.Characteristics&0x20000000 != 0 && sec.Characteristics&0x20000000 != 0 {
-		if sec.Characteristics&0x80000000 != 0 && sec.Characteristics&0x20000000 != 0 {
-			return true, "Writable and executable section (W^X violation)"
-		}
+	if sec.Characteristics&0x80000000 != 0 && sec.Characteristics&0x20000000 != 0 {
+		return true, "Writable and executable section (W^X violation)"
 	}
 
 	// Check for unusually high entropy (packed/encrypted)
@@ -260,20 +258,17 @@ func parseImports(data []byte, bits int) ([]string, []string) {
 	optOffset := coffOffset + 20
 	magic := binary.LittleEndian.Uint16(data[optOffset : optOffset+2])
 
-	var importDirOffset int
+	var importDirOffset uint32
 	if magic == 0x10B {
-		// PE32: Import directory is at index 1
-		importDirOffset = optOffset + 96 + 8 // Optional header size + 8 bytes per entry
+		importDirOffset = optOffset + 96 + 8
 	} else if magic == 0x20B {
-		// PE32+: Import directory is at index 1
 		importDirOffset = optOffset + 112 + 8
 	}
 
-	if importDirOffset+8 > len(data) {
+	if int(importDirOffset)+8 > len(data) {
 		return imports, dlls
 	}
 
-	// Get import directory RVA and size
 	importRVA := binary.LittleEndian.Uint32(data[importDirOffset : importDirOffset+4])
 	importSize := binary.LittleEndian.Uint32(data[importDirOffset+4 : importDirOffset+8])
 
