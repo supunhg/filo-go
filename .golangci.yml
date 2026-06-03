@@ -1,0 +1,25 @@
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gosec
+    - misspell
+    - unconvert
+
+linters-settings:
+  govet:
+    shadow: true
+  gosec:
+    excludes:
+      - G104  # Unhandled errors on file operations (common in CLI tools)
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck

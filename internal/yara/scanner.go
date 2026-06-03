@@ -2,7 +2,6 @@ package yara
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 )
 
@@ -140,7 +139,7 @@ func containsBytes(data []byte, pattern string) bool {
 		if len(hexStr)%2 != 0 {
 			return false
 		}
-		bytes := make([]byte, len(hexStr)/2)
+		hexBytes := make([]byte, len(hexStr)/2)
 		for i := 0; i < len(hexStr); i += 2 {
 			var b byte
 			for j := 0; j < 2; j++ {
@@ -156,13 +155,13 @@ func containsBytes(data []byte, pattern string) bool {
 					return false
 				}
 			}
-			bytes[i/2] = b
+			hexBytes[i/2] = b
 		}
-		return bytes.Contains(data, bytes)
+		return bytesContains(data, hexBytes)
 	}
 
 	// Handle text strings
-	return bytes.Contains(data, []byte(pattern))
+	return bytesContains(data, []byte(pattern))
 }
 
 // bytesContains checks if data contains pattern.
