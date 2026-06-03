@@ -9,12 +9,12 @@ import (
 
 // Result holds registry analysis results.
 type Result struct {
-	FileName    string            `json:"file_name"`
-	HiveName    string            `json:"hive_name"`
-	HiveType    string            `json:"hive_type"`
-	Keys        []RegistryKey     `json:"keys"`
-	Artifacts   []Artifact        `json:"artifacts"`
-	Stats       map[string]int    `json:"stats"`
+	FileName  string         `json:"file_name"`
+	HiveName  string         `json:"hive_name"`
+	HiveType  string         `json:"hive_type"`
+	Keys      []RegistryKey  `json:"keys"`
+	Artifacts []Artifact     `json:"artifacts"`
+	Stats     map[string]int `json:"stats"`
 }
 
 // RegistryKey represents a registry key.
@@ -26,68 +26,68 @@ type RegistryKey struct {
 
 // Value represents a registry value.
 type Value struct {
-	Name     string      `json:"name"`
-	Type     uint32      `json:"type"`
-	Data     interface{} `json:"data"`
-	Size     int         `json:"size"`
+	Name string      `json:"name"`
+	Type uint32      `json:"type"`
+	Data interface{} `json:"data"`
+	Size int         `json:"size"`
 }
 
 // Artifact represents a forensic artifact.
 type Artifact struct {
-	Category    string `json:"category"`
-	Description string `json:"description"`
-	Value       string `json:"value"`
+	Category    string  `json:"category"`
+	Description string  `json:"description"`
+	Value       string  `json:"value"`
 	Confidence  float64 `json:"confidence"`
 }
 
 var knownArtifactPaths = map[string]string{
-	`Microsoft\Windows\CurrentVersion\Run`:           "Persistence - Auto-start",
-	`Microsoft\Windows\CurrentVersion\RunOnce`:       "Persistence - One-time auto-start",
-	`Microsoft\Windows\CurrentVersion\Explorer\Shell Folders`: "User folders",
-	`Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders`: "User folders (redirected)",
-	`Microsoft\Windows NT\CurrentVersion\Winlogon`:   "Winlogon settings",
-	`Microsoft\Windows\CurrentVersion\Policies\Explorer`: "Policy settings",
-	`Microsoft\Windows\CurrentVersion\Uninstall`:     "Installed software",
-	`SYSTEM\CurrentControlSet\Services`:               "Services",
-	`SYSTEM\CurrentControlSet\Control\Session Manager`: "Session Manager",
-	`SOFTWARE\Microsoft\Windows NT\CurrentVersion`:    "Windows version",
-	`SYSTEM\CurrentControlSet\Control\ComputerName`:   "Computer name",
-	`SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer`: "Explorer settings",
+	"Microsoft\\Windows\\CurrentVersion\\Run":                        "Persistence - Auto-start",
+	"Microsoft\\Windows\\CurrentVersion\\RunOnce":                    "Persistence - One-time auto-start",
+	"Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders":    "User folders",
+	"Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders": "User folders (redirected)",
+	"Microsoft\\Windows NT\\CurrentVersion\\Winlogon":               "Winlogon settings",
+	"Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer":        "Policy settings",
+	"Microsoft\\Windows\\CurrentVersion\\Uninstall":                  "Installed software",
+	"SYSTEM\\CurrentControlSet\\Services":                            "Services",
+	"SYSTEM\\CurrentControlSet\\Control\\Session Manager":            "Session Manager",
+	"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion":                "Windows version",
+	"SYSTEM\\CurrentControlSet\\Control\\ComputerName":               "Computer name",
+	"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer":         "Explorer settings",
 }
 
 // Hive-specific artifact paths for SAM, SYSTEM, and USER hives.
 var samArtifactPaths = map[string]string{
-	`SAM\Domains\Account\Users`:                       "User accounts",
-	`SAM\Domains\Account\Users\Names`:                 "User account names",
-	`SAM\Domains\Account\Aliases`:                     "Local group aliases",
+	"SAM\\Domains\\Account\\Users":        "User accounts",
+	"SAM\\Domains\\Account\\Users\\Names":  "User account names",
+	"SAM\\Domains\\Account\\Aliases":      "Local group aliases",
 }
 
 var systemArtifactPaths = map[string]string{
-	`SYSTEM\CurrentControlSet\Services`:                "Services (SYSTEM)",
-	`SYSTEM\CurrentControlSet\Control\ComputerName\ComputerName`: "Computer name",
-	`SYSTEM\CurrentControlSet\Control\TimeZoneInformation":       "Timezone",
-	`SYSTEM\CurrentControlSet\Control\Lsa`:             "LSA settings",
-	`SYSTEM\CurrentControlSet\Control\Lsa\JD`:         "LSA JD (anti-hijack)",
-	`SYSTEM\CurrentControlSet\Control\Lsa\Skew1`:       "LSA Skew1 (anti-hijack)",
-	`SYSTEM\CurrentControlSet\Control\Lsa\GBG`:         "LSA GBG (anti-hijack)",
-	`SYSTEM\CurrentControlSet\Control\Lsa\Data`:        "LSA Data",
-	`SYSTEM\CurrentControlSet\Control\ProductOptions`:  "Product options",
-	`SYSTEM\CurrentControlSet\Control\Windows`:          "Windows settings",
-	`SYSTEM\MountedDevices`:                              "Mounted devices",
-	`SYSTEM\Setup`:                                       "Setup information",
+	"SYSTEM\\CurrentControlSet\\Services":                              "Services (SYSTEM)",
+	"SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName":  "Computer name",
+	"SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation":          "Timezone",
+	"SYSTEM\\CurrentControlSet\\Control\\Lsa":                          "LSA settings",
+	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\JD":                     "LSA JD (anti-hijack)",
+	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\Skew1":                  "LSA Skew1 (anti-hijack)",
+	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\GBG":                    "LSA GBG (anti-hijack)",
+	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\Data":                   "LSA Data",
+	"SYSTEM\\CurrentControlSet\\Control\\ProductOptions":              "Product options",
+	"SYSTEM\\CurrentControlSet\\Control\\Windows":                      "Windows settings",
+	"SYSTEM\\MountedDevices":                                          "Mounted devices",
+	"SYSTEM\\Setup":                                                   "Setup information",
 }
 
 var userArtifactPaths = map[string]string{
-	`Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs`:       "Recent documents",
-	`Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU`:          "Run dialog history",
-	`Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths`:      "Typed paths",
-	`Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery`:  "Search history",
-	`Software\Microsoft\Office`:                                             "Microsoft Office data",
-	`Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist`:      "UserAssist (program execution)",
-	`Software\Microsoft\Windows\CurrentVersion\Explorer\MuiCache":        "MUICache (program names)",
-	`Software\Microsoft\Windows\Shell\Bags`:                                "Explorer bags (folder views)",
-	`Software\Microsoft\Windows\Shell\MRUList`:                            "Shell MRU",
-	`Software\Microsoft\Windows\CurrentVersion\Applets\Recent`:           "Recent applets",
+	"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\RecentDocs":      "Recent documents",
+	"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\RunMRU":         "Run dialog history",
+	"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\TypedPaths":     "Typed paths",
+	"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\WordWheelQuery": "Search history",
+	"Software\\Microsoft\\Office":                                            "Microsoft Office data",
+	"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\UserAssist":     "UserAssist (program execution)",
+	"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\MuiCache":       "MUICache (program names)",
+	"Software\\Microsoft\\Windows\\Shell\\Bags":                              "Explorer bags (folder views)",
+	"Software\\Microsoft\\Windows\\Shell\\MRUList":                           "Shell MRU",
+	"Software\\Microsoft\\Windows\\CurrentVersion\\Applets\\Recent":          "Recent applets",
 }
 
 // addHiveSpecificArtifacts extracts forensic artifacts specific to the hive type.
@@ -145,10 +145,10 @@ func DetectHiveType(fileName, hiveName string) string {
 // Analyze parses Windows Registry hive data.
 func Analyze(data []byte, fileName string) (*Result, error) {
 	result := &Result{
-		FileName: fileName,
-		Keys:     []RegistryKey{},
+		FileName:  fileName,
+		Keys:      []RegistryKey{},
 		Artifacts: []Artifact{},
-		Stats:    make(map[string]int),
+		Stats:     make(map[string]int),
 	}
 
 	if len(data) < 4096 {
