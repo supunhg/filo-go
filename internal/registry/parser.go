@@ -11,6 +11,7 @@ import (
 type Result struct {
 	FileName    string            `json:"file_name"`
 	HiveName    string            `json:"hive_name"`
+	HiveType    string            `json:"hive_type"`
 	Keys        []RegistryKey     `json:"keys"`
 	Artifacts   []Artifact        `json:"artifacts"`
 	Stats       map[string]int    `json:"stats"`
@@ -54,6 +55,93 @@ var knownArtifactPaths = map[string]string{
 	`SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer`: "Explorer settings",
 }
 
+// Hive-specific artifact paths for SAM, SYSTEM, and USER hives.
+var samArtifactPaths = map[string]string{
+	`SAM\Domains\Account\Users`:                       "User accounts",
+	`SAM\Domains\Account\Users\Names`:                 "User account names",
+	`SAM\Domains\Account\Aliases`:                     "Local group aliases",
+}
+
+var systemArtifactPaths = map[string]string{
+	`SYSTEM\CurrentControlSet\Services`:                "Services (SYSTEM)",
+	`SYSTEM\CurrentControlSet\Control\ComputerName\ComputerName`: "Computer name",
+	`SYSTEM\CurrentControlSet\Control\TimeZoneInformation":       "Timezone",
+	`SYSTEM\CurrentControlSet\Control\Lsa`:             "LSA settings",
+	`SYSTEM\CurrentControlSet\Control\Lsa\JD`:         "LSA JD (anti-hijack)",
+	`SYSTEM\CurrentControlSet\Control\Lsa\Skew1`:       "LSA Skew1 (anti-hijack)",
+	`SYSTEM\CurrentControlSet\Control\Lsa\GBG`:         "LSA GBG (anti-hijack)",
+	`SYSTEM\CurrentControlSet\Control\Lsa\Data`:        "LSA Data",
+	`SYSTEM\CurrentControlSet\Control\ProductOptions`:  "Product options",
+	`SYSTEM\CurrentControlSet\Control\Windows`:          "Windows settings",
+	`SYSTEM\MountedDevices`:                              "Mounted devices",
+	`SYSTEM\Setup`:                                       "Setup information",
+}
+
+var userArtifactPaths = map[string]string{
+	`Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs`:       "Recent documents",
+	`Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU`:          "Run dialog history",
+	`Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths`:      "Typed paths",
+	`Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery`:  "Search history",
+	`Software\Microsoft\Office`:                                             "Microsoft Office data",
+	`Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist`:      "UserAssist (program execution)",
+	`Software\Microsoft\Windows\CurrentVersion\Explorer\MuiCache":        "MUICache (program names)",
+	`Software\Microsoft\Windows\Shell\Bags`:                                "Explorer bags (folder views)",
+	`Software\Microsoft\Windows\Shell\MRUList`:                            "Shell MRU",
+	`Software\Microsoft\Windows\CurrentVersion\Applets\Recent`:           "Recent applets",
+}
+
+// addHiveSpecificArtifacts extracts forensic artifacts specific to the hive type.
+func addHiveSpecificArtifacts(result *Result) {
+	var paths map[string]string
+
+	switch result.HiveType {
+	case "SAM":
+		paths = samArtifactPaths
+	case "SYSTEM":
+		paths = systemArtifactPaths
+	case "USER":
+		paths = userArtifactPaths
+	default:
+		return
+	}
+
+	for _, key := range result.Keys {
+		for pattern, category := range paths {
+			if strings.Contains(key.Path, pattern) {
+				result.Artifacts = append(result.Artifacts, Artifact{
+					Category:    category,
+					Description: "Hive-specific artifact: " + result.HiveType,
+					Value:       key.Path,
+					Confidence:  0.85,
+				})
+			}
+		}
+	}
+
+	result.Stats["hive_artifacts"] = len(result.Artifacts)
+}
+
+// DetectHiveType identifies the registry hive type from its name or path.
+func DetectHiveType(fileName, hiveName string) string {
+	upper := strings.ToUpper(fileName + hiveName)
+	if strings.Contains(upper, "SAM") {
+		return "SAM"
+	}
+	if strings.Contains(upper, "SYSTEM") {
+		return "SYSTEM"
+	}
+	if strings.Contains(upper, "NTUSER") || strings.Contains(upper, "USER.DAT") {
+		return "USER"
+	}
+	if strings.Contains(upper, "SOFTWARE") && !strings.Contains(upper, "SYSTEM") {
+		return "SOFTWARE"
+	}
+	if strings.Contains(upper, "SECURITY") {
+		return "SECURITY"
+	}
+	return "UNKNOWN"
+}
+
 // Analyze parses Windows Registry hive data.
 func Analyze(data []byte, fileName string) (*Result, error) {
 	result := &Result{
@@ -76,11 +164,17 @@ func Analyze(data []byte, fileName string) (*Result, error) {
 	// Get hive name
 	result.HiveName = strings.TrimRight(string(data[48:68]), "\x00")
 
+	// Detect hive type
+	result.HiveType = DetectHiveType(fileName, result.HiveName)
+
 	// Parse root key offset
 	rootKeyOffset := binary.LittleEndian.Uint32(data[36:40])
 
 	// Parse keys (simplified)
 	parseKeys(data, int(rootKeyOffset), "", result)
+
+	// Add hive-specific artifact detection
+	addHiveSpecificArtifacts(result)
 
 	return result, nil
 }
@@ -133,6 +227,7 @@ func Print(r *Result) {
 	fmt.Println()
 	fmt.Printf("  Windows Registry: %s\n", r.FileName)
 	fmt.Printf("  Hive Name: %s\n", r.HiveName)
+	fmt.Printf("  Hive Type: %s\n", r.HiveType)
 	fmt.Printf("  Keys Found: %d\n", len(r.Keys))
 	fmt.Println()
 

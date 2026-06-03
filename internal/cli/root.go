@@ -44,4 +44,6 @@ func init() {
 	rootCmd.AddCommand(timelineCmd)
 	rootCmd.AddCommand(sigmaCmd)
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(sqliteCmd)
 }
