@@ -1,0 +1,37 @@
+format: ole2
+version: "1.0"
+mime:
+  - application/vnd.ms-office
+category: document
+confidence_weight: 0.95
+extensions:
+  - doc
+  - xls
+  - ppt
+  - msg
+  - pub
+description: Microsoft OLE2 Compound Document
+references:
+  - https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-cfb/
+signatures:
+  - offset: 0
+    hex: "D0 CF 11 E0 A1 B1 1A E1"
+    description: OLE2 magic bytes
+    weight: 1.0
+structure:
+  header_size: 512
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: Compound File Header (512 bytes)
+    - id: fat
+      required: true
+      description: File Allocation Table
+    - id: directory
+      required: true
+      description: Directory entries
+repair_strategies:
+  - name: none
+    priority: 0
+    description: OLE2 files cannot be repaired

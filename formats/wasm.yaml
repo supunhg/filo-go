@@ -1,0 +1,35 @@
+format: wasm
+version: "1.0"
+mime:
+  - application/wasm
+category: executable
+confidence_weight: 0.98
+extensions:
+  - wasm
+  - wat
+description: WebAssembly binary
+references:
+  - https://webassembly.github.io/spec/core/binary/index.html
+signatures:
+  - offset: 0
+    hex: "00 61 73 6D"
+    description: "\0asm magic bytes"
+    weight: 1.0
+structure:
+  header_size: 8
+  chunks:
+    - id: magic
+      required: true
+      position: 0
+      description: Magic number (\0asm)
+    - id: version
+      required: true
+      position: 4
+      description: Version (1)
+    - id: sections
+      required: true
+      description: Module sections
+repair_strategies:
+  - name: none
+    priority: 0
+    description: WebAssembly files cannot be repaired

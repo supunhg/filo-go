@@ -1,0 +1,29 @@
+format: rar
+version: "5.0"
+mime:
+  - application/vnd.rar
+  - application/x-rar-compressed
+category: archive
+confidence_weight: 0.95
+extensions:
+  - rar
+  - rar5
+description: RAR archive
+references:
+  - https://www.rarlab.com/rar_format.htm
+signatures:
+  - offset: 0
+    hex: "52 61 72 21 1A 07"
+    description: RAR signature
+    weight: 1.0
+structure:
+  header_size: 7
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: RAR header
+repair_strategies:
+  - name: none
+    priority: 0
+    description: RAR files cannot be repaired

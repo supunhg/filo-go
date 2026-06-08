@@ -1,0 +1,39 @@
+format: pcap
+version: "1.0"
+mime:
+  - application/vnd.tcpdump.pcap
+category: network
+confidence_weight: 0.95
+extensions:
+  - pcap
+  - cap
+description: pcap network capture
+references:
+  - https://www.tcpdump.org/linktypes.html
+signatures:
+  - offset: 0
+    hex: "D4 C3 B2 A1"
+    description: pcap little-endian
+    weight: 1.0
+  - offset: 0
+    hex: "A1 B2 C3 D4"
+    description: pcap big-endian
+    weight: 1.0
+  - offset: 0
+    hex: "0A 0D 0D 0A"
+    description: pcap-ng
+    weight: 0.9
+structure:
+  header_size: 24
+  chunks:
+    - id: global_header
+      required: true
+      position: 0
+      description: pcap global header
+    - id: packets
+      required: true
+      description: Packet records
+repair_strategies:
+  - name: none
+    priority: 0
+    description: pcap files cannot be repaired

@@ -1,0 +1,28 @@
+format: 7z
+version: "1.0"
+mime:
+  - application/x-7z-compressed
+category: archive
+confidence_weight: 0.95
+extensions:
+  - 7z
+  - 7zip
+description: 7-Zip archive
+references:
+  - https://www.7-zip.org/tech/7z_format.txt
+signatures:
+  - offset: 0
+    hex: "37 7A BC AF 27 1C"
+    description: 7z signature
+    weight: 1.0
+structure:
+  header_size: 32
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: 7z header
+repair_strategies:
+  - name: none
+    priority: 0
+    description: 7z files cannot be repaired

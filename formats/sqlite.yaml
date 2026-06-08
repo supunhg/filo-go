@@ -1,0 +1,36 @@
+format: sqlite
+version: "3"
+mime:
+  - application/x-sqlite3
+  - application/vnd.sqlite3
+category: database
+confidence_weight: 0.98
+extensions:
+  - sqlite
+  - sqlite3
+  - db
+  - db3
+  - s3db
+  - sl3
+description: SQLite database
+references:
+  - https://www.sqlite.org/fileformat2.html
+signatures:
+  - offset: 0
+    hex: "53 51 4C 69 74 65 20 66 6F 72 6D 61 74 20 33 00"
+    description: "SQLite format 3 signature"
+    weight: 1.0
+structure:
+  header_size: 100
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: SQLite file header (100 bytes)
+    - id: pages
+      required: true
+      description: Database pages
+repair_strategies:
+  - name: none
+    priority: 0
+    description: SQLite files cannot be repaired

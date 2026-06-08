@@ -1,0 +1,35 @@
+format: webp
+version: "1.0"
+mime:
+  - image/webp
+category: image
+confidence_weight: 0.95
+extensions:
+  - webp
+description: WebP image
+references:
+  - https://developers.google.com/speed/webp
+signatures:
+  - offset: 0
+    hex: "52 49 46 46"
+    description: RIFF header
+    weight: 0.5
+  - offset: 8
+    hex: "57 45 42 50"
+    description: WEBP signature
+    weight: 1.0
+structure:
+  header_size: 12
+  chunks:
+    - id: riff_header
+      required: true
+      position: 0
+      description: RIFF header
+    - id: webp_signature
+      required: true
+      position: 8
+      description: WEBP signature
+repair_strategies:
+  - name: none
+    priority: 0
+    description: WebP files cannot be repaired

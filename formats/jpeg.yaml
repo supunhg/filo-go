@@ -1,0 +1,40 @@
+format: jpeg
+version: "1.0"
+mime:
+  - image/jpeg
+category: image
+confidence_weight: 0.95
+extensions:
+  - jpg
+  - jpeg
+  - jpe
+  - jfif
+description: JPEG image
+references:
+  - https://www.w3.org/Graphics/JPEG/itu-t81.pdf
+signatures:
+  - offset: 0
+    hex: "FF D8 FF"
+    description: JPEG SOI marker followed by APP marker
+    weight: 1.0
+footers:
+  - hex: "FF D9"
+    description: JPEG EOI marker
+structure:
+  header_size: 2
+  chunks:
+    - id: SOI
+      required: true
+      position: 0
+      description: Start of image
+    - id: EOI
+      required: true
+      position: last
+      description: End of image
+repair_strategies:
+  - name: add_soi_and_eoi
+    priority: 1
+    description: Add missing SOI/EOI markers
+  - name: add_eoi_marker
+    priority: 2
+    description: Append missing EOI marker

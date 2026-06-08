@@ -1,0 +1,31 @@
+format: luac
+version: "5.4"
+mime:
+  - application/x-lua
+category: executable
+confidence_weight: 0.95
+extensions:
+  - luac
+  - lua
+description: Lua compiled bytecode
+references:
+  - https://www.lua.org/manual/5.4/manual.html
+signatures:
+  - offset: 0
+    hex: "1B 4C 75 61"
+    description: Lua bytecode magic
+    weight: 1.0
+structure:
+  header_size: 12
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: Lua header
+    - id: bytecode
+      required: true
+      description: Compiled bytecode
+repair_strategies:
+  - name: none
+    priority: 0
+    description: Lua bytecode files cannot be repaired

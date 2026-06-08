@@ -1,0 +1,41 @@
+format: elf
+version: "1.0"
+mime:
+  - application/x-executable
+  - application/x-elf
+category: executable
+confidence_weight: 0.98
+extensions:
+  - elf
+  - so
+  - o
+  - bin
+description: ELF executable
+references:
+  - https://refspecs.linuxfoundation.org/elf/elf.pdf
+signatures:
+  - offset: 0
+    hex: "7F 45 4C 46"
+    description: ELF magic bytes
+    weight: 1.0
+structure:
+  header_size: 16
+  endianness: variable
+  chunks:
+    - id: ident
+      required: true
+      position: 0
+      description: ELF identification (16 bytes)
+    - id: ehdr
+      required: true
+      description: ELF header
+    - id: phdr
+      required: false
+      description: Program headers
+    - id: shdr
+      required: false
+      description: Section headers
+repair_strategies:
+  - name: none
+    priority: 0
+    description: ELF files typically cannot be repaired

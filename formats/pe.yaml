@@ -1,0 +1,46 @@
+format: pe
+version: "1.0"
+mime:
+  - application/x-dosexec
+  - application/vnd.microsoft.portable-executable
+category: executable
+confidence_weight: 0.98
+extensions:
+  - exe
+  - dll
+  - sys
+  - ocx
+  - scr
+description: Windows PE executable
+references:
+  - https://learn.microsoft.com/en-us/windows/win32/debug/pe-format
+signatures:
+  - offset: 0
+    hex: "4D 5A"
+    description: MZ header (DOS stub)
+    weight: 0.9
+structure:
+  chunks:
+    - id: dos_header
+      required: true
+      position: 0
+      description: DOS MZ header
+    - id: dos_stub
+      required: false
+      description: DOS stub program
+    - id: pe_signature
+      required: true
+      description: PE signature "PE\0\0"
+    - id: coff_header
+      required: true
+      description: COFF file header
+    - id: optional_header
+      required: true
+      description: Optional header
+    - id: section_headers
+      required: true
+      description: Section table
+repair_strategies:
+  - name: none
+    priority: 0
+    description: PE files typically cannot be repaired

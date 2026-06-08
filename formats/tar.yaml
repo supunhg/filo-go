@@ -1,0 +1,35 @@
+format: tar
+version: "1.0"
+mime:
+  - application/x-tar
+category: archive
+confidence_weight: 0.85
+extensions:
+  - tar
+  - tar.gz
+  - tgz
+  - tar.bz2
+  - tbz2
+  - tar.xz
+  - txz
+description: TAR archive
+references:
+  - https://www.gnu.org/software/tar/manual/html_node/Standard.html
+signatures:
+  - offset: 257
+    hex: "75 73 74 61 72"
+    description: "ustar signature at offset 257"
+    weight: 1.0
+structure:
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: TAR header (512 bytes)
+    - id: data
+      required: true
+      description: File data
+repair_strategies:
+  - name: none
+    priority: 0
+    description: TAR files cannot be repaired

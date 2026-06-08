@@ -1,0 +1,44 @@
+format: png
+version: "1.2"
+mime:
+  - image/png
+category: image
+confidence_weight: 0.95
+extensions:
+  - png
+description: Portable Network Graphics image
+references:
+  - https://www.w3.org/TR/png/
+signatures:
+  - offset: 0
+    hex: "89 50 4E 47 0D 0A 1A 0A"
+    description: PNG magic bytes
+    weight: 1.0
+footers:
+  - hex: "49 45 4E 44 AE 42 60 82"
+    description: IEND chunk
+structure:
+  header_size: 8
+  chunks:
+    - id: IHDR
+      required: true
+      position: 0
+      description: Image header
+    - id: IDAT
+      required: true
+      min_count: 1
+      description: Image data
+    - id: IEND
+      required: true
+      position: last
+      description: Image end
+repair_strategies:
+  - name: reconstruct_from_chunks
+    priority: 1
+    description: Rebuild PNG signature from IHDR position
+  - name: add_iend_chunk
+    priority: 2
+    description: Append missing IEND chunk
+  - name: generate_minimal_header
+    priority: 3
+    description: Generate minimal 1x1 PNG header
