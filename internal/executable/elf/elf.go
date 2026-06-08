@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math"
 	"strings"
+
+	"github.com/supunhg/filo-go/internal/entropy"
 )
 
 // Result holds ELF analysis results.
@@ -215,7 +216,7 @@ func parseSections(data []byte, is64 bool) []Section {
 
 		// Calculate entropy
 		if secSize > 0 && int(secOffset)+int(secSize) <= len(data) {
-			sec.Entropy = calculateEntropy(data[secOffset : secOffset+secSize])
+			sec.Entropy = entropy.Calculate(data[secOffset : secOffset+secSize])
 		}
 
 		sections = append(sections, sec)
@@ -419,28 +420,6 @@ func parseSymbols(data []byte, sections []Section) *Symbols {
 	}
 
 	return syms
-}
-
-// calculateEntropy calculates Shannon entropy.
-func calculateEntropy(data []byte) float64 {
-	if len(data) == 0 {
-		return 0
-	}
-
-	freq := make([]int, 256)
-	for _, b := range data {
-		freq[b]++
-	}
-
-	entropy := 0.0
-	size := float64(len(data))
-	for _, f := range freq {
-		if f > 0 {
-			p := float64(f) / size
-			entropy -= p * math.Log2(p)
-		}
-	}
-	return entropy
 }
 
 func classString(class byte) string {

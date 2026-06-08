@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math"
 	"strings"
+
+	"github.com/supunhg/filo-go/internal/entropy"
 )
 
 // Result holds PE analysis results.
@@ -200,7 +201,7 @@ func parseSections(data []byte, offset uint32, count uint16) []Section {
 
 		// Calculate entropy
 		if sec.RawSize > 0 && int(sec.RawOffset)+int(sec.RawSize) <= len(data) {
-			sec.Entropy = calculateEntropy(data[sec.RawOffset : sec.RawOffset+sec.RawSize])
+			sec.Entropy = entropy.Calculate(data[sec.RawOffset : sec.RawOffset+sec.RawSize])
 		}
 
 		// Check for suspicious sections
@@ -451,27 +452,7 @@ func parseDataDirs(data []byte, optOffset uint32, magic uint16) []DataDir {
 	return dirs
 }
 
-// calculateEntropy calculates Shannon entropy of data.
-func calculateEntropy(data []byte) float64 {
-	if len(data) == 0 {
-		return 0
-	}
 
-	freq := make([]int, 256)
-	for _, b := range data {
-		freq[b]++
-	}
-
-	entropy := 0.0
-	size := float64(len(data))
-	for _, f := range freq {
-		if f > 0 {
-			p := float64(f) / size
-			entropy -= p * math.Log2(p)
-		}
-	}
-	return entropy
-}
 
 // machineName returns the string name for a PE machine type.
 func machineName(machine uint16) string {

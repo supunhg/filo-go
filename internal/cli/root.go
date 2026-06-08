@@ -46,4 +46,5 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(sqliteCmd)
+	rootCmd.AddCommand(executableCmd)
 }

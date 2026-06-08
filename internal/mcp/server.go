@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -309,11 +310,11 @@ func (s *Server) toolHash(path string) (interface{}, error) {
 		return nil, err
 	}
 
-	// Simple hash - would use crypto in production
+	h := sha256.Sum256(data)
 	return map[string]interface{}{
 		"path":  path,
 		"size":  len(data),
-		"sha256": fmt.Sprintf("%x", data[:min(16, len(data))]),
+		"sha256": fmt.Sprintf("%x", h),
 	}, nil
 }
 
@@ -388,9 +389,4 @@ func formatResult(result interface{}) string {
 	return string(data)
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
+

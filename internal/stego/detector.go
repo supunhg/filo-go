@@ -458,9 +458,4 @@ func decodeImage(data []byte) (image.Image, error) {
 	return img, err
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
+

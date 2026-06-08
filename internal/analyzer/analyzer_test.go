@@ -2,6 +2,8 @@ package analyzer
 
 import (
 	"testing"
+
+	"github.com/supunhg/filo-go/internal/entropy"
 )
 
 func TestAnalyzePNG(t *testing.T) {
@@ -102,8 +104,8 @@ func TestEntropy(t *testing.T) {
 
 	highEntropy := []byte{0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88}
 
-	lowE := computeEntropy(lowEntropy)
-	highE := computeEntropy(highEntropy)
+	lowE := entropy.Calculate(lowEntropy)
+	highE := entropy.Calculate(highEntropy)
 
 	if lowE >= highE {
 		t.Errorf("low entropy (%f) should be less than high entropy (%f)", lowE, highE)
@@ -133,7 +135,7 @@ func TestEntropyInterpretation(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		result := interpretEntropy(tt.entropy)
+		result := entropy.Interpret(tt.entropy)
 		if len(result) < len(tt.expected) || result[:len(tt.expected)] != tt.expected {
 			t.Errorf("interpretEntropy(%f) = %q, want prefix %q", tt.entropy, result, tt.expected)
 		}

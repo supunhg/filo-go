@@ -3,6 +3,7 @@ package analyzer
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"math"
 	"path/filepath"
@@ -10,42 +11,43 @@ import (
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/h2non/filetype"
+	"github.com/supunhg/filo-go/internal/entropy"
 	"github.com/supunhg/filo-go/internal/formats"
 )
 
 // Options controls analysis behavior.
 type Options struct {
-	DeepScan     bool
-	NoML         bool
-	AllEvidence  bool
-	AllEmbedded  bool
-	ExplainMode  bool
-	EntropyViz   bool
-	YaraRules    []string
-	FormatsDir   string
+	DeepScan    bool
+	NoML        bool
+	AllEvidence bool
+	AllEmbedded bool
+	ExplainMode bool
+	EntropyViz  bool
+	YaraRules   []string
+	FormatsDir  string
 }
 
 // Result holds the full analysis output.
 type Result struct {
-	FilePath          string            `json:"file_path"`
-	FileName          string            `json:"file_name"`
-	FileSize          int64             `json:"file_size"`
-	SHA256            string            `json:"sha256"`
-	Entropy           float64           `json:"entropy"`
-	EntropyLabel      string            `json:"entropy_label"`
-	PrimaryFormat     string            `json:"primary_format"`
-	PrimaryMIME       string            `json:"primary_mime"`
-	Confidence        float64           `json:"confidence"`
+	FilePath           string           `json:"file_path"`
+	FileName           string           `json:"file_name"`
+	FileSize           int64            `json:"file_size"`
+	SHA256             string           `json:"sha256"`
+	Entropy            float64          `json:"entropy"`
+	EntropyLabel       string           `json:"entropy_label"`
+	PrimaryFormat      string           `json:"primary_format"`
+	PrimaryMIME        string           `json:"primary_mime"`
+	Confidence         float64          `json:"confidence"`
 	AlternativeFormats []Alternative    `json:"alternative_formats,omitempty"`
-	Evidence          []Evidence        `json:"evidence,omitempty"`
-	EmbeddedObjects   []EmbeddedObject  `json:"embedded_objects,omitempty"`
-	Contradictions    []string          `json:"contradictions,omitempty"`
-	Architecture      *ArchInfo         `json:"architecture,omitempty"`
-	CryptoIndicators  *CryptoInfo       `json:"crypto_indicators,omitempty"`
-	ToolFingerprint   *FingerprintInfo  `json:"tool_fingerprint,omitempty"`
-	Polyglots         []PolyglotInfo    `json:"polyglots,omitempty"`
-	YARAMatches       []YARAMatch       `json:"yara_matches,omitempty"`
-	EntropyChunks     []EntropyChunk    `json:"entropy_chunks,omitempty"`
+	Evidence           []Evidence       `json:"evidence,omitempty"`
+	EmbeddedObjects    []EmbeddedObject `json:"embedded_objects,omitempty"`
+	Contradictions     []string         `json:"contradictions,omitempty"`
+	Architecture       *ArchInfo        `json:"architecture,omitempty"`
+	CryptoIndicators   *CryptoInfo      `json:"crypto_indicators,omitempty"`
+	ToolFingerprint    *FingerprintInfo `json:"tool_fingerprint,omitempty"`
+	Polyglots          []PolyglotInfo   `json:"polyglots,omitempty"`
+	YARAMatches        []YARAMatch      `json:"yara_matches,omitempty"`
+	EntropyChunks      []EntropyChunk   `json:"entropy_chunks,omitempty"`
 }
 
 // Alternative represents another possible format.
@@ -72,19 +74,19 @@ type EmbeddedObject struct {
 
 // ArchInfo holds CPU architecture details.
 type ArchInfo struct {
-	Bits     int    `json:"bits"`
-	Endian   string `json:"endian"`
-	Machine  string `json:"machine"`
-	Format   string `json:"format"`
+	Bits    int    `json:"bits"`
+	Endian  string `json:"endian"`
+	Machine string `json:"machine"`
+	Format  string `json:"format"`
 }
 
 // CryptoInfo holds encryption detection results.
 type CryptoInfo struct {
-	Detected     bool    `json:"detected"`
-	Confidence   float64 `json:"confidence"`
-	CipherHints  []string `json:"cipher_hints,omitempty"`
-	BlockSize    int     `json:"block_size,omitempty"`
-	ECBDetected  bool    `json:"ecb_detected"`
+	Detected    bool     `json:"detected"`
+	Confidence  float64  `json:"confidence"`
+	CipherHints []string `json:"cipher_hints,omitempty"`
+	BlockSize   int      `json:"block_size,omitempty"`
+	ECBDetected bool     `json:"ecb_detected"`
 }
 
 // FingerprintInfo holds tool creation info.
@@ -113,10 +115,7 @@ type YARAMatch struct {
 }
 
 // EntropyChunk is a segment for entropy visualization.
-type EntropyChunk struct {
-	Offset  int64   `json:"offset"`
-	Entropy float64 `json:"entropy"`
-}
+type EntropyChunk = entropy.Chunk
 
 // Analyze performs full file analysis.
 func Analyze(data []byte, filePath string, opts *Options) (*Result, error) {
@@ -132,11 +131,11 @@ func Analyze(data []byte, filePath string, opts *Options) (*Result, error) {
 	}
 
 	result.SHA256 = computeSHA256(data)
-	result.Entropy = computeEntropy(data)
-	result.EntropyLabel = interpretEntropy(result.Entropy)
+	result.Entropy = entropy.Calculate(data)
+	result.EntropyLabel = entropy.Interpret(result.Entropy)
 
 	if opts.EntropyViz {
-		result.EntropyChunks = computeEntropyChunks(data, 256)
+		result.EntropyChunks = entropy.Chunks(data, 256)
 	}
 
 	detectFileType(data, result, opts)
@@ -376,8 +375,6 @@ func detectArchitecture(data []byte, r *Result) {
 
 // detectCrypto detects encryption indicators.
 func detectCrypto(data []byte, r *Result) {
-	entropy := computeEntropy(data)
-
 	// Skip crypto detection for text files (entropy < 6.0 and contains printable chars)
 	isText := false
 	if len(data) > 0 {
@@ -388,7 +385,7 @@ func detectCrypto(data []byte, r *Result) {
 			}
 		}
 		printableRatio := float64(printableCount) / float64(min(256, len(data)))
-		if printableRatio > 0.8 && entropy < 6.0 {
+		if printableRatio > 0.8 && r.Entropy < 6.0 {
 			isText = true
 		}
 	}
@@ -411,7 +408,7 @@ func detectCrypto(data []byte, r *Result) {
 				r.CryptoIndicators = &CryptoInfo{}
 			}
 			r.CryptoIndicators.Detected = true
-			r.CryptoIndicators.Confidence = math.Min(entropy/8.0, 1.0)
+			r.CryptoIndicators.Confidence = math.Min(r.Entropy/8.0, 1.0)
 			r.CryptoIndicators.BlockSize = bs.size
 			r.CryptoIndicators.CipherHints = append(r.CryptoIndicators.CipherHints, bs.name)
 		}
@@ -509,7 +506,7 @@ func fingerprintTool(data []byte, r *Result) {
 			toolHint = fmt.Sprintf("OS code %d", osType)
 		}
 		r.ToolFingerprint = &FingerprintInfo{
-			OS:     toolHint,
+			OS:       toolHint,
 			Producer: "ZIP archive",
 		}
 	}
@@ -534,58 +531,6 @@ func fingerprintTool(data []byte, r *Result) {
 func computeSHA256(data []byte) string {
 	h := sha256.Sum256(data)
 	return fmt.Sprintf("%x", h)
-}
-
-func computeEntropy(data []byte) float64 {
-	if len(data) == 0 {
-		return 0
-	}
-
-	freq := make([]int, 256)
-	for _, b := range data {
-		freq[b]++
-	}
-
-	entropy := 0.0
-	size := float64(len(data))
-	for _, f := range freq {
-		if f > 0 {
-			p := float64(f) / size
-			entropy -= p * math.Log2(p)
-		}
-	}
-	return entropy
-}
-
-func interpretEntropy(e float64) string {
-	switch {
-	case e < 1.0:
-		return "Very low - likely structured/predictable data"
-	case e < 3.0:
-		return "Low - simple text or basic compression"
-	case e < 5.0:
-		return "Medium - compressed data or weak encryption"
-	case e < 7.0:
-		return "High - compressed or encrypted data"
-	default:
-		return "Very high - strong encryption or random data"
-	}
-}
-
-func computeEntropyChunks(data []byte, chunkSize int) []EntropyChunk {
-	var chunks []EntropyChunk
-	for i := 0; i < len(data); i += chunkSize {
-		end := i + chunkSize
-		if end > len(data) {
-			end = len(data)
-		}
-		chunk := data[i:end]
-		chunks = append(chunks, EntropyChunk{
-			Offset:  int64(i),
-			Entropy: computeEntropy(chunk),
-		})
-	}
-	return chunks
 }
 
 func estimateSize(data []byte, offset int, format string) int64 {
@@ -621,224 +566,66 @@ func boolToInt(b bool, trueVal, falseVal int) int {
 
 func elfMachineName(machine uint16) string {
 	names := map[uint16]string{
-		0x01: "AT&T WE 32100",
-		0x02: "SPARC",
-		0x03: "x86",
-		0x04: "Motorola 68000",
-		0x05: "Motorola 88000",
-		0x06: "Intel MCU",
-		0x07: "Intel 80860",
-		0x08: "MIPS R3000",
-		0x09: "IBM System/370",
-		0x0A: "MIPS R3000 LE",
-		0x14: "PowerPC",
-		0x15: "PowerPC 64-bit",
-		0x16: "IBM S390",
-		0x17: "IBM S390 (old)",
-		0x24: "NEC V800",
-		0x25: "Fujitsu FR20",
-		0x26: "TRW Ruby",
-		0x27: "Hannoni Parallel",
-		0x28: "SuperH",
-		0x29: "SPARC9",
-		0x2A: "STMicroelectronics",
-		0x2B: "Toyota RC/processor",
-		0x2C: "STMicroelectronics ST100",
-		0x2D: "Advanced Logic Corp",
-		0x2E: "Alpha (old)",
-		0x30: "Panasonic Mips",
-		0x31: "NEC v30",
-		0x32: "Broadcom VideoCore",
-		0x33: "Tensilica Xtensa",
-		0x36: "nMOS 16-bit",
-		0x37: "Sony DSP",
-		0x39: "Siemens PCM",
-		0x3C: "MIPS R10000 LE",
-		0x40: "Arm AArch64",
-		0x41: "ARM 32-bit",
-		0x42: "SHARC",
-		0x44: "Renesas/Hitachi H8/300",
-		0x45: "Renesas/Hitachi H8/300H",
-		0x46: "Renesas H8S",
-		0x47: "Renesas H8/500",
-		0x48: "MIPS R2000 BE",
-		0x49: "MIPS R2000 LE",
-		0x4A: "MIPS R3000 BE",
-		0x4B: "MIPS R3000 LE",
-		0x50: "Motorola PowerPC",
-		0x51: "PowerPC 64-bit LE",
-		0x52: "IBM 9076",
-		0x53: "IBM RS/6000 PPC",
-		0x54: "RSVd",
-		0x55: "LSI Logic DSP",
-		0x56: "Fujitsu F2MC16",
-		0x57: "Texas Instruments C6000 DSP",
-		0x58: "Digital Equipment Corp",
-		0x5A: "Hitachi DSP",
-		0x5B: "Renencas/Hitachi H8/300",
-		0x5C: "Renencas/Hitachi H8/300H",
-		0x5D: "Renencas H8S",
-		0x5E: "Renencas H8/500",
-		0x60: "Infinifox",
-		0x61: "Alpha AXP",
-		0x62: "Infinifox (old)",
-		0x63: "Panasonic M16",
-		0x64: "NEC x86-64",
-		0x65: "Panasonic A10",
-		0x66: "STMicroelectronics ST19",
-		0x67: "Digital VAX",
-		0x68: "Axis Communications",
-		0x69: "Infineon Technologies",
-		0x6A: "Element 14 64-bit DSP",
-		0x6B: "LSI Logic 16-bit",
-		0x6C: "TMS320C6000",
-		0x6D: "NMips",
-		0x6E: "Motorola DSP56XXX",
-		0x6F: "Freescale DSP56XXX",
-		0x70: "Star MC",
-		0x71: "AMD x86-64",
-		0x72: "Sony PSP",
-		0x73: "Panasonic MN10300",
-		0x74: "Matsushita MN10200",
-		0x75: "ARM NDS / RISC-V",
-		0x76: "AMDGPU",
-		0x77: "ARMv8-M",
-		0x78: "SPARC V9",
-		0x79: "Siemens TriCore",
-		0x7A: "Renesas/Argonaut RISC",
-		0x7B: "HG/Tech RISC",
-		0x7C: "S390 (old)",
-		0x7D: "IBM Moirai",
-		0x7E: "H8/300H (old)",
-		0x7F: "ARM 64-bit LE",
-		0x80: "STMicroelectronics ST200",
-		0x81: "MicroBlaze",
-		0x82: "CUDA",
-		0x83: "AMDGPU",
-		0x84: "Kalimba",
-		0x85: "40-bit c4x",
-		0x86: "Digital CNV",
-		0x87: "OpenRISC 1000",
-		0x88: "Renesas/Altos H8/300",
-		0x89: "Altera Nios II",
-		0x8A: "Crazyhorse ARMv7",
-		0x8B: "NMips (old)",
-		0x8C: "Motorola MCore",
-		0x8D: "Renesas H8/300H",
-		0x8E: "ARMv7-M",
-		0x8F: "RISC-V",
-		0x90: "Lanai",
-		0x91: "Linux ABI",
-		0x92: "Tilera TILE64",
-		0x93: "Tilera TILEPro",
-		0x94: "NVIDIA CUDA",
-		0x95: "Tilera TILE-Gx",
-		0x96: "CloudFlare NF",
-		0x97: "Microchip AVR",
-		0x98: "Fujitsu FR-V",
-		0x99: "Qualcomm Hexagon",
-		0x9A: "Motorola 860",
-		0x9B: "Samsung S390x",
-		0x9C: "STMicroelectronics ST100",
-		0x9D: "RISC-V 64-bit",
-		0x9E: "WDC x4",
-		0x9F: "RISC-V 32-bit",
-		0xA0: "RISC-V 128-bit",
-		0xA1: "MIPS R6",
-		0xA2: "Motorola ColdFire",
-		0xA3: "MCore",
-		0xA4: "Renesas M32R",
-		0xA5: "Renesas MN10300",
-		0xA6: "Matsushita MN10200",
-		0xA7: "PicoJava",
-		0xA8: "OpenRISC 32-bit",
-		0xA9: "ARMv7-R",
-		0xAA: "ARMv7-M",
-		0xAB: "S12Z",
-		0xAC: "PowerPC LE",
-		0xAD: "STMicroelectronics ST20",
-		0xAE: "NDS32",
-		0xAF: "eBPF",
-		0xB0: "ARC (Argonaut RISC)",
-		0xB1: "H8/300H",
-		0xB2: "SPARC V9 (LE)",
-		0xB3: "TILEPro64",
-		0xB4: "MIPS16",
-		0xB5: "Fujitsu FR60",
-		0xB6: "TILE-Gx 64",
-		0xB7: "TILE64",
-		0xB8: "PowerPC SPE",
-		0xB9: "MIPS R3000",
-		0xBA: "AMDGPU",
-		0xBB: "SPARC64",
-		0xBC: "MIPS R10000",
-		0xBD: "Motorola 68HC12",
-		0xBE: "Motorola M68HC11",
-		0xBF: "ARMv7-M (old)",
-		0xC0: "STMicroelectronics ST19",
-		0xC1: "PowerPC 64",
-		0xC2: "MIPS R5900",
-		0xC3: "MIPS R12000",
-		0xC4: "Motorola XC6888",
-		0xC5: "ARMv7-A LE",
-		0xC6: "ARMv7-A BE",
-		0xC7: "MIPS R14000",
-		0xC8: "MIPS R8000",
-		0xC9: "Motorola RCE",
-		0xCA: "NEC V850",
-		0xCB: "MIPS R3000 LE",
-		0xCC: "MIPS R10000 BE",
-		0xCD: "NEC V850x",
-		0xCE: "Fujitsu FR20",
-		0xCF: "FR-V",
-		0xD0: "SPARC V8",
-		0xD1: "Renesas/NEC v850",
-		0xD2: "Renesas v850x",
-		0xD3: "Renesas v850x2",
-		0xD4: "Renesas H8/500",
-		0xD5: "Renesas H8/300H",
-		0xD6: "Renesas H8S",
-		0xD7: "Renesas H8/300",
-		0xD8: "PowerPC LE",
-		0xD9: "PowerPC 64 LE",
-		0xDA: "Renesas/NEC v850",
-		0xDB: "NEC STK2000",
-		0xDC: "Renesas M32C",
-		0xDD: "Renesas M16C",
-		0xDE: "Renesas M32C (old)",
-		0xDF: "Renesas M32R",
-		0xE0: "Renesas M16C (old)",
-		0xE1: "Renesas M32C (old)",
-		0xE2: "SPARC M8",
-		0xE3: "RISC-V (old)",
-		0xE4: "RISC-V (old)",
-		0xE5: "MIPS R16000",
-		0xE6: "AMDGPU",
-		0xE7: "Renesas R8C",
-		0xE8: "SPARC M9",
-		0xE9: "Renesas R32C",
-		0xEA: "Renesas H8/300H (old)",
-		0xEB: "Renesas H8S (old)",
-		0xEC: "Renesas H8/500 (old)",
-		0xED: "Renesas H8/300 (old)",
-		0xEE: "Renesas v850 (old)",
-		0xEF: "Renesas v850x (old)",
-		0xF0: "Renesas v850x2 (old)",
-		0xF1: "Renesas M32C (old)",
-		0xF2: "Renesas M16C (old)",
-		0xF3: "Renesas M32R (old)",
-		0xF4: "Renesas M32C (old)",
-		0xF5: "Renesas M16C (old)",
-		0xF6: "Renesas M32C (old)",
-		0xF7: "Renesas M16C (old)",
-		0xF8: "Renesas M32C (old)",
-		0xF9: "Renesas M16C (old)",
-		0xFA: "Renesas M32C (old)",
-		0xFB: "Renesas M16C (old)",
-		0xFC: "Renesas M32C (old)",
-		0xFD: "Renesas M16C (old)",
-		0xFE: "Renesas M32C (old)",
-		0xFF: "Renesas M16C (old)",
+		0x01: "AT&T WE 32100", 0x02: "SPARC", 0x03: "x86", 0x04: "Motorola 68000",
+		0x05: "Motorola 88000", 0x06: "Intel MCU", 0x07: "Intel 80860", 0x08: "MIPS R3000",
+		0x09: "IBM System/370", 0x0A: "MIPS R3000 LE", 0x14: "PowerPC", 0x15: "PowerPC 64-bit",
+		0x16: "IBM S390", 0x17: "IBM S390 (old)", 0x24: "NEC V800", 0x25: "Fujitsu FR20",
+		0x26: "TRW Ruby", 0x27: "Hannoni Parallel", 0x28: "SuperH", 0x29: "SPARC9",
+		0x2A: "STMicroelectronics", 0x2B: "Toyota RC/processor", 0x2C: "STMicroelectronics ST100",
+		0x2D: "Advanced Logic Corp", 0x2E: "Alpha (old)", 0x30: "Panasonic Mips", 0x31: "NEC v30",
+		0x32: "Broadcom VideoCore", 0x33: "Tensilica Xtensa", 0x36: "nMOS 16-bit", 0x37: "Sony DSP",
+		0x39: "Siemens PCM", 0x3C: "MIPS R10000 LE", 0x40: "Arm AArch64", 0x41: "ARM 32-bit",
+		0x42: "SHARC", 0x44: "Renesas/Hitachi H8/300", 0x45: "Renesas/Hitachi H8/300H",
+		0x46: "Renesas H8S", 0x47: "Renesas H8/500", 0x48: "MIPS R2000 BE", 0x49: "MIPS R2000 LE",
+		0x4A: "MIPS R3000 BE", 0x4B: "MIPS R3000 LE", 0x50: "Motorola PowerPC",
+		0x51: "PowerPC 64-bit LE", 0x52: "IBM 9076", 0x53: "IBM RS/6000 PPC", 0x54: "RSVd",
+		0x55: "LSI Logic DSP", 0x56: "Fujitsu F2MC16", 0x57: "Texas Instruments C6000 DSP",
+		0x58: "Digital Equipment Corp", 0x5A: "Hitachi DSP", 0x5B: "Renencas/Hitachi H8/300",
+		0x5C: "Renencas/Hitachi H8/300H", 0x5D: "Renencas H8S", 0x5E: "Renencas H8/500",
+		0x60: "Infinifox", 0x61: "Alpha AXP", 0x62: "Infinifox (old)", 0x63: "Panasonic M16",
+		0x64: "NEC x86-64", 0x65: "Panasonic A10", 0x66: "STMicroelectronics ST19",
+		0x67: "Digital VAX", 0x68: "Axis Communications", 0x69: "Infineon Technologies",
+		0x6A: "Element 14 64-bit DSP", 0x6B: "LSI Logic 16-bit", 0x6C: "TMS320C6000",
+		0x6D: "NMips", 0x6E: "Motorola DSP56XXX", 0x6F: "Freescale DSP56XXX", 0x70: "Star MC",
+		0x71: "AMD x86-64", 0x72: "Sony PSP", 0x73: "Panasonic MN10300", 0x74: "Matsushita MN10200",
+		0x75: "ARM NDS / RISC-V", 0x76: "AMDGPU", 0x77: "ARMv8-M", 0x78: "SPARC V9",
+		0x79: "Siemens TriCore", 0x7A: "Renesas/Argonaut RISC", 0x7B: "HG/Tech RISC",
+		0x7C: "S390 (old)", 0x7D: "IBM Moirai", 0x7E: "H8/300H (old)", 0x7F: "ARM 64-bit LE",
+		0x80: "STMicroelectronics ST200", 0x81: "MicroBlaze", 0x82: "CUDA", 0x83: "AMDGPU",
+		0x84: "Kalimba", 0x85: "40-bit c4x", 0x86: "Digital CNV", 0x87: "OpenRISC 1000",
+		0x88: "Renesas/Altos H8/300", 0x89: "Altera Nios II", 0x8A: "Crazyhorse ARMv7",
+		0x8B: "NMips (old)", 0x8C: "Motorola MCore", 0x8D: "Renesas H8/300H", 0x8E: "ARMv7-M",
+		0x8F: "RISC-V", 0x90: "Lanai", 0x91: "Linux ABI", 0x92: "Tilera TILE64",
+		0x93: "Tilera TILEPro", 0x94: "NVIDIA CUDA", 0x95: "Tilera TILE-Gx", 0x96: "CloudFlare NF",
+		0x97: "Microchip AVR", 0x98: "Fujitsu FR-V", 0x99: "Qualcomm Hexagon", 0x9A: "Motorola 860",
+		0x9B: "Samsung S390x", 0x9C: "STMicroelectronics ST100", 0x9D: "RISC-V 64-bit",
+		0x9E: "WDC x4", 0x9F: "RISC-V 32-bit", 0xA0: "RISC-V 128-bit", 0xA1: "MIPS R6",
+		0xA2: "Motorola ColdFire", 0xA3: "MCore", 0xA4: "Renesas M32R", 0xA5: "Renesas MN10300",
+		0xA6: "Matsushita MN10200", 0xA7: "PicoJava", 0xA8: "OpenRISC 32-bit", 0xA9: "ARMv7-R",
+		0xAA: "ARMv7-M", 0xAB: "S12Z", 0xAC: "PowerPC LE", 0xAD: "STMicroelectronics ST20",
+		0xAE: "NDS32", 0xAF: "eBPF", 0xB0: "ARC (Argonaut RISC)", 0xB1: "H8/300H",
+		0xB2: "SPARC V9 (LE)", 0xB3: "TILEPro64", 0xB4: "MIPS16", 0xB5: "Fujitsu FR60",
+		0xB6: "TILE-Gx 64", 0xB7: "TILE64", 0xB8: "PowerPC SPE", 0xB9: "MIPS R3000",
+		0xBA: "AMDGPU", 0xBB: "SPARC64", 0xBC: "MIPS R10000", 0xBD: "Motorola 68HC12",
+		0xBE: "Motorola M68HC11", 0xBF: "ARMv7-M (old)", 0xC0: "STMicroelectronics ST19",
+		0xC1: "PowerPC 64", 0xC2: "MIPS R5900", 0xC3: "MIPS R12000", 0xC4: "Motorola XC6888",
+		0xC5: "ARMv7-A LE", 0xC6: "ARMv7-A BE", 0xC7: "MIPS R14000", 0xC8: "MIPS R8000",
+		0xC9: "Motorola RCE", 0xCA: "NEC V850", 0xCB: "MIPS R3000 LE", 0xCC: "MIPS R10000 BE",
+		0xCD: "NEC V850x", 0xCE: "Fujitsu FR20", 0xCF: "FR-V", 0xD0: "SPARC V8",
+		0xD1: "Renesas/NEC v850", 0xD2: "Renesas v850x", 0xD3: "Renesas v850x2",
+		0xD4: "Renesas H8/500", 0xD5: "Renesas H8/300H", 0xD6: "Renesas H8S", 0xD7: "Renesas H8/300",
+		0xD8: "PowerPC LE", 0xD9: "PowerPC 64 LE", 0xDA: "Renesas/NEC v850", 0xDB: "NEC STK2000",
+		0xDC: "Renesas M32C", 0xDD: "Renesas M16C", 0xDE: "Renesas M32C (old)", 0xDF: "Renesas M32R",
+		0xE0: "Renesas M16C (old)", 0xE1: "Renesas M32C (old)", 0xE2: "SPARC M8",
+		0xE3: "RISC-V (old)", 0xE4: "RISC-V (old)", 0xE5: "MIPS R16000", 0xE6: "AMDGPU",
+		0xE7: "Renesas R8C", 0xE8: "SPARC M9", 0xE9: "Renesas R32C", 0xEA: "Renesas H8/300H (old)",
+		0xEB: "Renesas H8S (old)", 0xEC: "Renesas H8/500 (old)", 0xED: "Renesas H8/300 (old)",
+		0xEE: "Renesas v850 (old)", 0xEF: "Renesas v850x (old)", 0xF0: "Renesas v850x2 (old)",
+		0xF1: "Renesas M32C (old)", 0xF2: "Renesas M16C (old)", 0xF3: "Renesas M32R (old)",
+		0xF4: "Renesas M32C (old)", 0xF5: "Renesas M16C (old)", 0xF6: "Renesas M32C (old)",
+		0xF7: "Renesas M16C (old)", 0xF8: "Renesas M32C (old)", 0xF9: "Renesas M16C (old)",
+		0xFA: "Renesas M32C (old)", 0xFB: "Renesas M16C (old)", 0xFC: "Renesas M32C (old)",
+		0xFD: "Renesas M16C (old)", 0xFE: "Renesas M32C (old)", 0xFF: "Renesas M16C (old)",
 	}
 	if name, ok := names[machine]; ok {
 		return name
@@ -848,28 +635,14 @@ func elfMachineName(machine uint16) string {
 
 func peMachineName(machine uint16) string {
 	names := map[uint16]string{
-		0x014C: "x86 (32-bit)",
-		0x0200: "Intel Itanium (IA-64)",
-		0x8664: "x86-64 (64-bit)",
-		0x01C0: "ARM (Thumb-2)",
-		0x01C4: "ARM Little-Endian",
-		0xAA64: "ARM64 (AArch64)",
-		0x0EBC: "EFI Byte Code",
-		0x9041: "Mitsubishi M32R Little-Endian",
-		0x0266: "MIPS16",
-		0x0366: "MIPS FPU",
-		0x0466: "MIPS16 FPU",
-		0x01F0: "PowerPC Little-Endian",
-		0x01F1: "PowerPC with floating point support",
-		0x0166: "MIPS R4000 Little-Endian",
-		0x01A2: "Hitachi SH3",
-		0x01A3: "Hitachi SH3 DSP",
-		0x01A6: "Hitachi SH4",
-		0x01A8: "Hitachi SH5",
-		0x01C2: "ARM or Thumb (interworking)",
-		0x01D3: "Matsushita AM33",
-		0x01F2: "PowerPC with floating point support",
-		0x0284: "Digital Alpha AXP",
+		0x014C: "x86 (32-bit)", 0x0200: "Intel Itanium (IA-64)", 0x8664: "x86-64 (64-bit)",
+		0x01C0: "ARM (Thumb-2)", 0x01C4: "ARM Little-Endian", 0xAA64: "ARM64 (AArch64)",
+		0x0EBC: "EFI Byte Code", 0x9041: "Mitsubishi M32R Little-Endian", 0x0266: "MIPS16",
+		0x0366: "MIPS FPU", 0x0466: "MIPS16 FPU", 0x01F0: "PowerPC Little-Endian",
+		0x01F1: "PowerPC with floating point support", 0x0166: "MIPS R4000 Little-Endian",
+		0x01A2: "Hitachi SH3", 0x01A3: "Hitachi SH3 DSP", 0x01A6: "Hitachi SH4",
+		0x01A8: "Hitachi SH5", 0x01C2: "ARM or Thumb (interworking)", 0x01D3: "Matsushita AM33",
+		0x01F2: "PowerPC with floating point support", 0x0284: "Digital Alpha AXP",
 	}
 	if name, ok := names[machine]; ok {
 		return name
@@ -901,7 +674,7 @@ func (r *Result) Print() {
 	fmt.Println()
 	fmt.Printf("  %sFile Size:%s %d bytes\n", colorBold, colorReset, r.FileSize)
 	fmt.Printf("  %sSHA256:%s %s\n", colorBold, colorReset, r.SHA256[:16])
-	fmt.Printf("  %sEntropy:%s %.2f bits/byte (%s)\n", colorBold, colorReset, r.Entropy, r.EntropyLabel)
+	fmt.Printf("  %sEntropy:%s %s\n", colorBold, colorReset, entropy.Bar(r.Entropy, 40))
 	fmt.Println()
 
 	if len(r.Evidence) > 0 {
@@ -959,7 +732,13 @@ func (r *Result) Print() {
 	}
 }
 
+// JSON returns the full analysis result as JSON.
 func (r *Result) JSON() string {
-	return fmt.Sprintf(`{"file_path":"%s","file_name":"%s","file_size":%d,"sha256":"%s","entropy":%.2f,"entropy_label":"%s","primary_format":"%s","primary_mime":"%s","confidence":%.2f}`,
-		r.FilePath, r.FileName, r.FileSize, r.SHA256[:16], r.Entropy, r.EntropyLabel, r.PrimaryFormat, r.PrimaryMIME, r.Confidence)
+	data, err := json.Marshal(r)
+	if err != nil {
+		// Fallback to minimal JSON on error
+		return fmt.Sprintf(`{"file_path":"%s","file_name":"%s","error":"json marshal failed"}`,
+			r.FilePath, r.FileName)
+	}
+	return string(data)
 }
