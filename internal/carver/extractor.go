@@ -190,6 +190,11 @@ func (e *Extractor) extractByFormat(data []byte, sig SignatureScan, opts *Extrac
 		return nil, fmt.Errorf("could not determine end of %s", sig.Format)
 	}
 
+	// Bounds check: ensure end doesn't exceed data length
+	if end > int64(len(data)) {
+		end = int64(len(data))
+	}
+
 	chunk := data[offset:end]
 
 	// Try to decompress
