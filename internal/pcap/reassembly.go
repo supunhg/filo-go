@@ -337,10 +337,3 @@ func (r *Reassembler) GetStreamsByProtocol(protocol string) []*TCPStream {
 func (r *Reassembler) GetMetadata() *ReassemblyMetadata {
 	return r.metadata
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
