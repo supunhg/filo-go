@@ -8,6 +8,14 @@
 
 ---
 
+## 📚 Documentation
+
+- [Knowledge Graph](docs/KNOWLEDGE_GRAPH.md) - Architecture and codebase overview
+- [Competitive Analysis](docs/COMPETITIVE_ANALYSIS.md) - Gap analysis vs binwalk/file/ExifTool
+- [Roadmap](docs/ROADMAP.md) - Development roadmap and milestones
+
+---
+
 ## 🎯 What is filo-go?
 
 **filo-go** is a modern, Go-native forensic analysis toolkit that replaces **binwalk**, **file**, **ExifTool**, and **strings** with a single, fast, cross-platform binary.
@@ -330,7 +338,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues**: [GitHub Issues](https://github.com/supunhg/filo-go/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/supunhg/filo-go/discussions)
-- **Email**: supunhg@gmail.com
+- **Email**: sanchithahewagamage@gmail.com
 
 ---
 
