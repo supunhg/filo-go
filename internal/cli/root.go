@@ -32,6 +32,7 @@ func init() {
 	rootCmd.AddCommand(carveCmd)
 	rootCmd.AddCommand(extractCmd)
 	rootCmd.AddCommand(metaCmd)
+	rootCmd.AddCommand(firmwareCmd)
 
 	rootCmd.AddCommand(stringsCmd)
 	rootCmd.AddCommand(lineageCmd)
