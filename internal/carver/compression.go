@@ -2,6 +2,7 @@ package carver
 
 import (
 	"bytes"
+	"compress/bzip2"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -126,11 +127,10 @@ func decompressXZ(data []byte) ([]byte, error) {
 	return io.ReadAll(reader)
 }
 
-// decompressBzip2 decompresses bzip2 data (placeholder)
+// decompressBzip2 decompresses bzip2 data
 func decompressBzip2(data []byte) ([]byte, error) {
-	// bzip2 decompression would require a bzip2 library
-	// For now, return an error
-	return nil, fmt.Errorf("bzip2 decompression not implemented")
+	reader := bzip2.NewReader(bytes.NewReader(data))
+	return io.ReadAll(reader)
 }
 
 // DecompressFile decompresses a file and writes the output

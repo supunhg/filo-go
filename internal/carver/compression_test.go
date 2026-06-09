@@ -3,6 +3,7 @@ package carver
 import (
 	"bytes"
 	"compress/gzip"
+	"os/exec"
 	"testing"
 )
 
@@ -109,5 +110,49 @@ func TestFormatCompressionInfo(t *testing.T) {
 	result = FormatCompressionInfo(info)
 	if result == "" {
 		t.Error("Expected non-empty result")
+	}
+}
+
+func TestDecompressBzip2(t *testing.T) {
+	original := []byte("Hello, World! This is test data for bzip2 compression. It needs to be long enough to compress well.")
+	
+	// Create bzip2 compressed data using command
+	cmd := exec.Command("bzip2", "-c")
+	cmd.Stdin = bytes.NewReader(original)
+	var compressed bytes.Buffer
+	cmd.Stdout = &compressed
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("Failed to create bzip2 data: %v", err)
+	}
+	
+	decompressed, err := Decompress(compressed.Bytes(), CompressionBzip2)
+	if err != nil {
+		t.Fatalf("Decompress() error = %v", err)
+	}
+	
+	if !bytes.Equal(decompressed, original) {
+		t.Errorf("Decompress() = %v, want %v", decompressed, original)
+	}
+}
+
+func TestDecompressXZ(t *testing.T) {
+	original := []byte("Hello, World! This is test data for XZ compression.")
+	
+	// Create XZ compressed data using command
+	cmd := exec.Command("xz", "-c")
+	cmd.Stdin = bytes.NewReader(original)
+	var compressed bytes.Buffer
+	cmd.Stdout = &compressed
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("Failed to create XZ data: %v", err)
+	}
+	
+	decompressed, err := Decompress(compressed.Bytes(), CompressionXZ)
+	if err != nil {
+		t.Fatalf("Decompress() error = %v", err)
+	}
+	
+	if !bytes.Equal(decompressed, original) {
+		t.Errorf("Decompress() = %v, want %v", decompressed, original)
 	}
 }
