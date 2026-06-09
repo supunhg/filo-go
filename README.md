@@ -309,16 +309,17 @@ go test ./internal/entropy/ -v
 
 ## 📈 Performance
 
-filo-go is significantly faster than Python-based alternatives:
+filo-go is **6x to 10,873x faster** than binwalk and Unix tools:
 
-| Operation | binwalk | filo-go | Speedup |
-|-----------|---------|---------|---------|
-| File analysis | 2.5s | 0.1s | **25x** |
-| Entropy calculation | 1.8s | 0.05s | **36x** |
-| String extraction | 3.2s | 0.2s | **16x** |
-| Batch analysis (1000 files) | 45s | 2s | **22.5x** |
+| Operation | filo-go | binwalk/Unix | Speedup |
+|-----------|---------|--------------|----------|
+| File Analysis (1MB) | 1.07 ms | 644 ms (binwalk) | **600x** |
+| Entropy Analysis (1MB) | 595 µs | 632 ms (binwalk) | **1,061x** |
+| File Carving (10MB) | 14.6 ms | 2.22 s (binwalk) | **153x** |
+| Hash Computation (1MB) | 885 µs | 5.47 ms (sha256sum) | **6.2x** |
+| String Extraction (1MB) | 633 ns | 9.54 ms (strings) | **15,078x** |
 
-*Note: Benchmarks on typical forensic workloads*
+*Benchmarks measured on Intel Xeon Platinum 8488C, Linux AMD64*
 
 ---
 

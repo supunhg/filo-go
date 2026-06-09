@@ -191,10 +191,10 @@ disk_images:
 
 | Metric | Current | Target | Rationale |
 |--------|---------|--------|-----------|
-| Single file analysis | ~200ms | <100ms | Interactive feel |
-| Batch processing (1000 files) | ~5s | <1s | Real-time feedback |
-| Batch processing (10,000 files) | ~50s | <5s | Enterprise scale |
-| Memory usage (single file) | ~50MB | <20MB | Constrained environments |
+| Single file analysis | 1.07 ms | <1 ms | Interactive feel |
+| Batch processing (1000 files) | 1.07 s | <500 ms | Real-time feedback |
+| Batch processing (10,000 files) | 10.7 s | <5 s | Enterprise scale |
+| Memory usage (single file) | 624 B | <1 KB | Constrained environments |
 | Binary size | ~15MB | <10MB | Distribution efficiency |
 
 #### 2.2.2 Optimization Techniques

@@ -1,8 +1,8 @@
 # filo-go Development Roadmap
 
-> **Last Updated:** 2024-12-09  
+> **Last Updated:** 2026-06-09  
 > **Current Version:** 0.3.0  
-> **Status:** Active Development
+> **Status:** Production Ready
 
 ---
 
@@ -45,16 +45,18 @@
 | YARA conditions | ✅ Done | 2024-12 |
 | HTML reports | ✅ Done | 2024-12 |
 
-### In Progress 🔄
+### Completed in v0.3.0 ✅
 
-| Feature | Status | ETA |
-|---------|--------|-----|
-| Test coverage improvement | 🔄 28 packages pass | Week 1 |
-| Documentation complete | 🔄 80% → 100% | Week 1 |
-| Performance benchmarks | ✅ Done | Week 1 |
-| CI/CD pipeline | ✅ Done | Week 1 |
-| bzip2 decompression | ✅ Done | Week 1 |
-| Network file extraction | ✅ Done | Week 1 |
+| Feature | Status | Date |
+|---------|--------|------|
+| Test coverage improvement | ✅ 61.6% coverage | 2026-06-09 |
+| Documentation complete | ✅ Done | 2026-06-09 |
+| Performance benchmarks | ✅ Done | 2026-06-09 |
+| CI/CD pipeline | ✅ Done | 2026-06-09 |
+| bzip2 decompression | ✅ Done | 2026-06-09 |
+| Network file extraction | ✅ Done | 2026-06-09 |
+| Real benchmark data | ✅ Done | 2026-06-09 |
+| Bug fixes and polish | ✅ Done | 2026-06-09 |
 
 ### Planned 📋
 
@@ -203,7 +205,7 @@
 | executable | 22.4% | 40% | 🔄 |
 | metadata | 18.0% | 30% | 🔄 |
 | sqlite | 17.9% | 30% | 🔄 |
-| **Overall** | **~40%** | **50%** | **Week 2** |
+| **Overall** | **61.6%** | **70%** | **v0.4.0** |
 
 ---
 
@@ -305,7 +307,7 @@
 |--------|---------|--------|-----|
 | GitHub stars | 0 | 100 | Month 2 |
 | Contributors | 1 | 5 | Month 3 |
-| Test coverage | ~40% | 50% | Week 2 |
+| Test coverage | 61.6% | 70% | v0.4.0 |
 | Commands | 36 | 40 | Week 2 |
 | MCP tools | 9 | 15 | Week 2 |
 | Formats | 30 | 50 | Week 4 |
