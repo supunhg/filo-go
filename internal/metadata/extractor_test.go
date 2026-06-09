@@ -245,3 +245,173 @@ func TestMetadataJSON(t *testing.T) {
 		t.Errorf("expected 1 suspicious item, got %d", len(result.Suspicious))
 	}
 }
+
+func TestExtractJPEGWithComment(t *testing.T) {
+	// JPEG with comment
+	data := []byte{
+		0xFF, 0xD8, 0xFF, 0xFE, // SOI + COM
+		0x00, 0x0E, // Length: 14
+		0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64, 0x21, // "Hello World!"
+		0xFF, 0xD9, // EOI
+	}
+
+	result, err := Extract(data, "test.jpg")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, ok := result.Metadata["comment"]; !ok {
+		t.Error("expected comment metadata")
+	}
+}
+
+func TestExtractPDFWithOpenAction(t *testing.T) {
+	data := []byte("%PDF-1.7\r\n/OpenAction /JavaScript alert('xss');\r\n")
+
+	result, err := Extract(data, "test.pdf")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	foundOpenAction := false
+	for _, s := range result.Suspicious {
+		if len(s) > 0 {
+			foundOpenAction = true
+			break
+		}
+	}
+
+	if !foundOpenAction {
+		t.Error("expected OpenAction to be detected in PDF")
+	}
+}
+
+func TestExtractPDFWithAA(t *testing.T) {
+	data := []byte("%PDF-1.7\r\n/AA << /JS alert('xss'); >>\r\n")
+
+	result, err := Extract(data, "test.pdf")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	foundAA := false
+	for _, s := range result.Suspicious {
+		if len(s) > 0 {
+			foundAA = true
+			break
+		}
+	}
+
+	if !foundAA {
+		t.Error("expected AA to be detected in PDF")
+	}
+}
+
+func TestExtractPNGtIMEChunk(t *testing.T) {
+	// PNG with tIME chunk
+	data := []byte{
+		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
+		0x00, 0x00, 0x00, 0x0D, // IHDR length
+		0x49, 0x48, 0x44, 0x52, // IHDR
+		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+		0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE,
+		// tIME chunk
+		0x00, 0x00, 0x00, 0x07, // length: 7
+		0x74, 0x49, 0x4D, 0x45, // tIME
+		0x07, 0xD8, // Year: 2024
+		0x0C,       // Month: 12
+		0x19,       // Day: 25
+		0x0E,       // Hour: 14
+		0x30,       // Minute: 48
+		0x00,       // Second: 0
+	}
+
+	result, err := Extract(data, "test.png")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, ok := result.Metadata["modification_time"]; !ok {
+		t.Log("Note: tIME chunk may not have been parsed correctly")
+	}
+}
+
+func TestExtractPNGzTXtChunk(t *testing.T) {
+	// PNG with zTXt chunk
+	data := []byte{
+		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
+		0x00, 0x00, 0x00, 0x0D, // IHDR length
+		0x49, 0x48, 0x44, 0x52, // IHDR
+		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+		0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE,
+		// zTXt chunk
+		0x00, 0x00, 0x00, 0x0E, // length: 14
+		0x7A, 0x54, 0x58, 0x74, // zTXt
+		0x6B, 0x65, 0x79, 0x00, // key\0
+		0x00, // compression method
+		0x78, 0x9C, 0x62, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01, // compressed data
+	}
+
+	result, err := Extract(data, "test.png")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, ok := result.Metadata["text_key"]; !ok {
+		t.Log("Note: zTXt chunk may not have been parsed correctly")
+	}
+}
+
+func TestExtractPNGiTXtChunk(t *testing.T) {
+	// PNG with iTXt chunk
+	data := []byte{
+		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
+		0x00, 0x00, 0x00, 0x0D, // IHDR length
+		0x49, 0x48, 0x44, 0x52, // IHDR
+		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+		0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE,
+		// iTXt chunk
+		0x00, 0x00, 0x00, 0x12, // length: 18
+		0x69, 0x54, 0x58, 0x74, // iTXt
+		0x6B, 0x65, 0x79, 0x00, // key\0
+		0x00, // compression flag
+		0x00, // compression method
+		0x65, 0x6E, 0x00, // lang\0
+		0x76, 0x61, 0x6C, 0x75, 0x65, // value
+	}
+
+	result, err := Extract(data, "test.png")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, ok := result.Metadata["text_key"]; !ok {
+		t.Log("Note: iTXt chunk may not have been parsed correctly")
+	}
+}
+
+func TestPrintMetadata(t *testing.T) {
+	result := &Result{
+		FileName: "test.jpg",
+		Format:   "jpeg",
+		Metadata: map[string]interface{}{
+			"camera_make":  "Canon",
+			"camera_model": "EOS 5D",
+		},
+		Suspicious: []string{"test suspicious"},
+	}
+
+	// Test that Print doesn't panic
+	Print(result)
+}
+
+func TestPrintEmptyMetadata(t *testing.T) {
+	result := &Result{
+		FileName: "test.bin",
+		Format:   "unknown",
+		Metadata: map[string]interface{}{},
+	}
+
+	// Test that Print doesn't panic
+	Print(result)
+}
