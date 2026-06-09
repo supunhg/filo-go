@@ -37,10 +37,15 @@ jobs:
       run: go vet ./...
 
     - name: Run tests
-      run: go test -race -coverprofile=coverage.out ./...
+      run: go test -race ./...
+
+    - name: Run tests with coverage
+      run: go test -coverprofile=coverage.out ./...
+      if: matrix.go-version == '1.24'
 
     - name: Display coverage
       run: go tool cover -func=coverage.out
+      if: matrix.go-version == '1.24'
 
     - name: Upload coverage
       uses: codecov/codecov-action@v4
