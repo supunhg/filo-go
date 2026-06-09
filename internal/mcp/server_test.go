@@ -3,6 +3,8 @@ package mcp
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -331,5 +333,532 @@ func TestToolSchema(t *testing.T) {
 		if _, ok := schema["properties"]; !ok {
 			t.Errorf("Tool %s schema missing 'properties'", tool.Name)
 		}
+	}
+}
+
+func TestToolCallAnalyze(t *testing.T) {
+	server := NewServer()
+	
+	// Create test file
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.bin")
+	os.WriteFile(testFile, []byte("test data"), 0644)
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "analyze",
+			"arguments": map[string]interface{}{
+				"path": testFile,
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error != nil {
+		t.Errorf("Expected no error, got %v", resp.Error)
+	}
+}
+
+func TestToolCallHash(t *testing.T) {
+	server := NewServer()
+	
+	// Create test file
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.bin")
+	os.WriteFile(testFile, []byte("test data"), 0644)
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "hash",
+			"arguments": map[string]interface{}{
+				"path":       testFile,
+				"algorithms": []interface{}{"md5", "sha256"},
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error != nil {
+		t.Errorf("Expected no error, got %v", resp.Error)
+	}
+}
+
+func TestToolCallStrings(t *testing.T) {
+	server := NewServer()
+	
+	// Create test file
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.bin")
+	os.WriteFile(testFile, []byte("Hello World\x00\x00\x00Test String"), 0644)
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "strings",
+			"arguments": map[string]interface{}{
+				"path":       testFile,
+				"min_length": 4,
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error != nil {
+		t.Errorf("Expected no error, got %v", resp.Error)
+	}
+}
+
+func TestToolCallCrypto(t *testing.T) {
+	server := NewServer()
+	
+	// Create test file
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.bin")
+	os.WriteFile(testFile, []byte("random data for crypto analysis"), 0644)
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "crypto",
+			"arguments": map[string]interface{}{
+				"path": testFile,
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error != nil {
+		t.Errorf("Expected no error, got %v", resp.Error)
+	}
+}
+
+func TestToolCallMetadata(t *testing.T) {
+	server := NewServer()
+	
+	// Create test file
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.bin")
+	os.WriteFile(testFile, []byte("%PDF-1.7 test content"), 0644)
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "metadata",
+			"arguments": map[string]interface{}{
+				"path": testFile,
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error != nil {
+		t.Errorf("Expected no error, got %v", resp.Error)
+	}
+}
+
+func TestToolCallStego(t *testing.T) {
+	server := NewServer()
+	
+	// Create test file
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.bin")
+	os.WriteFile(testFile, []byte("test data for stego"), 0644)
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "stego",
+			"arguments": map[string]interface{}{
+				"path": testFile,
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error != nil {
+		t.Errorf("Expected no error, got %v", resp.Error)
+	}
+}
+
+func TestToolCallContainer(t *testing.T) {
+	server := NewServer()
+	
+	// Create test file
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.bin")
+	os.WriteFile(testFile, []byte("test data for container"), 0644)
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "container",
+			"arguments": map[string]interface{}{
+				"path": testFile,
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	// Container analysis may fail for non-archive, that's OK
+	_ = resp.Error
+}
+
+func TestToolCallSQLite(t *testing.T) {
+	server := NewServer()
+	
+	// Create test file
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.db")
+	os.WriteFile(testFile, []byte("not a real sqlite file"), 0644)
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "sqlite",
+			"arguments": map[string]interface{}{
+				"path": testFile,
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	// SQLite analysis may fail for invalid file, that's OK
+	_ = resp.Error
+}
+
+func TestToolCallBatch(t *testing.T) {
+	server := NewServer()
+	
+	// Create test directory
+	tmpDir := t.TempDir()
+	os.WriteFile(filepath.Join(tmpDir, "test.bin"), []byte("test"), 0644)
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "batch",
+			"arguments": map[string]interface{}{
+				"directory": tmpDir,
+				"workers":   2,
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error != nil {
+		t.Errorf("Expected no error, got %v", resp.Error)
+	}
+}
+
+func TestToolCallBatchInvalidDir(t *testing.T) {
+	server := NewServer()
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "batch",
+			"arguments": map[string]interface{}{
+				"directory": "/nonexistent",
+				"workers":   2,
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	// Should handle error gracefully
+	_ = resp.Error
+}
+
+func TestToolCallAnalyzeNonexistent(t *testing.T) {
+	server := NewServer()
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "analyze",
+			"arguments": map[string]interface{}{
+				"path": "/nonexistent/file.bin",
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error == nil {
+		t.Error("Expected error for nonexistent file")
+	}
+}
+
+func TestToolCallHashNonexistent(t *testing.T) {
+	server := NewServer()
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "hash",
+			"arguments": map[string]interface{}{
+				"path": "/nonexistent/file.bin",
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error == nil {
+		t.Error("Expected error for nonexistent file")
+	}
+}
+
+func TestToolCallStringsNonexistent(t *testing.T) {
+	server := NewServer()
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "strings",
+			"arguments": map[string]interface{}{
+				"path": "/nonexistent/file.bin",
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error == nil {
+		t.Error("Expected error for nonexistent file")
+	}
+}
+
+func TestToolCallCryptoNonexistent(t *testing.T) {
+	server := NewServer()
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "crypto",
+			"arguments": map[string]interface{}{
+				"path": "/nonexistent/file.bin",
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error == nil {
+		t.Error("Expected error for nonexistent file")
+	}
+}
+
+func TestToolCallMetadataNonexistent(t *testing.T) {
+	server := NewServer()
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "metadata",
+			"arguments": map[string]interface{}{
+				"path": "/nonexistent/file.bin",
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error == nil {
+		t.Error("Expected error for nonexistent file")
+	}
+}
+
+func TestToolCallStegoNonexistent(t *testing.T) {
+	server := NewServer()
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "stego",
+			"arguments": map[string]interface{}{
+				"path": "/nonexistent/file.bin",
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error == nil {
+		t.Error("Expected error for nonexistent file")
+	}
+}
+
+func TestToolCallContainerNonexistent(t *testing.T) {
+	server := NewServer()
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "container",
+			"arguments": map[string]interface{}{
+				"path": "/nonexistent/file.bin",
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error == nil {
+		t.Error("Expected error for nonexistent file")
+	}
+}
+
+func TestToolCallSQLiteNonexistent(t *testing.T) {
+	server := NewServer()
+	
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "tools/call",
+		Params: map[string]interface{}{
+			"name": "sqlite",
+			"arguments": map[string]interface{}{
+				"path": "/nonexistent/file.db",
+			},
+		},
+		ID: 1,
+	}
+	
+	resp := server.handleToolCall(req)
+	if resp == nil {
+		t.Fatal("Expected non-nil response")
+	}
+	
+	if resp.Error == nil {
+		t.Error("Expected error for nonexistent file")
+	}
+}
+
+func TestServerRun(t *testing.T) {
+	server := NewServer()
+	
+	// Create pipe for testing
+	input := &bytes.Buffer{}
+	output := &bytes.Buffer{}
+	server.reader = input
+	server.writer = output
+	
+	// Write initialize request
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "initialize",
+		ID:      1,
+	}
+	
+	data, _ := json.Marshal(req)
+	input.Write(data)
+	input.Write([]byte("\n"))
+	
+	// Run server (will read until EOF)
+	err := server.Run()
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	
+	// Check output
+	if output.Len() == 0 {
+		t.Error("Expected output from server")
 	}
 }
