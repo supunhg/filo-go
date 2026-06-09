@@ -7,6 +7,7 @@ import (
 var (
 	version   = "0.1.0"
 	verbose   bool
+	quiet     bool
 	rootCmd   = &cobra.Command{
 		Use:   "filo",
 		Short: "Filo - Forensic Intelligence & Learning Operator",
@@ -22,6 +23,7 @@ func Execute() error {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose/debug output")
+	rootCmd.PersistentFlags().BoolVarP(&quiet, "quiet", "q", false, "Suppress non-essential output")
 	rootCmd.AddCommand(analyzeCmd)
 	rootCmd.AddCommand(batchCmd)
 	rootCmd.AddCommand(formatsCmd)
