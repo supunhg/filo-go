@@ -32,7 +32,6 @@ structure:
       description: Image descriptor
     - id: trailer
       required: true
-      position: last
       description: GIF trailer (0x3B)
 repair_strategies:
   - name: add_trailer

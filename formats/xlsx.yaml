@@ -27,7 +27,7 @@ structure:
       description: ZIP container
     - id: content_types
       required: true
-      description: [Content_Types].xml
+      description: Content_Types.xml
     - id: workbook
       required: true
       description: xl/workbook.xml

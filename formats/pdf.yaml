@@ -12,11 +12,11 @@ references:
 signatures:
   - offset: 0
     hex: "25 50 44 46"
-    description: %PDF header
+    description: PDF header
     weight: 1.0
 footers:
   - hex: "25 25 45 4F 46"
-    description: %%EOF marker
+    description: PDF EOF marker
 structure:
   chunks:
     - id: header
@@ -35,7 +35,7 @@ structure:
 repair_strategies:
   - name: add_pdf_header
     priority: 1
-    description: Prepend %PDF-1.7 header
+    description: Prepend PDF-1.7 header
   - name: add_pdf_eof
     priority: 2
-    description: Append %%EOF marker
+    description: Append PDF EOF marker

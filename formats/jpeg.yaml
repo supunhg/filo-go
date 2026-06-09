@@ -29,7 +29,7 @@ structure:
       description: Start of image
     - id: EOI
       required: true
-      position: last
+      position: -1
       description: End of image
 repair_strategies:
   - name: add_soi_and_eoi

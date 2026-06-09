@@ -43,7 +43,7 @@ structure:
       description: Central directory
     - id: eocd
       required: true
-      position: last
+      position: -1
       description: End of central directory
 repair_strategies:
   - name: add_eocd

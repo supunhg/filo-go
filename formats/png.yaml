@@ -30,7 +30,7 @@ structure:
       description: Image data
     - id: IEND
       required: true
-      position: last
+      position: -1
       description: Image end
 repair_strategies:
   - name: reconstruct_from_chunks

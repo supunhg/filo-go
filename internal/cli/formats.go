@@ -63,6 +63,7 @@ func runFormatsList(cmd *cobra.Command, args []string) error {
 	dir := getFormatsDir()
 	db, err := formats.NewDatabase(dir)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		return fmt.Errorf("failed to load format database: %w", err)
 	}
 

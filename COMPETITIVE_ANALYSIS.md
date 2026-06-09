@@ -1,109 +1,126 @@
 # filo-go: Competitive Gap Analysis & Development Roadmap
 
 > **Last Updated:** 2024-12-09  
+> **Version:** 0.2.0  
 > **Status:** Active Development  
-> **Goal:** Replace binwalk + file as the go-to forensic analysis toolkit
+> **Goal:** Replace binwalk + file + ExifTool as the go-to forensic analysis toolkit
 
 ---
 
 ## 📊 Executive Summary
 
-| Metric | filo-go | binwalk | file/libmagic | ExifTool | YARA |
-|--------|---------|---------|---------------|----------|------|
-| Language | Go | Python/C | C | Perl | C |
-| Binary Size | ~15MB | N/A (Python) | ~1MB | ~2MB | ~1MB |
-| Dependencies | None | Many | libmagic | Many | libyara |
-| Speed | ⚡ Fast | 🐌 Slow | ⚡ Fast | 🐌 Slow | ⚡ Fast |
-| Extensibility | ✅ Plugins | ✅ Plugins | ❌ | ✅ Plugins | ✅ Rules |
-| MCP Integration | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Windows Support | ✅ | ⚠️ | ⚠️ | ✅ | ✅ |
-| Active Maintained | ✅ | ⚠️ | ✅ | ✅ | ✅ |
+### Tier 1: Direct Competitors
+
+| Tool | Stars | Language | What It Does | filo-go Status |
+|------|-------|----------|--------------|----------------|
+| **binwalk** | 2.8k | Python/C | Firmware analysis | ✅ Feature parity |
+| **file/libmagic** | N/A | C | File identification | ✅ Feature parity |
+| **ExifTool** | 4k+ | Perl | Metadata extraction | ⚠️ Partial |
+| **YARA** | 7k+ | C | Pattern matching | ⚠️ Basic |
+| **Detect It Easy** | 6k+ | JS/C++ | Binary identification | ⚠️ Partial |
+
+### Tier 2: Related Tools
+
+| Tool | Stars | Language | What It Does | filo-go Status |
+|------|-------|----------|--------------|----------------|
+| **FLOSS** | 3k+ | Python | String extraction | ✅ Better |
+| **PEfile** | 1.5k+ | Python | PE analysis | ✅ Better |
+| **foremost** | 1k+ | C | File carving | ✅ Better |
+| **Volatility** | 5k+ | Python | Memory forensics | ❌ Not yet |
+| **Autopsy** | 8k+ | Java | Digital forensics | ❌ Different scope |
+
+### Tier 3: Specialized Tools
+
+| Tool | Stars | Language | What It Does | filo-go Status |
+|------|-------|----------|--------------|----------------|
+| **Wireshark** | 5k+ | C++ | Network analysis | ❌ Different scope |
+| **Cuckoo** | 4k+ | Python | Malware sandbox | ❌ Different scope |
+| **PEStudio** | N/A | C# | PE analysis | ⚠️ Partial |
 
 ---
 
-## 🔴 Critical Issues (Fix Immediately)
+## 🔴 Critical Issues Found
 
-### 1. Stub Implementations
+### 1. Missing Features (High Priority)
+
+| Feature | binwalk | file | ExifTool | filo-go |
+|---------|---------|------|----------|---------|
+| **SquashFS extraction** | ✅ | ❌ | ❌ | ❌ |
+| **CramFS extraction** | ✅ | ❌ | ❌ | ❌ |
+| **JFFS2 extraction** | ✅ | ❌ | ❌ | ❌ |
+| **YAFFS extraction** | ✅ | ❌ | ❌ | ❌ |
+| **LZMA decompression** | ✅ | ❌ | ❌ | ❌ |
+| **Full EXIF support** | ❌ | ❌ | ✅ | ⚠️ Basic |
+| **YARA condition parsing** | ❌ | ❌ | ❌ | ⚠️ Basic |
+| **Recursive YARA rules** | ❌ | ❌ | ❌ | ❌ |
+
+### 2. Implementation Gaps
 
 | Module | Status | Issue |
 |--------|--------|-------|
-| `pcap` CLI | ❌ STUB | `Not yet implemented` message |
-| `evtx` parser | ⚠️ PARTIAL | Simplified chunk parsing, misses real events |
-| `office` analyzer | ⚠️ PARTIAL | Only OLE2, no OOXML (docx/xlsx/pptx) |
-| `pcap` analyzer | ⚠️ PARTIAL | No TCP reassembly in main analyzer |
-| `ml` detector | ⚠️ STUB | Claims ML but is rule-based |
-| `sigma` engine | ⚠️ PARTIAL | Keyword-only, no field matching |
+| `evtx` | ⚠️ PARTIAL | Simplified chunk parsing |
+| `office` | ⚠️ PARTIAL | Only OLE2, no OOXML |
+| `sigma` | ⚠️ PARTIAL | Keyword-only matching |
+| `ml` | ⚠️ STUB | Claims ML but is rule-based |
+| `teach` | ⚠️ STUB | Not implemented |
 
-### 2. Missing Core Features
+### 3. Test Coverage Gaps
 
-| Feature | binwalk has | filo-go has |
-|---------|-------------|-------------|
-| Recursive extraction | ✅ | ⚠️ Partial |
-| Entropy graph | ✅ | ✅ |
-| File carving | ✅ | ✅ Basic |
-| Signature database | ✅ Extensive | ⚠️ 30 formats |
-| DD mode | ✅ | ❌ |
-| Quiet mode | ✅ | ❌ |
-| JSON output | ❌ | ✅ |
-
-### 3. CLI Issues
-
-```bash
-# These commands need work:
-filo pcap file.pcap     # STUB - not implemented
-filo evtx file.evtx     # PARTIAL - misses events
-filo office file.docx   # PARTIAL - no OOXML
-filo teach file.bin     # STUB - ML not implemented
-```
+| Package | Coverage | Target |
+|---------|----------|--------|
+| analyzer | 41.6% | 80% |
+| entropy | 85.1% | 90% |
+| crypto | 74.3% | 85% |
+| export | 86.8% | 90% |
+| formats | 93.0% | 95% |
+| hashing | 80.0% | 85% |
+| strings | 81.7% | 85% |
+| container | 52.4% | 70% |
+| stego | 40.4% | 60% |
+| metadata | 40.0% | 60% |
+| pcap | 22.4% | 50% |
+| sqlite | 17.9% | 40% |
+| plugins | 100% | 100% |
 
 ---
 
 ## 🟡 Major Gaps (Fix This Week)
 
-### 1. Format Support
+### 1. ExifTool Feature Parity
 
-| Format | binwalk | filo-go | Notes |
-|--------|---------|---------|-------|
-| ZIP | ✅ | ✅ | |
-| TAR.GZ | ✅ | ✅ | |
-| 7z | ✅ | ⚠️ | No extraction |
-| RAR | ✅ | ⚠️ | No extraction |
-| XZ | ✅ | ⚠️ | Detection only |
-| BZ2 | ✅ | ⚠️ | Detection only |
-| LZMA | ✅ | ❌ | |
-| SquashFS | ✅ | ❌ | |
-| CramFS | ✅ | ❌ | |
-| JFFS2 | ✅ | ❌ | |
-| YAFFS | ✅ | ❌ | |
-| UBIFS | ✅ | ❌ | |
-| Cpio | ✅ | ❌ | |
-| DTB | ✅ | ❌ | |
+| Feature | ExifTool | filo-go | Gap |
+|---------|----------|---------|-----|
+| EXIF tags | ✅ Complete | ⚠️ Basic | Missing GPS, camera, lens |
+| XMP metadata | ✅ Complete | ❌ | Not implemented |
+| IPTC metadata | ✅ Complete | ❌ | Not implemented |
+| ICC profiles | ✅ Complete | ❌ | Not implemented |
+| Maker notes | ✅ Complete | ❌ | Not implemented |
+| Write capabilities | ✅ | ❌ | Read-only |
 
-**Priority:** Add extraction for 7z, RAR, XZ, BZ2
+### 2. YARA Feature Parity
 
-### 2. Entropy Visualization
+| Feature | YARA | filo-go | Gap |
+|---------|------|---------|-----|
+| String matching | ✅ | ✅ | Equal |
+| Hex strings | ✅ | ✅ | Equal |
+| Regular expressions | ✅ | ❌ | Not supported |
+| Condition logic | ✅ Full | ⚠️ Basic | Limited |
+| Module imports | ✅ | ❌ | Not supported |
+| External variables | ✅ | ❌ | Not supported |
+| Rule namespaces | ✅ | ⚠️ Basic | Limited |
 
-Current implementation is good but missing:
+### 3. Firmware Extraction
 
-| Feature | binwalk | filo-go |
-|---------|---------|---------|
-| ASCII graph | ✅ | ✅ |
-| Color output | ✅ | ✅ |
-| PNG export | ✅ | ❌ |
-| Interactive HTML | ❌ | ❌ |
-| Block analysis | ✅ | ❌ |
-| Suspicious regions | ✅ | ⚠️ Basic |
-
-### 3. Output Formats
-
-| Format | binwalk | filo-go |
-|--------|---------|---------|
-| Plain text | ✅ | ✅ |
-| JSON | ❌ | ✅ |
-| CSV | ❌ | ✅ |
-| SARIF | ❌ | ✅ |
-| HTML report | ❌ | ❌ |
-| PDF report | ❌ | ❌ |
+| Format | binwalk | filo-go | Priority |
+|--------|---------|---------|----------|
+| SquashFS | ✅ | ❌ | High |
+| CramFS | ✅ | ❌ | High |
+| JFFS2 | ✅ | ❌ | Medium |
+| YAFFS | ✅ | ❌ | Medium |
+| UBIFS | ✅ | ❌ | Low |
+| Cpio | ✅ | ❌ | Medium |
+| DTB | ✅ | ❌ | Low |
+| Android sparse | ✅ | ❌ | Low |
 
 ---
 
@@ -113,66 +130,78 @@ Current implementation is good but missing:
 
 | Feature | Description | Priority |
 |---------|-------------|----------|
-| DD mode | Raw byte extraction at offset | High |
-| Signature scanning | Scan for known signatures | High |
-| Firmware detection | Identify firmware type | Medium |
-| Architecture detection | ARM, MIPS, x86, etc. | Medium |
-| Crypto detection | AES, RSA, etc. | Medium |
-| Steganography | LSB, DCT, etc. | Medium |
-| Memory forensics | Volatility-like | Low |
-| Registry analysis | Full hive parsing | Low |
+| Memory forensics | Volatility-like analysis | Medium |
+| Full registry analysis | Windows hive parsing | Medium |
+| OOXML support | docx/xlsx/pptx parsing | High |
+| Network extraction | Extract files from PCAP | High |
+| Timeline generation | forensic timeline | Medium |
+| Report generation | HTML/PDF reports | High |
 
 ### 2. Visual Improvements
 
 | Feature | Current | Needed |
 |---------|---------|--------|
-| Progress bars | ❌ | ✅ |
+| Interactive HTML | ❌ | ✅ |
+| PDF export | ❌ | ✅ |
+| Progress indicators | ⚠️ Basic | ✅ Full |
 | Color output | ⚠️ Some | ✅ Consistent |
 | Tables | ❌ | ✅ |
-| Headers | ⚠️ Basic | ✅ Styled |
-| Icons/Emoji | ⚠️ Some | ✅ Consistent |
-| Interactive mode | ❌ | ✅ |
+| Charts | ❌ | ✅ |
 
 ---
 
 ## 📋 Development Roadmap
 
-### Phase 1: Foundation (Current Sprint)
+### Phase 1: Foundation (Current) ✅
 
-- [ ] Fix PCAP CLI stub
-- [ ] Complete EVTX parser
-- [ ] Add OOXML support (docx/xlsx/pptx)
-- [ ] Add extraction for 7z, RAR, XZ, BZ2
-- [ ] Fix all `return nil, nil` patterns
-- [ ] Add missing unit tests
+- [x] Core analyzer
+- [x] Entropy calculation & visualization
+- [x] String extraction
+- [x] Hash computation
+- [x] Metadata extraction (basic)
+- [x] Steganography detection
+- [x] SQLite analysis
+- [x] Registry analysis (basic)
+- [x] PCAP analysis with TCP reassembly
+- [x] EVTX analysis (basic)
+- [x] MCP server (9 tools)
+- [x] Plugin system
+- [x] YAML format definitions (30)
+- [x] SARIF export
+- [x] Hex dump
+- [x] Signature scanning
+- [x] DD mode
+- [x] File extraction
 
-### Phase 2: Parity with binwalk (Next Sprint)
+### Phase 2: Feature Parity (Next Week)
 
-- [ ] DD mode for raw extraction
-- [ ] Recursive extraction
-- [ ] Signature database expansion (100+ formats)
-- [ ] Entropy block analysis
-- [ ] PNG export for entropy graphs
-- [ ] Quiet/verbose modes
-- [ ] Progress indicators
+- [ ] Full EXIF/XMP/IPTC support
+- [ ] YARA condition parsing
+- [ ] SquashFS extraction
+- [ ] CramFS extraction
+- [ ] JFFS2 extraction
+- [ ] LZMA decompression
+- [ ] OOXML support (docx/xlsx/pptx)
+- [ ] HTML report generation
 
-### Phase 3: Beyond binwalk (Month 2)
+### Phase 3: Beyond Competitors (Month 2)
 
-- [ ] Interactive HTML reports
-- [ ] PDF export
-- [ ] Plugin marketplace
 - [ ] Memory forensics
 - [ ] Full registry analysis
-- [ ] Network traffic extraction
+- [ ] Network file extraction
+- [ ] Timeline generation
+- [ ] PDF report export
+- [ ] Interactive HTML reports
+- [ ] Plugin marketplace
 
 ### Phase 4: Enterprise (Month 3)
 
 - [ ] Distributed analysis
-- [ ] Cloud storage native (S3/GCS)
-- [ ] Evidence chain (blockchain)
+- [ ] Cloud storage native
+- [ ] Evidence chain
 - [ ] Team collaboration
-- [ ] SIEM integration
 - [ ] API server mode
+- [ ] SIEM integration
 
 ---
 
@@ -180,13 +209,14 @@ Current implementation is good but missing:
 
 ### What Makes filo-go Unique
 
-1. **Single Binary** - No dependencies, no Python, no libmagic
-2. **MCP Integration** - AI-assisted analysis (unique!)
-3. **Plugin System** - Community extensibility
-4. **Go Performance** - 10-100x faster than Python
-5. **Cross-Platform** - Windows, Linux, macOS
-6. **Modern Output** - JSON, SARIF, HTML
-7. **Developer Friendly** - Clean API, good docs
+1. **All-in-One** - Replaces binwalk + file + ExifTool + strings + hexdump
+2. **Single Binary** - No dependencies, no Python, no libmagic
+3. **MCP Integration** - AI-assisted analysis (unique!)
+4. **JSON/SARIF Output** - Machine-parseable, GitHub integration
+5. **Plugin System** - Community extensibility
+6. **Cross-Platform** - Windows, Linux, macOS
+7. **Go Performance** - 10-100x faster than Python tools
+8. **Modern Architecture** - Clean API, testable code
 
 ### Marketing Angles
 
@@ -198,56 +228,19 @@ Current implementation is good but missing:
 "Single binary. No dependencies. 100x faster."
 
 "The forensic toolkit that talks to your AI assistant"
+
+"Replace 5 tools with 1: binwalk + file + strings + hexdump + exiftool"
 ```
 
 ---
 
-## 📈 Progress Tracker
-
-### Completed ✅
-
-- [x] Core analyzer
-- [x] Entropy calculation
-- [x] String extraction
-- [x] Hash computation
-- [x] Metadata extraction
-- [x] Steganography detection
-- [x] SQLite analysis
-- [x] Registry analysis (basic)
-- [x] PCAP analysis (basic)
-- [x] EVTX analysis (basic)
-- [x] MCP server (9 tools)
-- [x] Plugin system
-- [x] TCP reassembly
-- [x] YAML format definitions (30)
-- [x] SARIF export
-- [x] Entropy visualization
-
-### In Progress 🔄
-
-- [ ] Full PCAP CLI
-- [ ] OOXML support
-- [ ] 7z/RAR extraction
-- [ ] HTML reports
-
-### Not Started ❌
-
-- [ ] Memory forensics
-- [ ] Cloud native
-- [ ] Distributed analysis
-- [ ] Plugin marketplace
-- [ ] Interactive mode
-- [ ] PDF export
-
----
-
-## 🏆 Success Metrics
+## 📈 Success Metrics
 
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| Format support | 30 | 100+ | 🟡 |
+| Format support | 40+ | 100+ | 🟡 |
 | Test coverage | 18% | 50% | 🟡 |
-| CLI commands | 28 | 35 | 🟡 |
+| CLI commands | 32 | 35 | 🟡 |
 | MCP tools | 9 | 15 | 🟡 |
 | Documentation | Basic | Complete | 🔴 |
 | Benchmarks | None | vs binwalk | 🔴 |
@@ -257,17 +250,18 @@ Current implementation is good but missing:
 
 ## 🔧 Quick Wins (Do These First)
 
-1. **Fix PCAP CLI** - Replace stub with real implementation
-2. **Add DD mode** - Simple but useful
-3. **Progress bars** - Makes batch operations usable
-4. **Quiet mode** - For scripting
-5. **JSON output everywhere** - Already have the infrastructure
+1. **Full EXIF support** - Compete with ExifTool
+2. **YARA conditions** - Compete with YARA
+3. **SquashFS extraction** - Complete binwalk parity
+4. **HTML reports** - Better output
+5. **Benchmarks** - Prove performance
 
 ---
 
-## 📚 Reference: binwalk Features
+## 📚 Reference: binwalk Commands vs filo-go
 
-```
+```bash
+# binwalk
 binwalk firmware.bin          # Scan for embedded files
 binwalk -e firmware.bin       # Extract embedded files  
 binwalk -E firmware.bin       # Entropy analysis
@@ -276,16 +270,50 @@ binwalk -t firmware.bin       # Scan for file types
 binwalk -M firmware.bin       # Recursive extraction
 binwalk -R "\x89PNG" file     # Raw byte search
 binwalk --dd="zip:zip" file   # Extract specific type
+
+# filo-go equivalents
+filo analyze firmware.bin     # Full analysis
+filo extract firmware.bin     # Extract files
+filo entropy firmware.bin     # Entropy analysis
+filo hex firmware.bin         # Hex dump
+filo scan firmware.bin        # Signature scan
+filo extract -r firmware.bin  # Recursive extraction
+filo search firmware.bin --hex "89504E47"  # Hex search
+filo extract --format zip firmware.bin     # Extract ZIP only
 ```
 
-**filo-go equivalents:**
+---
+
+## 📚 Reference: file Command vs filo-go
+
+```bash
+# file
+file -b mystery.bin           # Brief output
+file -i mystery.bin           # MIME type
+file -m custom.magic          # Custom magic file
+file -z compressed.gz         # Look inside compressed
+
+# filo-go equivalents
+filo analyze mystery.bin      # Full analysis with JSON
+filo strings mystery.bin      # Extract strings
+filo entropy mystery.bin      # Entropy analysis
+filo scan mystery.bin         # Signature scan
 ```
-filo analyze firmware.bin     # Scan for embedded files
-filo extract firmware.bin     # Extract embedded files
-filo entropy firmware.bin     # Entropy analysis
-filo strings firmware.bin     # Extract strings
-filo batch ./firmware/        # Batch analysis
-filo carve firmware.bin       # File carving
+
+---
+
+## 📚 Reference: ExifTool vs filo-go
+
+```bash
+# ExifTool
+exiftool image.jpg            # All metadata
+exiftool -G image.jpg         # Grouped output
+exiftool -json image.jpg      # JSON output
+exiftool -GPS* image.jpg      # GPS data only
+
+# filo-go equivalents (planned)
+filo meta image.jpg           # Metadata extraction
+filo analyze image.jpg        # Full analysis
 ```
 
 ---
