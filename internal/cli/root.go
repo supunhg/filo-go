@@ -33,6 +33,7 @@ func init() {
 	rootCmd.AddCommand(extractCmd)
 	rootCmd.AddCommand(metaCmd)
 	rootCmd.AddCommand(firmwareCmd)
+	rootCmd.AddCommand(officeCmd)
 
 	rootCmd.AddCommand(stringsCmd)
 	rootCmd.AddCommand(lineageCmd)
