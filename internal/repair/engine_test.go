@@ -93,12 +93,12 @@ func TestRepairPNGMissingSignature(t *testing.T) {
 		0x00, 0x00, 0x00, 0x0D, // IHDR length
 		0x49, 0x48, 0x44, 0x52, // "IHDR"
 	}
-	
+
 	result, err := Repair(data, "test.png", &Options{NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -111,12 +111,12 @@ func TestRepairPNGMissingIEND(t *testing.T) {
 		0x00, 0x00, 0x00, 0x0D, // IHDR length
 		0x49, 0x48, 0x44, 0x52, // IHDR
 	}
-	
+
 	result, err := Repair(data, "test.png", &Options{NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -125,12 +125,12 @@ func TestRepairPNGMissingIEND(t *testing.T) {
 func TestRepairJPEGMissingSOI(t *testing.T) {
 	// JPEG without SOI marker
 	data := []byte{0xFF, 0xE0, 0x00, 0x10} // Missing 0xFF 0xD8
-	
+
 	result, err := Repair(data, "test.jpg", &Options{NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -139,12 +139,12 @@ func TestRepairJPEGMissingSOI(t *testing.T) {
 func TestRepairJPEGMissingEOI(t *testing.T) {
 	// JPEG without EOI marker
 	data := []byte{0xFF, 0xD8, 0xFF, 0xE0} // Missing 0xFF 0xD9
-	
+
 	result, err := Repair(data, "test.jpg", &Options{NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -153,12 +153,12 @@ func TestRepairJPEGMissingEOI(t *testing.T) {
 func TestRepairPDFMissingHeader(t *testing.T) {
 	// PDF without header
 	data := []byte{0x25, 0x50, 0x44, 0x46} // Just %PDF
-	
+
 	result, err := Repair(data, "test.pdf", &Options{NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -167,12 +167,12 @@ func TestRepairPDFMissingHeader(t *testing.T) {
 func TestRepairPDFMissingEOF(t *testing.T) {
 	// PDF without %%EOF
 	data := []byte("%PDF-1.7\r\n1 0 obj\n<< /Type /Catalog >>\nendobj")
-	
+
 	result, err := Repair(data, "test.pdf", &Options{NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -181,12 +181,12 @@ func TestRepairPDFMissingEOF(t *testing.T) {
 func TestRepairZIPMissingEOCD(t *testing.T) {
 	// ZIP without EOCD
 	data := []byte{0x50, 0x4B, 0x03, 0x04} // Just local file header
-	
+
 	result, err := Repair(data, "test.zip", &Options{NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -194,12 +194,12 @@ func TestRepairZIPMissingEOCD(t *testing.T) {
 
 func TestRepairUnknownFormat(t *testing.T) {
 	data := []byte{0x00, 0x00, 0x00, 0x00}
-	
+
 	result, err := Repair(data, "test.bin", nil)
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -207,12 +207,12 @@ func TestRepairUnknownFormat(t *testing.T) {
 
 func TestRepairWithDryRun(t *testing.T) {
 	data := []byte{0xFF, 0xE0, 0x00, 0x10} // JPEG without SOI
-	
+
 	result, err := Repair(data, "test.jpg", &Options{DryRun: true, NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -220,12 +220,12 @@ func TestRepairWithDryRun(t *testing.T) {
 
 func TestRepairWithTargetFormat(t *testing.T) {
 	data := []byte{0x89, 0x50, 0x4E, 0x47} // PNG header
-	
+
 	result, err := Repair(data, "test.bin", &Options{TargetFormat: "png", NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -233,11 +233,11 @@ func TestRepairWithTargetFormat(t *testing.T) {
 
 func TestRepairOptionsDefaults(t *testing.T) {
 	opts := &Options{}
-	
+
 	if opts.Strategy == "" {
 		opts.Strategy = "auto"
 	}
-	
+
 	if opts.Strategy != "auto" {
 		t.Errorf("Expected auto strategy, got %s", opts.Strategy)
 	}
@@ -253,15 +253,15 @@ func TestResultStructure(t *testing.T) {
 		Changes:      []string{"Fixed header"},
 		Warnings:     []string{},
 	}
-	
+
 	if result.FileName != "test.png" {
 		t.Errorf("Expected filename test.png, got %s", result.FileName)
 	}
-	
+
 	if !result.Success {
 		t.Error("Expected success to be true")
 	}
-	
+
 	if result.Strategy != "reconstruct_from_chunks" {
 		t.Errorf("Expected strategy reconstruct_from_chunks, got %s", result.Strategy)
 	}
@@ -279,12 +279,12 @@ func TestRepairPNGComplete(t *testing.T) {
 		0x00, 0x00, 0x00, // Compression, Filter, Interlace
 		// Missing IEND
 	}
-	
+
 	result, err := Repair(data, "test.png", &Options{NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -293,12 +293,12 @@ func TestRepairPNGComplete(t *testing.T) {
 func TestRepairJPEGComplete(t *testing.T) {
 	// JPEG without SOI and EOI
 	data := []byte{0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46} // JFIF data without SOI/EOI
-	
+
 	result, err := Repair(data, "test.jpg", &Options{NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -307,12 +307,12 @@ func TestRepairJPEGComplete(t *testing.T) {
 func TestRepairPDFComplete(t *testing.T) {
 	// PDF without header and EOF
 	data := []byte("1 0 obj\n<< /Type /Catalog >>\nendobj")
-	
+
 	result, err := Repair(data, "test.pdf", &Options{NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}
@@ -321,12 +321,12 @@ func TestRepairPDFComplete(t *testing.T) {
 func TestRepairZIPComplete(t *testing.T) {
 	// ZIP without EOCD
 	data := []byte{0x50, 0x4B, 0x03, 0x04, 0x00, 0x00} // Local file header
-	
+
 	result, err := Repair(data, "test.zip", &Options{NoBackup: true})
 	if err != nil {
 		t.Fatalf("Repair() error = %v", err)
 	}
-	
+
 	if result == nil {
 		t.Fatal("Expected non-nil result")
 	}

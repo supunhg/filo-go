@@ -182,7 +182,7 @@ func TestFileHeader(t *testing.T) {
 	// Test all page size values
 	data := make([]byte, 100)
 	copy(data, Magic)
-	
+
 	// Test page size 512
 	data[16] = 0x02
 	data[17] = 0x00
@@ -209,7 +209,7 @@ func TestFileHeader(t *testing.T) {
 func TestParseHeaderEncodings(t *testing.T) {
 	data := make([]byte, 100)
 	copy(data, Magic)
-	
+
 	// Test UTF-8 encoding (uint32 at offset 56)
 	data[56] = 0x00
 	data[57] = 0x00
@@ -219,7 +219,7 @@ func TestParseHeaderEncodings(t *testing.T) {
 	if header.TextEncoding != "UTF-8" {
 		t.Errorf("expected UTF-8, got %s", header.TextEncoding)
 	}
-	
+
 	// Test UTF-16LE encoding
 	data[56] = 0x00
 	data[57] = 0x00
@@ -229,7 +229,7 @@ func TestParseHeaderEncodings(t *testing.T) {
 	if header.TextEncoding != "UTF-16le" {
 		t.Errorf("expected UTF-16le, got %s", header.TextEncoding)
 	}
-	
+
 	// Test UTF-16BE encoding
 	data[56] = 0x00
 	data[57] = 0x00
@@ -244,7 +244,7 @@ func TestParseHeaderEncodings(t *testing.T) {
 func TestParseRecordText(t *testing.T) {
 	// Test that parseRecord handles various serial types
 	page := make([]byte, 256)
-	
+
 	// Just test that it doesn't panic with various inputs
 	result := parseRecord(page, 0)
 	_ = result // May be nil or empty for minimal data
@@ -253,7 +253,7 @@ func TestParseRecordText(t *testing.T) {
 func TestParseRecordInteger(t *testing.T) {
 	// Test that parseRecord handles integer serial types
 	page := make([]byte, 256)
-	
+
 	// Just test that it doesn't panic with various inputs
 	result := parseRecord(page, 0)
 	_ = result // May be nil or empty for minimal data
@@ -262,10 +262,10 @@ func TestParseRecordInteger(t *testing.T) {
 func TestParseRecordNull(t *testing.T) {
 	// Create a page with NULL record
 	page := make([]byte, 256)
-	
+
 	page[0] = 2 // header size
 	page[1] = 0 // serial type 0 = NULL
-	
+
 	result := parseRecord(page, 0)
 	if len(result) != 1 {
 		t.Errorf("expected 1 column, got %d", len(result))
@@ -278,7 +278,7 @@ func TestParseRecordNull(t *testing.T) {
 func TestParseRecordBlob(t *testing.T) {
 	// Test that parseRecord handles BLOB serial types
 	page := make([]byte, 256)
-	
+
 	// Just test that it doesn't panic with various inputs
 	result := parseRecord(page, 0)
 	_ = result // May be nil or empty for minimal data
@@ -287,7 +287,7 @@ func TestParseRecordBlob(t *testing.T) {
 func TestParseRecord2ByteInt(t *testing.T) {
 	// Test that parseRecord handles 2-byte integer serial types
 	page := make([]byte, 256)
-	
+
 	// Just test that it doesn't panic with various inputs
 	result := parseRecord(page, 0)
 	_ = result // May be nil or empty for minimal data
@@ -296,7 +296,7 @@ func TestParseRecord2ByteInt(t *testing.T) {
 func TestParseRecord4ByteInt(t *testing.T) {
 	// Test that parseRecord handles 4-byte integer serial types
 	page := make([]byte, 256)
-	
+
 	// Just test that it doesn't panic with various inputs
 	result := parseRecord(page, 0)
 	_ = result // May be nil or empty for minimal data
@@ -305,7 +305,7 @@ func TestParseRecord4ByteInt(t *testing.T) {
 func TestParseRecord8ByteInt(t *testing.T) {
 	// Test that parseRecord handles 8-byte integer serial types
 	page := make([]byte, 256)
-	
+
 	// Just test that it doesn't panic with various inputs
 	result := parseRecord(page, 0)
 	_ = result // May be nil or empty for minimal data
@@ -314,7 +314,7 @@ func TestParseRecord8ByteInt(t *testing.T) {
 func TestParseRecordFloat(t *testing.T) {
 	// Test that parseRecord handles float serial types
 	page := make([]byte, 256)
-	
+
 	// Just test that it doesn't panic with various inputs
 	result := parseRecord(page, 0)
 	_ = result // May be nil or empty for minimal data
@@ -323,7 +323,7 @@ func TestParseRecordFloat(t *testing.T) {
 func TestParseRecord3ByteInt(t *testing.T) {
 	// Test that parseRecord handles 3-byte integer serial types
 	page := make([]byte, 256)
-	
+
 	// Just test that it doesn't panic with various inputs
 	result := parseRecord(page, 0)
 	_ = result // May be nil or empty for minimal data
@@ -332,7 +332,7 @@ func TestParseRecord3ByteInt(t *testing.T) {
 func TestParseRecord6ByteInt(t *testing.T) {
 	// Test that parseRecord handles 6-byte integer serial types
 	page := make([]byte, 256)
-	
+
 	// Just test that it doesn't panic with various inputs
 	result := parseRecord(page, 0)
 	_ = result // May be nil or empty for minimal data
@@ -341,7 +341,7 @@ func TestParseRecord6ByteInt(t *testing.T) {
 func TestParseRecordMultiColumn(t *testing.T) {
 	// Test that parseRecord handles multiple columns
 	page := make([]byte, 256)
-	
+
 	// Just test that it doesn't panic with various inputs
 	result := parseRecord(page, 0)
 	_ = result // May be nil or empty for minimal data
@@ -357,9 +357,9 @@ func TestParseSchemaTable(t *testing.T) {
 	data[29] = 0x00
 	data[30] = 0x00
 	data[31] = 0x02
-	
+
 	header, _ := ParseHeader(data)
-	
+
 	// parseSchemaTable will fail because page 1 isn't a valid leaf table page
 	_, err := parseSchemaTable(data, header, 1)
 	// Error is expected for minimal data
@@ -372,13 +372,13 @@ func TestCountTableRowsInvalidPage(t *testing.T) {
 		PageSize:      4096,
 		DBSizeInPages: 1,
 	}
-	
+
 	// Invalid root page
 	result := countTableRows(data, header, 0)
 	if result != 0 {
 		t.Errorf("expected 0 rows for invalid page, got %d", result)
 	}
-	
+
 	result = countTableRows(data, header, 100)
 	if result != 0 {
 		t.Errorf("expected 0 rows for page beyond DB, got %d", result)
@@ -393,7 +393,7 @@ func TestScanDeletedRecordsFreelist(t *testing.T) {
 		DBSizeInPages: 2,
 		FreelistTrunk: 2, // Page 2 is trunk
 	}
-	
+
 	// Write next trunk page (0) and leaf page (1)
 	// Trunk page at offset 4096
 	data[4096] = 0 // next trunk = 0
@@ -404,7 +404,7 @@ func TestScanDeletedRecordsFreelist(t *testing.T) {
 	data[4101] = 0
 	data[4102] = 0
 	data[4103] = 1
-	
+
 	records := ScanDeletedRecords(data, header)
 	// Should find some records or none
 	_ = records
@@ -431,11 +431,11 @@ func TestResultStructure(t *testing.T) {
 		Pages:    10,
 		Stats:    map[string]int{"tables": 5},
 	}
-	
+
 	if result.FileName != "test.db" {
 		t.Errorf("expected filename test.db, got %s", result.FileName)
 	}
-	
+
 	if result.Pages != 10 {
 		t.Errorf("expected 10 pages, got %d", result.Pages)
 	}
@@ -448,11 +448,11 @@ func TestTableStructure(t *testing.T) {
 		SQL:      "CREATE TABLE users (id INTEGER PRIMARY KEY)",
 		RowCount: 100,
 	}
-	
+
 	if table.Name != "users" {
 		t.Errorf("expected name users, got %s", table.Name)
 	}
-	
+
 	if table.RowCount != 100 {
 		t.Errorf("expected 100 rows, got %d", table.RowCount)
 	}
@@ -466,11 +466,11 @@ func TestWALInfoStructure(t *testing.T) {
 		PageSize:      4096,
 		CheckpointSeq: 5,
 	}
-	
+
 	if !wal.Present {
 		t.Error("expected Present to be true")
 	}
-	
+
 	if wal.PageSize != 4096 {
 		t.Errorf("expected page size 4096, got %d", wal.PageSize)
 	}
@@ -483,11 +483,11 @@ func TestDeletedRecordStructure(t *testing.T) {
 		Size:    50,
 		RawData: "test data",
 	}
-	
+
 	if dr.Page != 5 {
 		t.Errorf("expected page 5, got %d", dr.Page)
 	}
-	
+
 	if dr.Size != 50 {
 		t.Errorf("expected size 50, got %d", dr.Size)
 	}
@@ -497,8 +497,8 @@ func TestPrintResults(t *testing.T) {
 	result := &Result{
 		FileName: "test.db",
 		Header: &FileHeader{
-			Magic:       "SQLite format 3",
-			PageSize:    4096,
+			Magic:        "SQLite format 3",
+			PageSize:     4096,
 			WriteVersion: 1,
 			TextEncoding: "UTF-8",
 		},
@@ -508,7 +508,7 @@ func TestPrintResults(t *testing.T) {
 		},
 		WAL: &WALInfo{Present: false},
 	}
-	
+
 	// Test that Print doesn't panic
 	Print(result)
 }
@@ -517,8 +517,8 @@ func TestPrintResultsWithWAL(t *testing.T) {
 	result := &Result{
 		FileName: "test.db",
 		Header: &FileHeader{
-			Magic:       "SQLite format 3",
-			PageSize:    4096,
+			Magic:        "SQLite format 3",
+			PageSize:     4096,
 			WriteVersion: 2,
 			TextEncoding: "UTF-8",
 		},
@@ -529,7 +529,7 @@ func TestPrintResultsWithWAL(t *testing.T) {
 			CheckpointSeq: 5,
 		},
 	}
-	
+
 	// Test that Print doesn't panic
 	Print(result)
 }
@@ -538,8 +538,8 @@ func TestPrintResultsWithDeletedRecords(t *testing.T) {
 	result := &Result{
 		FileName: "test.db",
 		Header: &FileHeader{
-			Magic:       "SQLite format 3",
-			PageSize:    4096,
+			Magic:        "SQLite format 3",
+			PageSize:     4096,
 			WriteVersion: 1,
 			TextEncoding: "UTF-8",
 		},
@@ -548,7 +548,7 @@ func TestPrintResultsWithDeletedRecords(t *testing.T) {
 			{Page: 5, Offset: 100, Size: 50, RawData: "test data"},
 		},
 	}
-	
+
 	// Test that Print doesn't panic
 	Print(result)
 }

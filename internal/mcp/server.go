@@ -506,10 +506,10 @@ func (s *Server) toolStego(path string) (interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		"path":     path,
-		"format":   result.Format,
-		"methods":  methods,
-		"flags":    result.Flags,
+		"path":    path,
+		"format":  result.Format,
+		"methods": methods,
+		"flags":   result.Flags,
 	}, nil
 }
 
@@ -576,10 +576,10 @@ func (s *Server) toolSQLite(path string) (interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		"path":      path,
-		"tables":    tables,
-		"pages":     result.Pages,
-		"has_wal":   result.WAL != nil,
+		"path":    path,
+		"tables":  tables,
+		"pages":   result.Pages,
+		"has_wal": result.WAL != nil,
 	}, nil
 }
 

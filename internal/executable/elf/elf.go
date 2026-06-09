@@ -27,25 +27,25 @@ type Result struct {
 
 // Section represents an ELF section.
 type Section struct {
-	Name      string  `json:"name"`
-	Type      string  `json:"type"`
-	Flags     string  `json:"flags"`
-	Address   uint64  `json:"address"`
-	Size      uint64  `json:"size"`
-	Offset    uint64  `json:"offset"`
-	Entropy   float64 `json:"entropy"`
+	Name    string  `json:"name"`
+	Type    string  `json:"type"`
+	Flags   string  `json:"flags"`
+	Address uint64  `json:"address"`
+	Size    uint64  `json:"size"`
+	Offset  uint64  `json:"offset"`
+	Entropy float64 `json:"entropy"`
 }
 
 // Segment represents an ELF program header/segment.
 type Segment struct {
-	Type    string `json:"type"`
-	Offset  uint64 `json:"offset"`
-	VAddr   uint64 `json:"vaddr"`
-	PAddr   uint64 `json:"paddr"`
+	Type     string `json:"type"`
+	Offset   uint64 `json:"offset"`
+	VAddr    uint64 `json:"vaddr"`
+	PAddr    uint64 `json:"paddr"`
 	FileSize uint64 `json:"file_size"`
-	MemSize uint64 `json:"mem_size"`
-	Flags   string `json:"flags"`
-	Align   uint64 `json:"align"`
+	MemSize  uint64 `json:"mem_size"`
+	Flags    string `json:"flags"`
+	Align    uint64 `json:"align"`
 }
 
 // Security holds security-related information.

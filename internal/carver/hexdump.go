@@ -129,10 +129,10 @@ func ScanSignatures(data []byte) []SignatureScan {
 	var results []SignatureScan
 
 	signatures := []struct {
-		Magic   []byte
-		Format  string
-		MIME    string
-		Offset  int
+		Magic  []byte
+		Format string
+		MIME   string
+		Offset int
 	}{
 		{[]byte{0x89, 0x50, 0x4E, 0x47}, "png", "image/png", 0},
 		{[]byte{0xFF, 0xD8, 0xFF}, "jpeg", "image/jpeg", 0},

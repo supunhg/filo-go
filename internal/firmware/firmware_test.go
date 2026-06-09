@@ -22,8 +22,8 @@ func TestFormatFirmwareInfo(t *testing.T) {
 
 	// Test with SquashFS
 	sb := &SquashFSSuperblock{
-		Magic:    SquashFSMagic,
-		Inodes:   100,
+		Magic:     SquashFSMagic,
+		Inodes:    100,
 		BlockSize: 4096,
 	}
 	info = FormatFirmwareInfo("squashfs", sb)

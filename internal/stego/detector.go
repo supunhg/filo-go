@@ -14,10 +14,10 @@ import (
 
 // Result holds steganography analysis results.
 type Result struct {
-	FileName string          `json:"file_name"`
-	Format   string          `json:"format"`
-	Methods  []MethodResult  `json:"methods"`
-	Flags    []string        `json:"flags,omitempty"`
+	FileName string         `json:"file_name"`
+	Format   string         `json:"format"`
+	Methods  []MethodResult `json:"methods"`
+	Flags    []string       `json:"flags,omitempty"`
 }
 
 // MethodResult holds results from a single detection method.
@@ -457,5 +457,3 @@ func decodeImage(data []byte) (image.Image, error) {
 	img, _, err := image.Decode(reader)
 	return img, err
 }
-
-

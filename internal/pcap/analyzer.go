@@ -9,13 +9,13 @@ import (
 
 // Result holds PCAP analysis results.
 type Result struct {
-	FileName      string           `json:"file_name"`
-	PacketCount   int              `json:"packet_count"`
-	Protocols     map[string]int   `json:"protocols"`
-	Flags         []string         `json:"flags,omitempty"`
-	HTTPRequests  []HTTPRequest    `json:"http_requests,omitempty"`
-	Base64Data    []string         `json:"base64_data,omitempty"`
-	InterestingStrings []string     `json:"interesting_strings,omitempty"`
+	FileName           string         `json:"file_name"`
+	PacketCount        int            `json:"packet_count"`
+	Protocols          map[string]int `json:"protocols"`
+	Flags              []string       `json:"flags,omitempty"`
+	HTTPRequests       []HTTPRequest  `json:"http_requests,omitempty"`
+	Base64Data         []string       `json:"base64_data,omitempty"`
+	InterestingStrings []string       `json:"interesting_strings,omitempty"`
 }
 
 // HTTPRequest represents an extracted HTTP request.

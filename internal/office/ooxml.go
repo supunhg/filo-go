@@ -12,7 +12,7 @@ import (
 
 // OOXMLDocument represents an Office Open XML document
 type OOXMLDocument struct {
-	Type        string            // docx, xlsx, pptx
+	Type        string // docx, xlsx, pptx
 	Properties  *DocumentProperties
 	CustomProps map[string]interface{}
 	Author      string
@@ -30,21 +30,21 @@ type OOXMLDocument struct {
 
 // DocumentProperties represents core document properties
 type DocumentProperties struct {
-	XMLName          xml.Name `xml:"http://schemas.openxmlformats.org/package/2006/metadata/core-properties coreProperties"`
-	Creator          string   `xml:"creator"`
-	Title            string   `xml:"title"`
-	Subject          string   `xml:"subject"`
-	Description      string   `xml:"description"`
-	Keywords         string   `xml:"keywords"`
-	Category         string   `xml:"category"`
-	Version          string   `xml:"version"`
-	Revision         string   `xml:"revision"`
-	LastModifiedBy   string   `xml:"lastModifiedBy"`
-	Created          string   `xml:"created"`
-	Modified         string   `xml:"modified"`
-	ContentStatus    string   `xml:"contentStatus"`
-	Language         string   `xml:"language"`
-	Identifier       string   `xml:"identifier"`
+	XMLName        xml.Name `xml:"http://schemas.openxmlformats.org/package/2006/metadata/core-properties coreProperties"`
+	Creator        string   `xml:"creator"`
+	Title          string   `xml:"title"`
+	Subject        string   `xml:"subject"`
+	Description    string   `xml:"description"`
+	Keywords       string   `xml:"keywords"`
+	Category       string   `xml:"category"`
+	Version        string   `xml:"version"`
+	Revision       string   `xml:"revision"`
+	LastModifiedBy string   `xml:"lastModifiedBy"`
+	Created        string   `xml:"created"`
+	Modified       string   `xml:"modified"`
+	ContentStatus  string   `xml:"contentStatus"`
+	Language       string   `xml:"language"`
+	Identifier     string   `xml:"identifier"`
 }
 
 // CustomProperties represents custom document properties
@@ -64,22 +64,22 @@ type CustomProperty struct {
 
 // AppProperties represents application-specific properties
 type AppProperties struct {
-	XMLName            xml.Name `xml:"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties Application"`
-	Template           string   `xml:"Template"`
-	TotalTime          string   `xml:"TotalTime"`
-	Pages              string   `xml:"Pages"`
-	Words              string   `xml:"Words"`
-	Characters         string   `xml:"Characters"`
-	CharactersWithSpaces string `xml:"CharactersWithSpaces"`
-	Lines              string   `xml:"Lines"`
-	Paragraphs         string   `xml:"Paragraphs"`
-	ScaleCrop          string   `xml:"ScaleCrop"`
-	LinksUpToDate      string   `xml:"LinksUpToDate"`
-	SharedDoc          string   `xml:"SharedDoc"`
-	HyperlinksChanged  string   `xml:"HyperlinksChanged"`
-	AppVersion         string   `xml:"AppVersion"`
-	Company            string   `xml:"Company"`
-	DocSecurity        string   `xml:"DocSecurity"`
+	XMLName              xml.Name `xml:"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties Application"`
+	Template             string   `xml:"Template"`
+	TotalTime            string   `xml:"TotalTime"`
+	Pages                string   `xml:"Pages"`
+	Words                string   `xml:"Words"`
+	Characters           string   `xml:"Characters"`
+	CharactersWithSpaces string   `xml:"CharactersWithSpaces"`
+	Lines                string   `xml:"Lines"`
+	Paragraphs           string   `xml:"Paragraphs"`
+	ScaleCrop            string   `xml:"ScaleCrop"`
+	LinksUpToDate        string   `xml:"LinksUpToDate"`
+	SharedDoc            string   `xml:"SharedDoc"`
+	HyperlinksChanged    string   `xml:"HyperlinksChanged"`
+	AppVersion           string   `xml:"AppVersion"`
+	Company              string   `xml:"Company"`
+	DocSecurity          string   `xml:"DocSecurity"`
 }
 
 // DetectOOXML detects if a file is an OOXML document

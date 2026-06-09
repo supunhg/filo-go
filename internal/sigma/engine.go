@@ -7,18 +7,18 @@ import (
 
 // Rule represents a Sigma detection rule.
 type Rule struct {
-	Title       string            `json:"title"`
-	ID          string            `json:"id"`
-	Status      string            `json:"status"`
-	Description string            `json:"description"`
-	Author      string            `json:"author"`
-	Date        string            `json:"date"`
-	Tags        []string          `json:"tags"`
-	Logsource   Logsource         `json:"logsource"`
-	Detection   Detection         `json:"detection"`
-	Condition   string            `json:"condition"`
-	Falsepositives []string       `json:"falsepositives"`
-	Level       string            `json:"level"`
+	Title          string    `json:"title"`
+	ID             string    `json:"id"`
+	Status         string    `json:"status"`
+	Description    string    `json:"description"`
+	Author         string    `json:"author"`
+	Date           string    `json:"date"`
+	Tags           []string  `json:"tags"`
+	Logsource      Logsource `json:"logsource"`
+	Detection      Detection `json:"detection"`
+	Condition      string    `json:"condition"`
+	Falsepositives []string  `json:"falsepositives"`
+	Level          string    `json:"level"`
 }
 
 // Logsource specifies the log source.
@@ -37,9 +37,9 @@ type Detection struct {
 
 // Match represents a rule match.
 type Match struct {
-	Rule      *Rule  `json:"rule"`
-	Matched   bool   `json:"matched"`
-	Evidence  []string `json:"evidence"`
+	Rule     *Rule    `json:"rule"`
+	Matched  bool     `json:"matched"`
+	Evidence []string `json:"evidence"`
 }
 
 // Engine evaluates Sigma rules.
@@ -80,8 +80,8 @@ func (e *Engine) Scan(data []byte, fileName string) []*Match {
 
 func (e *Engine) evaluateRule(rule *Rule, data []byte) *Match {
 	match := &Match{
-		Rule:    rule,
-		Matched: false,
+		Rule:     rule,
+		Matched:  false,
 		Evidence: []string{},
 	}
 

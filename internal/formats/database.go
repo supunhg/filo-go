@@ -44,9 +44,9 @@ type Footer struct {
 
 // Structure represents file structure requirements.
 type Structure struct {
-	Chunks      []Chunk `yaml:"chunks,omitempty"`
-	HeaderSize  int     `yaml:"header_size,omitempty"`
-	Endianness   string  `yaml:"endianness,omitempty"`
+	Chunks     []Chunk `yaml:"chunks,omitempty"`
+	HeaderSize int     `yaml:"header_size,omitempty"`
+	Endianness string  `yaml:"endianness,omitempty"`
 }
 
 // Chunk represents a required file chunk.

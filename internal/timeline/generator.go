@@ -8,11 +8,11 @@ import (
 
 // Entry represents a timeline event.
 type Entry struct {
-	Timestamp  time.Time `json:"timestamp"`
-	Source     string    `json:"source"`
-	Event      string    `json:"event"`
-	Detail     string    `json:"detail,omitempty"`
-	Category   string    `json:"category"`
+	Timestamp time.Time `json:"timestamp"`
+	Source    string    `json:"source"`
+	Event     string    `json:"event"`
+	Detail    string    `json:"detail,omitempty"`
+	Category  string    `json:"category"`
 }
 
 // Timeline holds sorted events.

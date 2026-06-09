@@ -12,18 +12,18 @@ const CramFSMagic = 0x28CD3D45
 
 // CramFSSuperblock represents a CramFS superblock
 type CramFSSuperblock struct {
-	Magic          uint32
-	Size           uint32
-	Flags          uint32
-	Future         uint32
-	Signature      [16]byte
-	FsCrc          uint32
-	Edition        uint32
-	Blocks         uint32
-	Files          uint32
-	User           uint32
-	Gid            uint32
-	Name           [16]byte
+	Magic     uint32
+	Size      uint32
+	Flags     uint32
+	Future    uint32
+	Signature [16]byte
+	FsCrc     uint32
+	Edition   uint32
+	Blocks    uint32
+	Files     uint32
+	User      uint32
+	Gid       uint32
+	Name      [16]byte
 }
 
 // DetectCramFS detects if a file contains a CramFS filesystem
@@ -84,18 +84,18 @@ func ExtractCramFS(srcPath, destDir string) (*ExtractionResult, error) {
 	}
 
 	result := &ExtractionResult{
-		Format:    "cramfs",
+		Format:     "cramfs",
 		SourceFile: srcPath,
 		OutputDir:  destDir,
-		Files:     []ExtractedFile{},
+		Files:      []ExtractedFile{},
 	}
 
 	// Add superblock as extracted file
 	result.Files = append(result.Files, ExtractedFile{
-		Name:      "superblock",
-		Size:      96,
-		Offset:    0,
-		IsDir:     false,
+		Name:   "superblock",
+		Size:   96,
+		Offset: 0,
+		IsDir:  false,
 	})
 
 	// Add info file
@@ -113,10 +113,10 @@ func ExtractCramFS(srcPath, destDir string) (*ExtractionResult, error) {
 	}
 
 	result.Files = append(result.Files, ExtractedFile{
-		Name:    "cramfs-info.txt",
-		Size:    int64(len(info)),
-		Offset:  0,
-		IsDir:   false,
+		Name:   "cramfs-info.txt",
+		Size:   int64(len(info)),
+		Offset: 0,
+		IsDir:  false,
 	})
 
 	return result, nil

@@ -172,8 +172,8 @@ func TestList(t *testing.T) {
 func TestByCategory(t *testing.T) {
 	db := &Database{
 		formats: map[string]*FormatSpec{
-			"image1": {Format: "image1", Category: "image"},
-			"image2": {Format: "image2", Category: "image"},
+			"image1":  {Format: "image1", Category: "image"},
+			"image2":  {Format: "image2", Category: "image"},
 			"archive": {Format: "archive", Category: "archive"},
 		},
 	}
@@ -308,10 +308,10 @@ func TestMatchSignatureRange(t *testing.T) {
 
 func TestHexToBytes(t *testing.T) {
 	tests := []struct {
-		name    string
-		hex     string
+		name     string
+		hex      string
 		expected []byte
-		wantErr bool
+		wantErr  bool
 	}{
 		{"valid", "AA BB CC", []byte{0xAA, 0xBB, 0xCC}, false},
 		{"no spaces", "AABBCC", []byte{0xAA, 0xBB, 0xCC}, false},
@@ -338,8 +338,8 @@ func TestHexToBytes(t *testing.T) {
 
 func TestMatchResultJSON(t *testing.T) {
 	result := MatchResult{
-		Format: &FormatSpec{Format: "test"},
-		Confidence: 0.9,
+		Format:      &FormatSpec{Format: "test"},
+		Confidence:  0.9,
 		MatchedSigs: []string{"sig1", "sig2"},
 	}
 

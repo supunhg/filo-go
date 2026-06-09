@@ -8,12 +8,12 @@ import (
 
 // Result holds office macro analysis results.
 type Result struct {
-	FileName    string          `json:"file_name"`
-	HasMacros   bool            `json:"has_macros"`
-	MacroCount  int             `json:"macro_count"`
-	AutoExec    []string        `json:"auto_exec,omitempty"`
-	Suspicious   []string       `json:"suspicious,omitempty"`
-	App         string          `json:"app,omitempty"`
+	FileName   string   `json:"file_name"`
+	HasMacros  bool     `json:"has_macros"`
+	MacroCount int      `json:"macro_count"`
+	AutoExec   []string `json:"auto_exec,omitempty"`
+	Suspicious []string `json:"suspicious,omitempty"`
+	App        string   `json:"app,omitempty"`
 }
 
 var autoExecPatterns = []string{

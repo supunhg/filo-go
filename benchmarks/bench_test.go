@@ -22,7 +22,7 @@ func generateTestData(size int) []byte {
 // Benchmark entropy calculation
 func BenchmarkEntropyCalculate(b *testing.B) {
 	sizes := []int{1024, 10240, 102400, 1048576} // 1KB, 10KB, 100KB, 1MB
-	
+
 	for _, size := range sizes {
 		data := generateTestData(size)
 		b.Run(formatSize(size), func(b *testing.B) {
@@ -45,7 +45,7 @@ func BenchmarkEntropyChunks(b *testing.B) {
 // Benchmark hashing (MD5)
 func BenchmarkHashingMD5(b *testing.B) {
 	sizes := []int{1024, 10240, 102400, 1048576} // 1KB, 10KB, 100KB, 1MB
-	
+
 	for _, size := range sizes {
 		data := generateTestData(size)
 		b.Run(formatSize(size), func(b *testing.B) {
@@ -59,7 +59,7 @@ func BenchmarkHashingMD5(b *testing.B) {
 // Benchmark hashing (SHA256)
 func BenchmarkHashingSHA256(b *testing.B) {
 	sizes := []int{1024, 10240, 102400, 1048576} // 1KB, 10KB, 100KB, 1MB
-	
+
 	for _, size := range sizes {
 		data := generateTestData(size)
 		b.Run(formatSize(size), func(b *testing.B) {
@@ -73,7 +73,7 @@ func BenchmarkHashingSHA256(b *testing.B) {
 // Benchmark string extraction
 func BenchmarkStringExtraction(b *testing.B) {
 	sizes := []int{1024, 10240, 102400, 1048576} // 1KB, 10KB, 100KB, 1MB
-	
+
 	for _, size := range sizes {
 		data := generateTestData(size)
 		opts := &strings.Options{MinLength: 4, Type: "all"}
@@ -94,7 +94,7 @@ func BenchmarkGzipDecompress(b *testing.B) {
 	w.Write(original)
 	w.Close()
 	compressed := buf.Bytes()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r, _ := gzip.NewReader(bytes.NewReader(compressed))
@@ -119,11 +119,11 @@ func BenchmarkFileRead(b *testing.B) {
 	// Create temp file
 	tmpFile, _ := os.CreateTemp("", "bench-*")
 	defer os.Remove(tmpFile.Name())
-	
+
 	data := generateTestData(102400) // 100KB
 	tmpFile.Write(data)
 	tmpFile.Close()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		os.ReadFile(tmpFile.Name())
@@ -135,7 +135,7 @@ func formatSize(bytes int) string {
 		KB = 1024
 		MB = 1024 * KB
 	)
-	
+
 	switch {
 	case bytes >= MB:
 		return "1MB"

@@ -10,7 +10,7 @@ import (
 
 var (
 	pcapExtract bool
-	pcapStreams  bool
+	pcapStreams bool
 	pcapProto   string
 	pcapOutput  string
 )

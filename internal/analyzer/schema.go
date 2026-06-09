@@ -11,14 +11,14 @@ const SchemaVersion = "2.0.0"
 
 // OutputSchema represents the complete analysis output.
 type OutputSchema struct {
-	Meta      AnalysisMeta    `json:"meta"`
-	File      FileInfo        `json:"file"`
-	Detection DetectionResult `json:"detection"`
-	Entropy   EntropyResult   `json:"entropy"`
-	Content   ContentAnalysis `json:"content"`
+	Meta      AnalysisMeta     `json:"meta"`
+	File      FileInfo         `json:"file"`
+	Detection DetectionResult  `json:"detection"`
+	Entropy   EntropyResult    `json:"entropy"`
+	Content   ContentAnalysis  `json:"content"`
 	Security  SecurityAnalysis `json:"security"`
-	Artifacts []Artifact      `json:"artifacts,omitempty"`
-	Warnings  []string        `json:"warnings,omitempty"`
+	Artifacts []Artifact       `json:"artifacts,omitempty"`
+	Warnings  []string         `json:"warnings,omitempty"`
 }
 
 // AnalysisMeta contains metadata about the analysis.
@@ -67,8 +67,8 @@ type FormatInfo struct {
 
 // EntropyResult contains entropy analysis.
 type EntropyResult struct {
-	Overall   float64 `json:"overall"`
-	Label     string  `json:"label"`
+	Overall float64 `json:"overall"`
+	Label   string  `json:"label"`
 }
 
 // ContentAnalysis contains content extraction results.
@@ -220,8 +220,8 @@ func categorizeFormat(format string) string {
 		"pdf": "document",
 		"elf": "executable", "pe": "executable", "macho": "executable",
 		"sqlite": "database",
-		"pcap": "network",
-		"evtx": "logs",
+		"pcap":   "network",
+		"evtx":   "logs",
 	}
 	if cat, ok := categories[format]; ok {
 		return cat

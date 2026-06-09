@@ -13,25 +13,25 @@ const SquashFSMagic = 0x73717368
 
 // SquashFSSuperblock represents a SquashFS superblock
 type SquashFSSuperblock struct {
-	Magic              uint32
-	Inodes             uint32
-	ModificationTime   uint32
-	BlockSize          uint32
-	Fragments          uint32
-	Compressor         uint16
-	BlockLog           uint16
-	Flags              uint16
-	IDCount            uint16
-	MajorVersion       uint16
-	MinorVersion       uint16
-	RootInode          uint64
-	BytesUsed          uint64
-	IDTableStart       uint64
-	XattrIDTableStart  uint64
-	InodeTableStart    uint64
+	Magic               uint32
+	Inodes              uint32
+	ModificationTime    uint32
+	BlockSize           uint32
+	Fragments           uint32
+	Compressor          uint16
+	BlockLog            uint16
+	Flags               uint16
+	IDCount             uint16
+	MajorVersion        uint16
+	MinorVersion        uint16
+	RootInode           uint64
+	BytesUsed           uint64
+	IDTableStart        uint64
+	XattrIDTableStart   uint64
+	InodeTableStart     uint64
 	DirectoryTableStart uint64
-	FragmentTableStart uint64
-	ExportTableStart   uint64
+	FragmentTableStart  uint64
+	ExportTableStart    uint64
 }
 
 // SquashFSCompressor types
@@ -102,10 +102,10 @@ func ExtractSquashFS(srcPath, destDir string) (*ExtractionResult, error) {
 	}
 
 	result := &ExtractionResult{
-		Format:    "squashfs",
+		Format:     "squashfs",
 		SourceFile: srcPath,
 		OutputDir:  destDir,
-		Files:     []ExtractedFile{},
+		Files:      []ExtractedFile{},
 	}
 
 	// Get compressor name
@@ -116,10 +116,10 @@ func ExtractSquashFS(srcPath, destDir string) (*ExtractionResult, error) {
 
 	// Add superblock as extracted file
 	result.Files = append(result.Files, ExtractedFile{
-		Name:      "superblock",
-		Size:      96,
-		Offset:    0,
-		IsDir:     false,
+		Name:   "superblock",
+		Size:   96,
+		Offset: 0,
+		IsDir:  false,
 	})
 
 	// Add info file
@@ -138,10 +138,10 @@ func ExtractSquashFS(srcPath, destDir string) (*ExtractionResult, error) {
 	}
 
 	result.Files = append(result.Files, ExtractedFile{
-		Name:    "squashfs-info.txt",
-		Size:    int64(len(info)),
-		Offset:  0,
-		IsDir:   false,
+		Name:   "squashfs-info.txt",
+		Size:   int64(len(info)),
+		Offset: 0,
+		IsDir:  false,
 	})
 
 	return result, nil

@@ -74,11 +74,11 @@ type FileInfo struct {
 
 // Result is what plugins return.
 type Result struct {
-	Format      string                 `json:"format"`
-	Confidence  float64                `json:"confidence"`
-	Details     map[string]interface{} `json:"details,omitempty"`
-	Warnings    []string               `json:"warnings,omitempty"`
-	Artifacts   []Artifact             `json:"artifacts,omitempty"`
+	Format     string                 `json:"format"`
+	Confidence float64                `json:"confidence"`
+	Details    map[string]interface{} `json:"details,omitempty"`
+	Warnings   []string               `json:"warnings,omitempty"`
+	Artifacts  []Artifact             `json:"artifacts,omitempty"`
 }
 
 // Artifact is a file extracted or created during analysis.

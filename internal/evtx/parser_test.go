@@ -93,7 +93,7 @@ func TestSuspiciousEventIDs(t *testing.T) {
 
 func TestResultStats(t *testing.T) {
 	result := &Result{
-		FileName:   "test.evtx",
+		FileName:    "test.evtx",
 		TotalEvents: 10,
 		Events: []Event{
 			{Provider: "Test", LevelName: "Information"},
@@ -123,7 +123,7 @@ func TestResultStats(t *testing.T) {
 
 func TestPrint(t *testing.T) {
 	result := &Result{
-		FileName:   "test.evtx",
+		FileName:    "test.evtx",
 		TotalEvents: 5,
 		Events: []Event{
 			{EventID: 4624, LevelName: "Information"},

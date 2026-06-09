@@ -7,9 +7,9 @@ import (
 
 // Result holds YARA scan results.
 type Result struct {
-	FileName string        `json:"file_name"`
-	Matches  []MatchResult `json:"matches"`
-	RuleCount int          `json:"rule_count"`
+	FileName  string        `json:"file_name"`
+	Matches   []MatchResult `json:"matches"`
+	RuleCount int           `json:"rule_count"`
 }
 
 // MatchResult represents a single rule match.
@@ -198,8 +198,8 @@ func parseRuleSource(source string) []*Rule {
 			parts := strings.SplitN(line[5:], ":", 2)
 			name := strings.TrimSpace(parts[0])
 			currentRule = &Rule{
-				Name:   name,
-				Meta:   map[string]string{},
+				Name:    name,
+				Meta:    map[string]string{},
 				Strings: []YString{},
 			}
 			if len(parts) > 1 {

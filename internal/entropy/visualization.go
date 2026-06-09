@@ -7,9 +7,9 @@ import (
 
 // VizOptions controls visualization output.
 type VizOptions struct {
-	Width    int
-	Height   int
-	Color    bool
+	Width     int
+	Height    int
+	Color     bool
 	ExportPNG bool
 }
 

@@ -12,30 +12,30 @@ import (
 // Config holds all configuration for the filo tool.
 type Config struct {
 	// General
-	Output    OutputConfig    `yaml:"output"`
-	Analysis  AnalysisConfig  `yaml:"analysis"`
-	Lineage   LineageConfig   `yaml:"lineage"`
-	MCP       MCPConfig       `yaml:"mcp"`
-	Export    ExportConfig    `yaml:"export"`
-	Database  DatabaseConfig  `yaml:"database"`
+	Output   OutputConfig   `yaml:"output"`
+	Analysis AnalysisConfig `yaml:"analysis"`
+	Lineage  LineageConfig  `yaml:"lineage"`
+	MCP      MCPConfig      `yaml:"mcp"`
+	Export   ExportConfig   `yaml:"export"`
+	Database DatabaseConfig `yaml:"database"`
 }
 
 // OutputConfig controls how results are displayed.
 type OutputConfig struct {
-	Format   string `yaml:"format"`   // json, text, csv, sarif
-	Colors   *bool  `yaml:"colors"`   // enable/disable colors
-	Verbose  bool   `yaml:"verbose"`   // verbose output
-	Quiet    bool   `yaml:"quiet"`     // minimal output
+	Format  string `yaml:"format"`  // json, text, csv, sarif
+	Colors  *bool  `yaml:"colors"`  // enable/disable colors
+	Verbose bool   `yaml:"verbose"` // verbose output
+	Quiet   bool   `yaml:"quiet"`   // minimal output
 }
 
 // AnalysisConfig controls analysis behavior.
 type AnalysisConfig struct {
-	DeepScan    bool     `yaml:"deep_scan"`    // enable deep analysis by default
-	NoML        bool     `yaml:"no_ml"`        // disable ML detection
-	MaxDepth    int      `yaml:"max_depth"`    // max recursion depth for archives
-	MaxSize     int64    `yaml:"max_size"`     // max file size in bytes (0 = unlimited)
-	YaraRules   []string `yaml:"yara_rules"`   // default YARA rule files
-	EntropyViz  bool     `yaml:"entropy_viz"`  // show entropy visualization
+	DeepScan   bool     `yaml:"deep_scan"`   // enable deep analysis by default
+	NoML       bool     `yaml:"no_ml"`       // disable ML detection
+	MaxDepth   int      `yaml:"max_depth"`   // max recursion depth for archives
+	MaxSize    int64    `yaml:"max_size"`    // max file size in bytes (0 = unlimited)
+	YaraRules  []string `yaml:"yara_rules"`  // default YARA rule files
+	EntropyViz bool     `yaml:"entropy_viz"` // show entropy visualization
 }
 
 // LineageConfig controls chain-of-custody tracking.

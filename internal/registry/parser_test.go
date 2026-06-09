@@ -108,8 +108,8 @@ func TestParseKeys(t *testing.T) {
 
 func TestAddHiveSpecificArtifacts(t *testing.T) {
 	result := &Result{
-		FileName:  "SAM",
-		HiveType:  "SAM",
+		FileName: "SAM",
+		HiveType: "SAM",
 		Keys: []RegistryKey{
 			{Path: "SAM\\Domains\\Account\\Users"},
 		},
@@ -130,8 +130,8 @@ func TestAddHiveSpecificArtifacts(t *testing.T) {
 
 func TestAddHiveSpecificArtifacts_SYSTEM(t *testing.T) {
 	result := &Result{
-		FileName:  "SYSTEM",
-		HiveType:  "SYSTEM",
+		FileName: "SYSTEM",
+		HiveType: "SYSTEM",
 		Keys: []RegistryKey{
 			{Path: "SYSTEM\\CurrentControlSet\\Services"},
 		},
@@ -148,8 +148,8 @@ func TestAddHiveSpecificArtifacts_SYSTEM(t *testing.T) {
 
 func TestAddHiveSpecificArtifacts_USER(t *testing.T) {
 	result := &Result{
-		FileName:  "NTUSER.DAT",
-		HiveType:  "USER",
+		FileName: "NTUSER.DAT",
+		HiveType: "USER",
 		Keys: []RegistryKey{
 			{Path: "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\RecentDocs"},
 		},

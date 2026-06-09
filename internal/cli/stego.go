@@ -70,7 +70,7 @@ func runStego(cmd *cobra.Command, args []string) error {
 	if len(result.Flags) > 0 {
 		fmt.Println("  Flags Found:")
 		for _, f := range result.Flags {
-		 fmt.Printf("    %s\n", f)
+			fmt.Printf("    %s\n", f)
 		}
 		fmt.Println()
 	}

@@ -28,30 +28,30 @@ const (
 
 // FileHeader represents the 100-byte SQLite database file header.
 type FileHeader struct {
-	Magic            string `json:"magic"`
-	PageSize         int    `json:"page_size"`
-	WriteVersion     int    `json:"write_version"`
-	ReadVersion      int    `json:"read_version"`
-	ReservedBytes    int    `json:"reserved_bytes"`
-	FileChangeCount  uint32 `json:"file_change_count"`
-	DBSizeInPages    uint32 `json:"db_size_in_pages"`
-	FreelistTrunk    uint32 `json:"freelist_trunk_page"`
-	FreelistPages    uint32 `json:"freelist_pages"`
-	SchemaCookie     uint32 `json:"schema_cookie"`
-	SchemaFormat     uint32 `json:"schema_format"`
-	Encoding         int    `json:"encoding"`
-	UserVersion      uint32 `json:"user_version"`
-	AutoVacuum       uint32 `json:"auto_vacuum"`
-	TextEncoding     string `json:"text_encoding"`
+	Magic           string `json:"magic"`
+	PageSize        int    `json:"page_size"`
+	WriteVersion    int    `json:"write_version"`
+	ReadVersion     int    `json:"read_version"`
+	ReservedBytes   int    `json:"reserved_bytes"`
+	FileChangeCount uint32 `json:"file_change_count"`
+	DBSizeInPages   uint32 `json:"db_size_in_pages"`
+	FreelistTrunk   uint32 `json:"freelist_trunk_page"`
+	FreelistPages   uint32 `json:"freelist_pages"`
+	SchemaCookie    uint32 `json:"schema_cookie"`
+	SchemaFormat    uint32 `json:"schema_format"`
+	Encoding        int    `json:"encoding"`
+	UserVersion     uint32 `json:"user_version"`
+	AutoVacuum      uint32 `json:"auto_vacuum"`
+	TextEncoding    string `json:"text_encoding"`
 }
 
 // Table represents an extracted SQLite table.
 type Table struct {
-	Name       string   `json:"name"`
-	RootPage   int      `json:"root_page"`
-	SQL        string   `json:"sql"`
-	Columns    []string `json:"columns,omitempty"`
-	RowCount   int      `json:"row_count"`
+	Name     string   `json:"name"`
+	RootPage int      `json:"root_page"`
+	SQL      string   `json:"sql"`
+	Columns  []string `json:"columns,omitempty"`
+	RowCount int      `json:"row_count"`
 }
 
 // WALInfo represents WAL journal metadata.
@@ -73,13 +73,13 @@ type DeletedRecord struct {
 
 // Result holds the complete SQLite analysis results.
 type Result struct {
-	FileName       string           `json:"file_name"`
-	Header         *FileHeader      `json:"header"`
-	Tables         []Table          `json:"tables"`
-	WAL            *WALInfo         `json:"wal"`
-	DeletedRecords []DeletedRecord  `json:"deleted_records,omitempty"`
-	Pages          int              `json:"total_pages"`
-	Stats          map[string]int   `json:"stats"`
+	FileName       string          `json:"file_name"`
+	Header         *FileHeader     `json:"header"`
+	Tables         []Table         `json:"tables"`
+	WAL            *WALInfo        `json:"wal"`
+	DeletedRecords []DeletedRecord `json:"deleted_records,omitempty"`
+	Pages          int             `json:"total_pages"`
+	Stats          map[string]int  `json:"stats"`
 }
 
 // readUint16BE reads a big-endian uint16.
@@ -353,7 +353,7 @@ func parseRecord(page []byte, offset int) []string {
 			// Text of length (st-13)/2
 			textLen := int((st - 13) / 2)
 			if offset+textLen <= len(page) {
-				cols = append(cols, string(page[offset : offset+textLen]))
+				cols = append(cols, string(page[offset:offset+textLen]))
 				offset += textLen
 			}
 		default:

@@ -41,79 +41,79 @@ var knownPackers = []KnownPacker{
 		},
 	},
 	{
-		Name:  "Themida",
+		Name: "Themida",
 		Sections: []string{
 			".themida", ".winlice",
 		},
 	},
 	{
-		Name:  "ASPack",
+		Name: "ASPack",
 		Sections: []string{
 			".adata", ".aspack",
 		},
 	},
 	{
-		Name:  "PECompact",
+		Name: "PECompact",
 		Sections: []string{
 			".PEC2", ".pec1", ".PEC2MO",
 		},
 	},
 	{
-		Name:  "Armadillo",
+		Name: "Armadillo",
 		Sections: []string{
 			".armadillo", ".clon",
 		},
 	},
 	{
-		Name:  "Enigma Protector",
+		Name: "Enigma Protector",
 		Sections: []string{
 			".enigma1", ".enigma2",
 		},
 	},
 	{
-		Name:  "MPRESS",
+		Name: "MPRESS",
 		Sections: []string{
 			".MPRESS1", ".MPRESS2",
 		},
 	},
 	{
-		Name:  "MEW",
+		Name: "MEW",
 		Sections: []string{
 			"MEW",
 		},
 	},
 	{
-		Name:  "FSG",
+		Name: "FSG",
 		Sections: []string{
 			"FSG!2",
 		},
 	},
 	{
-		Name:  "NsPack",
+		Name: "NsPack",
 		Sections: []string{
 			".nsp0", ".nsp1", ".nsp2",
 		},
 	},
 	{
-		Name:  "Petite",
+		Name: "Petite",
 		Sections: []string{
 			".petite",
 		},
 	},
 	{
-		Name:  "Y0da Protector",
+		Name: "Y0da Protector",
 		Sections: []string{
 			".y0da",
 		},
 	},
 	{
-		Name:  "PKLite",
+		Name: "PKLite",
 		Sections: []string{
 			".PKL32", ".PKL",
 		},
 	},
 	{
-		Name:  "LZEXE",
+		Name: "LZEXE",
 		Sections: []string{
 			"lzexe",
 		},
@@ -307,5 +307,3 @@ func hasObfuscation(data []byte) bool {
 	threshold := float64(len(data)) * 0.05
 	return float64(jmpCount) > threshold
 }
-
-

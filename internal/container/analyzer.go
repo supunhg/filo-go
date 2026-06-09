@@ -14,21 +14,21 @@ import (
 
 // Result holds container analysis results.
 type Result struct {
-	FileName    string         `json:"file_name"`
-	Format      string         `json:"format"`
-	Entries     []Entry        `json:"entries"`
-	TotalSize   int64          `json:"total_size"`
-	EntryCount  int            `json:"entry_count"`
-	Nested      []NestedResult `json:"nested,omitempty"`
+	FileName   string         `json:"file_name"`
+	Format     string         `json:"format"`
+	Entries    []Entry        `json:"entries"`
+	TotalSize  int64          `json:"total_size"`
+	EntryCount int            `json:"entry_count"`
+	Nested     []NestedResult `json:"nested,omitempty"`
 }
 
 // Entry represents a single file in a container.
 type Entry struct {
-	Path      string  `json:"path"`
-	Size      int64   `json:"size"`
-	Format    string  `json:"format"`
-	IsDir     bool    `json:"is_dir"`
-	Offset    int64   `json:"offset,omitempty"`
+	Path   string `json:"path"`
+	Size   int64  `json:"size"`
+	Format string `json:"format"`
+	IsDir  bool   `json:"is_dir"`
+	Offset int64  `json:"offset,omitempty"`
 }
 
 // NestedResult holds results from nested container analysis.
@@ -119,9 +119,9 @@ func analyzeZIP(data []byte, result *Result, maxDepth, currentDepth int) (*Resul
 
 	for _, file := range reader.File {
 		entry := Entry{
-			Path:   file.Name,
-			Size:   int64(file.UncompressedSize64),
-			IsDir:  file.FileInfo().IsDir(),
+			Path:  file.Name,
+			Size:  int64(file.UncompressedSize64),
+			IsDir: file.FileInfo().IsDir(),
 		}
 
 		if !file.FileInfo().IsDir() {
@@ -187,9 +187,9 @@ func analyzeTarFromReader(reader io.Reader, result *Result, maxDepth, currentDep
 		}
 
 		entry := Entry{
-			Path:   header.Name,
-			Size:   header.Size,
-			IsDir:  header.Typeflag == tar.TypeDir,
+			Path:  header.Name,
+			Size:  header.Size,
+			IsDir: header.Typeflag == tar.TypeDir,
 		}
 
 		if header.Typeflag != tar.TypeDir {

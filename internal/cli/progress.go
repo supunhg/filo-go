@@ -7,12 +7,12 @@ import (
 
 // ProgressBar displays a progress bar in the terminal.
 type ProgressBar struct {
-	total    int
-	current  int
-	width    int
-	prefix   string
-	showPct  bool
-	done     chan bool
+	total   int
+	current int
+	width   int
+	prefix  string
+	showPct bool
+	done    chan bool
 }
 
 // NewProgressBar creates a new progress bar.

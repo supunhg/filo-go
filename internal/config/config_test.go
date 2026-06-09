@@ -109,14 +109,14 @@ func TestLoadEnvOverrides(t *testing.T) {
 
 	// Set environment variables
 	originals := map[string]string{
-		"FILO_OUTPUT_FORMAT":      os.Getenv("FILO_OUTPUT_FORMAT"),
-		"FILO_OUTPUT_QUIET":       os.Getenv("FILO_OUTPUT_QUIET"),
-		"FILO_OUTPUT_VERBOSE":     os.Getenv("FILO_OUTPUT_VERBOSE"),
-		"FILO_ANALYSIS_DEEP_SCAN": os.Getenv("FILO_ANALYSIS_DEEP_SCAN"),
-		"FILO_ANALYSIS_NO_ML":     os.Getenv("FILO_ANALYSIS_NO_ML"),
-		"FILO_LINEAGE_ENABLED":    os.Getenv("FILO_LINEAGE_ENABLED"),
-		"FILO_MCP_PORT":           os.Getenv("FILO_MCP_PORT"),
-		"FILO_EXPORT_FORMAT":      os.Getenv("FILO_EXPORT_FORMAT"),
+		"FILO_OUTPUT_FORMAT":        os.Getenv("FILO_OUTPUT_FORMAT"),
+		"FILO_OUTPUT_QUIET":         os.Getenv("FILO_OUTPUT_QUIET"),
+		"FILO_OUTPUT_VERBOSE":       os.Getenv("FILO_OUTPUT_VERBOSE"),
+		"FILO_ANALYSIS_DEEP_SCAN":   os.Getenv("FILO_ANALYSIS_DEEP_SCAN"),
+		"FILO_ANALYSIS_NO_ML":       os.Getenv("FILO_ANALYSIS_NO_ML"),
+		"FILO_LINEAGE_ENABLED":      os.Getenv("FILO_LINEAGE_ENABLED"),
+		"FILO_MCP_PORT":             os.Getenv("FILO_MCP_PORT"),
+		"FILO_EXPORT_FORMAT":        os.Getenv("FILO_EXPORT_FORMAT"),
 		"FILO_DATABASE_FORMATS_DIR": os.Getenv("FILO_DATABASE_FORMATS_DIR"),
 	}
 

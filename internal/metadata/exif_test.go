@@ -19,7 +19,7 @@ func TestExtractEXIFNonJPEG(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.bin")
 	os.WriteFile(testFile, []byte("not a jpeg"), 0644)
-	
+
 	_, err := ExtractEXIF(testFile)
 	if err == nil {
 		t.Error("Expected error for non-JPEG file")
@@ -30,11 +30,11 @@ func TestExtractEXIFNoEXIF(t *testing.T) {
 	// Create a minimal JPEG without EXIF
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.jpg")
-	
+
 	// Minimal JPEG: SOI + EOI
 	data := []byte{0xFF, 0xD8, 0xFF, 0xD9}
 	os.WriteFile(testFile, data, 0644)
-	
+
 	_, err := ExtractEXIF(testFile)
 	if err == nil {
 		t.Error("Expected error for JPEG without EXIF")
@@ -60,25 +60,25 @@ func TestFormatEXIFResult(t *testing.T) {
 func TestFormatEXIFResultWithData(t *testing.T) {
 	result := &EXIFResult{
 		Tags: map[string]interface{}{
-			"Make":           "Canon",
-			"Model":          "EOS 5D",
-			"Software":       "1.0",
-			"PixelXDimension": 4000,
-			"PixelYDimension": 3000,
-			"ExposureTime":   0.01,
-			"FNumber":        2.8,
-			"ISOSpeedRatings": 100,
-			"FocalLength":    50.0,
-			"DateTime":       "2024:01:01 12:00:00",
+			"Make":             "Canon",
+			"Model":            "EOS 5D",
+			"Software":         "1.0",
+			"PixelXDimension":  4000,
+			"PixelYDimension":  3000,
+			"ExposureTime":     0.01,
+			"FNumber":          2.8,
+			"ISOSpeedRatings":  100,
+			"FocalLength":      50.0,
+			"DateTime":         "2024:01:01 12:00:00",
 			"DateTimeOriginal": "2024:01:01 12:00:00",
-			"GPSLatitude":    37.7749,
-			"GPSLatitudeRef": "N",
-			"GPSLongitude":   -122.4194,
-			"GPSLongitudeRef": "W",
-			"GPSAltitude":    100.0,
+			"GPSLatitude":      37.7749,
+			"GPSLatitudeRef":   "N",
+			"GPSLongitude":     -122.4194,
+			"GPSLongitudeRef":  "W",
+			"GPSAltitude":      100.0,
 		},
 	}
-	
+
 	formatted := FormatEXIFResult(result)
 	if formatted == "" {
 		t.Error("Expected non-empty result")
@@ -111,16 +111,16 @@ func TestFormatXMPData(t *testing.T) {
 func TestFormatXMPDataWithData(t *testing.T) {
 	data := &XMPData{
 		Description: []XMPDescription{{
-			About:       "test",
-			CameraMake:  "Canon",
-			CameraModel: "EOS 5D",
-			Software:    "1.0",
+			About:        "test",
+			CameraMake:   "Canon",
+			CameraModel:  "EOS 5D",
+			Software:     "1.0",
 			DateOriginal: "2024-01-01T12:00:00Z",
-			LensMake:    "Canon",
-			LensModel:   "EF 50mm f/1.4",
+			LensMake:     "Canon",
+			LensModel:    "EF 50mm f/1.4",
 		}},
 	}
-	
+
 	formatted := FormatXMPData(data)
 	if formatted == "" {
 		t.Error("Expected non-empty result")
@@ -153,7 +153,7 @@ func TestFormatIPTCData(t *testing.T) {
 func TestFormatIPTCDataWithData(t *testing.T) {
 	// Test with empty data
 	data := map[string]string{}
-	
+
 	formatted := FormatIPTCData(data)
 	if formatted != "No IPTC data found" {
 		t.Error("Expected 'No IPTC data found' for empty data")
@@ -172,7 +172,7 @@ func TestEXIFTags(t *testing.T) {
 		0x8827, // ISOSpeedRatings
 		0x920A, // FocalLength
 	}
-	
+
 	for _, tag := range commonTags {
 		if _, ok := exifTags[tag]; !ok {
 			t.Errorf("Expected tag 0x%04X to be defined", tag)

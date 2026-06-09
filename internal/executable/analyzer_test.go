@@ -53,7 +53,7 @@ func TestAnalyzePE(t *testing.T) {
 		0x80, 0x00, 0x00, 0x00, // e_lfanew
 		'P', 'E', 0x00, 0x00, // PE signature
 	}
-	
+
 	// This will fail due to incomplete PE header, but tests the code path
 	_, err := Analyze(data, "test.exe", nil)
 	// Error is expected for minimal header
@@ -77,19 +77,19 @@ func TestFilterSuspiciousImports(t *testing.T) {
 		"user32.dll",
 		"WriteProcessMemory",
 	}
-	
+
 	suspicious := filterSuspiciousImports(imports)
-	
+
 	if len(suspicious) != 3 {
 		t.Errorf("Expected 3 suspicious imports, got %d", len(suspicious))
 	}
-	
+
 	expected := map[string]bool{
-		"VirtualAlloc":        true,
-		"CreateRemoteThread":  true,
-		"WriteProcessMemory":  true,
+		"VirtualAlloc":       true,
+		"CreateRemoteThread": true,
+		"WriteProcessMemory": true,
 	}
-	
+
 	for _, s := range suspicious {
 		if !expected[s] {
 			t.Errorf("Unexpected suspicious import: %s", s)
@@ -100,7 +100,7 @@ func TestFilterSuspiciousImports(t *testing.T) {
 func TestFilterSuspiciousImportsEmpty(t *testing.T) {
 	imports := []string{"kernel32.dll", "user32.dll"}
 	suspicious := filterSuspiciousImports(imports)
-	
+
 	if len(suspicious) != 0 {
 		t.Errorf("Expected 0 suspicious imports, got %d", len(suspicious))
 	}
@@ -108,7 +108,7 @@ func TestFilterSuspiciousImportsEmpty(t *testing.T) {
 
 func TestFormatString(t *testing.T) {
 	tests := []struct {
-		format Format
+		format   Format
 		expected string
 	}{
 		{FormatPE, "PE"},
@@ -116,7 +116,7 @@ func TestFormatString(t *testing.T) {
 		{FormatMachO, "Mach-O"},
 		{FormatUnknown, "Unknown"},
 	}
-	
+
 	for _, tt := range tests {
 		if string(tt.format) != tt.expected {
 			t.Errorf("Format %v = %v, want %v", tt.format, string(tt.format), tt.expected)
@@ -126,11 +126,11 @@ func TestFormatString(t *testing.T) {
 
 func TestOptionsDefaults(t *testing.T) {
 	opts := &Options{}
-	
+
 	if opts.MinStringLen == 0 {
 		opts.MinStringLen = 4
 	}
-	
+
 	if opts.MinStringLen != 4 {
 		t.Errorf("Expected min string len 4, got %d", opts.MinStringLen)
 	}
@@ -142,15 +142,15 @@ func TestResultStructure(t *testing.T) {
 		FileName: "test.elf",
 		FileSize: 1024,
 	}
-	
+
 	if result.Format != FormatELF {
 		t.Errorf("Expected ELF format, got %s", result.Format)
 	}
-	
+
 	if result.FileName != "test.elf" {
 		t.Errorf("Expected filename test.elf, got %s", result.FileName)
 	}
-	
+
 	if result.FileSize != 1024 {
 		t.Errorf("Expected file size 1024, got %d", result.FileSize)
 	}
@@ -162,15 +162,15 @@ func TestEvidenceStructure(t *testing.T) {
 		Confidence: 0.9,
 		Details:    "test details",
 	}
-	
+
 	if evidence.Source != "test_source" {
 		t.Errorf("Expected source test_source, got %s", evidence.Source)
 	}
-	
+
 	if evidence.Confidence != 0.9 {
 		t.Errorf("Expected confidence 0.9, got %f", evidence.Confidence)
 	}
-	
+
 	if evidence.Details != "test details" {
 		t.Errorf("Expected details 'test details', got %s", evidence.Details)
 	}
@@ -182,14 +182,14 @@ func TestPrintResults(t *testing.T) {
 		FileName: "test.elf",
 		FileSize: 1024,
 		ELF: &elf.Result{
-			Class:    "ELF64",
-			Data:     "2's complement, little endian",
-			OSABI:    "UNIX - System V",
-			Type:     "EXEC (Executable file)",
-			Machine:  "Advanced Micro Devices x86-64",
+			Class:   "ELF64",
+			Data:    "2's complement, little endian",
+			OSABI:   "UNIX - System V",
+			Type:    "EXEC (Executable file)",
+			Machine: "Advanced Micro Devices x86-64",
 		},
 	}
-	
+
 	// Test that Print doesn't panic
 	Print(result)
 }
@@ -205,7 +205,7 @@ func TestPrintPEResults(t *testing.T) {
 			Subsystem:  "Windows CUI",
 		},
 	}
-	
+
 	// Test that Print doesn't panic
 	Print(result)
 }
@@ -221,7 +221,7 @@ func TestPrintMachOResults(t *testing.T) {
 			Bits: 64,
 		},
 	}
-	
+
 	// Test that Print doesn't panic
 	Print(result)
 }
