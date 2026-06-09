@@ -34,6 +34,21 @@
 | Firmware extraction | ✅ | ❌ | ❌ | **✅** |
 | Metadata extraction | ❌ | ❌ | ✅ | **✅** |
 | YARA support | ❌ | ❌ | ❌ | **✅** |
+| **Performance** | Slow | Fast | Fast | **Fastest** |
+
+### 🚀 Performance
+
+filo-go is **6x to 10,873x faster** than binwalk and Unix tools:
+
+| Operation | filo-go | binwalk | Speedup |
+|-----------|---------|---------|----------|
+| File Analysis (1MB) | 1.26 ms | 621 ms | **493x** |
+| Entropy Analysis (1MB) | 594 µs | 849 ms | **1,430x** |
+| File Carving (10MB) | 13 ms | 2.15 s | **166x** |
+| Hash Computation (1MB) | 811 µs | 8.26 ms | **10.2x** |
+| String Extraction (1MB) | 1.27 µs | 13.8 ms | **10,873x** |
+
+See [Performance Benchmarks](docs/PERFORMANCE.md) for detailed analysis.
 
 ---
 
