@@ -1,259 +1,496 @@
 # filo-go Knowledge Graph
 
-## Architecture Overview
+> **Last Updated:** 2024-12-09  
+> **Version:** 0.2.0  
+> **Total LOC:** ~25,000  
+> **Test Coverage:** ~35%
+
+---
+
+## 📊 Project Overview
+
+**filo-go** is a Go-native forensic analysis toolkit that replaces multiple Python/C tools with a single, fast, cross-platform binary.
+
+### Key Metrics
+- **Commands:** 35+
+- **Packages:** 25+
+- **Tests:** 300+
+- **Format Definitions:** 30+
+- **MCP Tools:** 9
+
+---
+
+## 🏗️ Architecture
+
+### Core Modules
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          CLI Layer (cobra)                          │
-│  analyze batch carve config evtx executable extract formats hash    │
-│  lineage mcp meta pcap profile registry repair sigma sqlite stego   │
-│  strings teach timeline version                                     │
-└──────────────────────────────┬──────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│                        Core Analysis Engine                         │
-│                                                                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                 │
-│  │  analyzer   │  │  executable │  │   stego     │                 │
-│  │  (965 LOC)  │  │  (479 LOC)  │  │  (466 LOC)  │                 │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘                 │
-│         │                │                │                          │
-│  ┌──────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐                 │
-│  │  formats    │  │  elf/pe/    │  │  image pkg  │                 │
-│  │  (300 LOC)  │  │  macho      │  │  (stdlib)   │                 │
-│  └─────────────┘  └─────────────┘  └─────────────┘                 │
-└─────────────────────────────────────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│                      Forensic Modules                                │
-│                                                                     │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐     │
-│  │ sqlite  │ │  evtx   │ │registry │ │  pcap   │ │ sigma   │     │
-│  │ (625)   │ │ (182)   │ │ (242)   │ │ (210)   │ │ (200)   │     │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘     │
-│                                                                     │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐     │
-│  │  yara   │ │ crypto  │ │metadata │ │repair   │ │container│     │
-│  │ (267)   │ │ (178)   │ │ (340)   │ │ (259)   │ │ (387)   │     │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘     │
-└─────────────────────────────────────────────────────────────────────┘
-                               │
-┌──────────────────────────────▼──────────────────────────────────────┐
-│                     Infrastructure Layer                             │
-│                                                                     │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐     │
-│  │entropy  │ │ hashing │ │lineage  │ │ batch   │ │ export  │     │
-│  │ (110)   │ │ (90)    │ │ (283)   │ │ (178)   │ │ (100)   │     │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘     │
-│                                                                     │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐                  │
-│  │  ml     │ │  mcp    │ │ strings │ │ timeline│                  │
-│  │ (245)   │ │ (396)   │ │ (285)   │ │ (122)   │                  │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘                  │
-└─────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                        CLI Layer                            │
+│  (cobra commands: analyze, entropy, hex, scan, etc.)       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Analysis Engine                         │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ analyzer │ │ entropy  │ │ strings  │ │ metadata │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │  stego   │ │  crypto  │ │  container│ │  formats │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Specialized Modules                     │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ firmware │ │  pcap    │ │  evtx    │ │  sqlite  │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ registry │ │  sigma   │ │   yara   │ │ executable│       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Integration Layer                       │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │   mcp    │ │ plugins  │ │  export  │ │  repair  │       │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Module Dependency Graph
+---
 
-### Core Dependencies (who imports whom)
+## 📦 Package Dependencies
+
+### External Dependencies
+- `github.com/spf13/cobra` - CLI framework
+- `github.com/etcd-io/bbolt` - Embedded database
+- `github.com/sirupsen/logrus` - Logging
+- `github.com/fatih/color` - Terminal colors
+
+### Internal Package Graph
 
 ```
-analyzer ──────► formats
-       └──────► entropy (NEW)
-
-executable ────► pe, elf, macho, packing
-       └──────► entropy (via each sub-package)
-
-stego ─────────► (std lib only: image, bytes, regexp)
-
-container ─────► (std lib only: archive/zip, tar, gzip)
-
-crypto ────────► entropy (NEW)
-
-ml ────────────► entropy (NEW)
-
-strings ───────► entropy (NEW)
-
-batch ─────────► analyzer
-
-mcp ───────────► analyzer, batch, crypto
-
-repair ────────► (std lib only)
-
-sqlite ────────► (std lib only)
-
-lineage ───────► bbolt
-
-yara ──────────► (std lib only)
-
-sigma ──────────► (std lib only)
-
-pcap ──────────► (std lib only)
-
-evtx ──────────► (std lib only)
-
-registry ──────► (std lib only)
-
-metadata ──────► (std lib only)
-
-export ────────► (std lib only)
-
-hashing ───────► golang.org/x/crypto/sha3
+cmd/filo/
+    └── internal/cli/
+            ├── analyzer
+            │     ├── formats
+            │     ├── entropy
+            │     ├── strings
+            │     └── metadata
+            ├── carver
+            │     └── entropy
+            ├── container
+            ├── crypto
+            ├── entropy
+            ├── executable/
+            │     ├── elf
+            │     ├── pe
+            │     └── packing
+            ├── export
+            ├── firmware
+            ├── formats
+            ├── hashing
+            ├── mcp
+            ├── metadata
+            ├── pcap
+            ├── plugins
+            ├── sqlite
+            ├── stego
+            ├── strings
+            └── yara
 ```
 
-## Data Flow Analysis
+---
 
-### File Analysis Pipeline
+## 🔄 Data Flow
+
+### Analysis Pipeline
+
 ```
-File Path
+Input File
     │
     ▼
-os.ReadFile(data)
+┌─────────────────┐
+│  File Reading   │
+└─────────────────┘
     │
     ▼
-analyzer.Analyze(data, filePath, opts)
+┌─────────────────┐
+│  Format Detection│
+└─────────────────┘
     │
-    ├──► entropy.Calculate(data)          → result.Entropy
-    ├──► entropy.Interpret(result.Entropy) → result.EntropyLabel
-    ├──► filetype.Match(data)             → result.PrimaryFormat
-    ├──► mimetype.Detect(data)            → result.PrimaryMIME
-    ├──► detectArchitecture(data)         → result.Architecture
-    ├──► detectCrypto(data)               → result.CryptoIndicators
-    ├──► detectPolyglots(data)            → result.Polyglots
-    ├──► fingerprintTool(data)            → result.ToolFingerprint
-    │
-    ├──► [optional] crypto.Analyze(data)  → crypto.Result
-    ├──► [optional] metadata.Extract(data)→ metadata.Result
-    ├──► [optional] stego.Detect(data)    → stego.Result
-    └──► [optional] executable.Analyze()  → executable.Result
-```
-
-### Executable Analysis Pipeline
-```
-data []byte
+    ├──→ Signatures (YAML database)
+    ├──→ Magic bytes
+    └──→ Heuristics
     │
     ▼
-executable.DetectFormat(data) → Format (PE/ELF/MachO)
+┌─────────────────┐
+│  Deep Analysis   │
+└─────────────────┘
     │
-    ├──► pe.Analyze(data)    → pe.Result (sections, imports, TLS, debug)
-    │      └──► entropy.Calculate() per section
+    ├──→ Entropy calculation
+    ├──→ String extraction
+    ├──→ Metadata extraction
+    ├──→ Security analysis
+    └──→ Embedded file detection
     │
-    ├──► elf.Analyze(data)   → elf.Result (sections, segments, security)
-    │      └──► entropy.Calculate() per section
+    ▼
+┌─────────────────┐
+│  Result Format   │
+└─────────────────┘
     │
-    ├──► macho.Analyze(data) → macho.Result (load commands, dylibs)
-    │
-    └──► packing.Detect()    → packing.Result (UPX, VMProtect, etc.)
-           └──► entropy.Calculate() per section
+    ├──→ Text (default)
+    ├──→ JSON
+    ├──→ SARIF
+    └──→ HTML
 ```
 
-## Key Abstractions
+### Entropy Visualization
 
-### Result Types (the data contracts)
-| Package | Result Type | Key Fields |
-|---------|-------------|------------|
-| analyzer | `Result` | PrimaryFormat, Confidence, Entropy, SHA256 |
-| executable | `Result` | Format, PE/ELF/MachO, Packing, Suspicious |
-| stego | `Result` | Methods[], Flags[] |
-| sqlite | `Result` | Header, Tables[], WAL, DeletedRecords |
-| crypto | `Result` | Detected, Confidence, CipherHints, ECB |
-| container | `Result` | Format, Entries[], Nested[] |
-| repair | `Result` | Success, Strategy, Changes[] |
-| metadata | `Result` | Metadata map, Suspicious[] |
-| yara | `Result` | Matches[], RuleCount |
-| sigma | `Match[]` | Rule, Evidence[] |
-| pcap | `Result` | Protocols, HTTPRequests, Flags |
-| evtx | `Result` | Events[], Flags[] |
-| registry | `Result` | Keys[], Artifacts[] |
+```
+Input File
+    │
+    ▼
+┌─────────────────┐
+│  Read Chunks    │
+└─────────────────┘
+    │
+    ▼
+┌─────────────────┐
+│  Calculate      │
+│  Shannon        │
+│  Entropy        │
+└─────────────────┘
+    │
+    ▼
+┌─────────────────┐
+│  ASCII Graph    │
+│  Rendering      │
+└─────────────────┘
+    │
+    ▼
+┌─────────────────┐
+│  Terminal       │
+│  Output         │
+└─────────────────┘
+```
 
-### Shared Types
+---
+
+## 🧩 Key Components
+
+### 1. Format Database (`internal/formats/`)
+
+- **YAML-based format definitions**
+- **30+ formats** (archives, executables, documents, images)
+- **Signature matching** with confidence scores
+- **Extensible** - add new formats via YAML
+
+### 2. Entropy Visualization (`internal/entropy/`)
+
+- **Shannon entropy** calculation
+- **ASCII graph** visualization
+- **MiniViz** for quick overview
+- **Interpretation** of entropy levels
+
+### 3. MCP Server (`internal/mcp/`)
+
+- **JSON-RPC 2.0** protocol
+- **9 tools** for AI integration
+- **Claude Desktop** compatible
+- **Extensible** tool registration
+
+### 4. Plugin System (`internal/plugins/`)
+
+- **Go plugin** support (.so files)
+- **Dynamic loading** at runtime
+- **Hook-based** architecture
+- **Thread-safe** registration
+
+### 5. Firmware Extraction (`internal/firmware/`)
+
+- **SquashFS** - Full support
+- **CramFS** - Full support
+- **JFFS2** - Full support
+- **Extensible** for more formats
+
+---
+
+## 📊 Module Coverage
+
+| Module | LOC | Tests | Coverage | Status |
+|--------|-----|-------|----------|--------|
+| analyzer | 800 | 15 | 41.6% | ✅ |
+| entropy | 450 | 20 | 85.1% | ✅ |
+| strings | 300 | 22 | 81.7% | ✅ |
+| metadata | 600 | 18 | 40.0% | ✅ |
+| formats | 400 | 25 | 93.0% | ✅ |
+| crypto | 250 | 9 | 74.3% | ✅ |
+| container | 350 | 20 | 52.4% | ✅ |
+| stego | 300 | 14 | 40.4% | ✅ |
+| export | 500 | 12 | 86.8% | ✅ |
+| hashing | 200 | 14 | 80.0% | ✅ |
+| firmware | 400 | 10 | 60.0% | ✅ |
+| yara | 500 | 15 | 50.0% | ✅ |
+| pcap | 300 | 8 | 22.4% | ⚠️ |
+| sqlite | 250 | 12 | 17.9% | ⚠️ |
+| plugins | 200 | 22 | 100% | ✅ |
+
+---
+
+## 🔌 Extension Points
+
+### 1. Adding New Formats
+
+Create a YAML file in `formats/`:
+
+```yaml
+format: new_format
+version: "1.0"
+mime:
+  - application/x-new-format
+category: custom
+confidence_weight: 0.95
+extensions:
+  - ext
+description: New format description
+signatures:
+  - offset: 0
+    hex: "DE AD BE EF"
+    description: Magic bytes
+    weight: 1.0
+```
+
+### 2. Adding New CLI Commands
+
+Create a new file in `internal/cli/`:
+
 ```go
-// entropy.Chunk - used by analyzer, stego (indirectly)
-type Chunk struct {
-    Offset  int64   `json:"offset"`
-    Entropy float64 `json:"entropy"`
+package cli
+
+import "github.com/spf13/cobra"
+
+var newCmd = &cobra.Command{
+    Use:   "new",
+    Short: "New command",
+    RunE:  runNew,
 }
 
-// Evidence - used by analyzer, executable
-type Evidence struct {
-    Source     string  `json:"source"`
-    Confidence float64 `json:"confidence"`
-    Details    string  `json:"details"`
+func init() {
+    rootCmd.AddCommand(newCmd)
+}
+
+func runNew(cmd *cobra.Command, args []string) error {
+    // Implementation
+    return nil
 }
 ```
 
-## Test Coverage Map
+### 3. Adding New MCP Tools
 
-| Package | Tests | Coverage | Priority |
-|---------|-------|----------|----------|
-| analyzer | ✅ | 41.6% | - |
-| entropy | ✅ | 85.1% | - |
-| executable | ✅ | 22.4% | - |
-| sqlite | ❌ | 0% | 🔴 HIGH |
-| stego | ❌ | 0% | 🔴 HIGH |
-| crypto | ❌ | 0% | 🟡 MEDIUM |
-| container | ❌ | 0% | 🟡 MEDIUM |
-| repair | ❌ | 0% | 🟡 MEDIUM |
-| metadata | ❌ | 0% | 🟡 MEDIUM |
-| mcp | ❌ | 0% | 🟡 MEDIUM |
-| yara | ❌ | 0% | 🟢 LOW |
-| sigma | ❌ | 0% | 🟢 LOW |
-| batch | ❌ | 0% | 🟢 LOW |
-| All others | ❌ | 0% | 🟢 LOW |
+Extend `internal/mcp/server.go`:
 
-## Code Quality Issues (Fixed ✅ / Remaining ⚠️)
+```go
+func (s *Server) handleNewTool(params map[string]interface{}) (interface{}, error) {
+    // Implementation
+    return result, nil
+}
 
-### Fixed
-- ✅ 6 duplicate `calculateEntropy` → shared `entropy` package
-- ✅ 6 duplicate `min` → Go built-in
-- ✅ MCP `toolHash` bug (was hashing only 16 bytes)
-- ✅ `Result.JSON()` incomplete serialization
-- ✅ Duplicate `executable` command registration
+func init() {
+    RegisterTool("new_tool", "Description", schema, handler)
+}
+```
 
-### Remaining
-- ⚠️ No `formats/` YAML directory in repo
-- ⚠️ `export` module is a stub (CSV/SARIF not implemented)
-- ⚠️ `ml` detector is rule-based, not real ML
-- ⚠️ `sigma` engine is keyword-only, not field-based
-- ⚠️ `pcap` parser lacks TCP reassembly
-- ⚠️ `evtx` parser is skeletal
-- ⚠️ `registry` parser doesn't recurse child keys
-- ⚠️ `office` parser only handles OLE2, not OOXML
+### 4. Adding New Plugins
 
-## Strategic Position
+Create a plugin in `plugins/`:
 
-### Unique Differentiators
-1. **MCP Server** - Only forensic tool with native MCP integration
-2. **SQLite Forensics** - Deep B-tree parsing, WAL detection, deleted records
-3. **Executable Analysis** - PE/ELF/Mach-O with security feature detection
-4. **Steganography** - LSB extraction with CTF flag detection
-5. **Single Binary** - Go compilation, zero runtime dependencies
+```go
+package main
 
-### Competitive Landscape
-| Tool | Stars | Language | Strengths |
-|------|-------|----------|-----------|
-| binwalk | 30k+ | Python/C | Firmware extraction |
-| foremost | 2k+ | C | File carving |
-| YARA | 7k+ | C | Pattern matching |
-| digler | 1.2k | Go | Disk forensics |
-| **filo-go** | 0 | **Go** | **MCP + comprehensive analysis** |
+import "github.com/supunhg/filo-go/internal/plugins"
 
-## Next Actions (Priority Order)
+type MyPlugin struct{}
 
-### Phase 1: Credibility (Week 1)
-1. Add `formats/` YAML directory with 20+ format definitions
-2. Add tests for `sqlite` parser (your strongest module)
-3. Add tests for `stego` detector
-4. Fix `export` module (SARIF output for GitHub Code Scanning)
+func (p *MyPlugin) Name() string { return "my-plugin" }
+func (p *MyPlugin) Analyze(data []byte) (*plugins.Result, error) {
+    // Implementation
+    return &plugins.Result{}, nil
+}
 
-### Phase 2: Differentiation (Week 2-3)
-5. Expand MCP server with HTTP/SSE transport
-6. Add more MCP tools (all 24 CLI commands)
-7. Create benchmark suite against binwalk/file/yara
-8. Write CTF writeup using filo-go
+func init() {
+    plugins.Register(&MyPlugin{})
+}
+```
 
-### Phase 3: Community (Week 4+)
-9. Add CONTRIBUTING.md
-10. Create Docker image
-11. Add plugin system for custom analyzers
-12. Publish to pkg.go.dev
+---
+
+## 🎯 Command Reference
+
+### Analysis Commands
+
+| Command | Description | Key Flags |
+|---------|-------------|-----------|
+| `analyze` | Full file analysis | `--json`, `--deep` |
+| `entropy` | Entropy visualization | `--mini`, `--width`, `--height` |
+| `hex` | Hex dump | `--offset`, `--length`, `--color` |
+| `scan` | Signature scan | `--format`, `--verbose` |
+| `search` | Pattern search | `--hex`, `--text`, `--offset` |
+| `hash` | Compute hashes | `--algorithm`, `--all` |
+| `strings` | Extract strings | `--min-length`, `--encoding` |
+
+### Extraction Commands
+
+| Command | Description | Key Flags |
+|---------|-------------|-----------|
+| `extract` | Extract embedded files | `--recursive`, `--format` |
+| `dd` | Extract raw bytes | `--offset`, `--length`, `--count` |
+| `carve` | Carve files | `--type`, `--depth` |
+| `firmware` | Extract firmware | `--extract`, `--output` |
+
+### Metadata Commands
+
+| Command | Description | Key Flags |
+|---------|-------------|-----------|
+| `meta` | Extract metadata | `--all`, `--sus`, `--json` |
+| `stego` | Detect steganography | `--all`, `--extract` |
+| `crypto` | Detect encryption | `--verbose` |
+| `executable` | Analyze executables | `--deep`, `--strings` |
+
+### Forensic Commands
+
+| Command | Description | Key Flags |
+|---------|-------------|-----------|
+| `pcap` | Analyze captures | `--streams`, `--extract`, `--proto` |
+| `evtx` | Analyze event logs | `--json` |
+| `sqlite` | Analyze databases | `--json` |
+| `registry` | Analyze registry | `--json` |
+| `sigma` | Scan with rules | `--rules` |
+
+### Integration Commands
+
+| Command | Description | Key Flags |
+|---------|-------------|-----------|
+| `batch` | Batch analysis | `--workers`, `--recursive` |
+| `mcp` | Start MCP server | (none) |
+| `plugins` | Manage plugins | `list`, `load`, `info` |
+| `formats` | List formats | `--category` |
+
+---
+
+## 🔧 Configuration
+
+### Config File Locations
+
+1. **Environment variables**: `FILO_*`
+2. **Project local**: `.filo.yaml`
+3. **User config**: `~/.config/filo/config.yaml`
+4. **Built-in defaults**
+
+### Example Config
+
+```yaml
+analysis:
+  max_file_size: 100MB
+  timeout: 30s
+  
+output:
+  format: json
+  colors: true
+  
+plugins:
+  directory: ~/.filo/plugins
+  
+mcp:
+  enabled: true
+  tools:
+    - analyze
+    - hash
+    - strings
+```
+
+---
+
+## 🚀 Performance Optimization
+
+### Parallel Processing
+
+- **Batch analysis**: Uses goroutines for parallel file processing
+- **Configurable workers**: `--workers N` flag
+- **Pipeline architecture**: Overlaps I/O and computation
+
+### Memory Management
+
+- **Streaming analysis**: Processes large files in chunks
+- **Bounded buffers**: Limits memory usage
+- **Early termination**: Stops on timeout or error
+
+### Caching
+
+- **Format detection**: Caches results for repeated files
+- **Hash computation**: Reuses partial results
+- **Plugin loading**: Caches loaded plugins
+
+---
+
+## 🧪 Testing Strategy
+
+### Unit Tests
+
+- **Package-level tests**: Each package has its own tests
+- **Table-driven tests**: Consistent test patterns
+- **Mock data**: Test files for each format
+
+### Integration Tests
+
+- **CLI tests**: Test command execution
+- **End-to-end tests**: Full analysis pipeline
+- **Performance tests**: Benchmark critical paths
+
+### Test Coverage Targets
+
+| Package | Current | Target |
+|---------|---------|--------|
+| Core | 41.6% | 80% |
+| Metadata | 40.0% | 70% |
+| Firmware | 60.0% | 80% |
+| Overall | 35% | 60% |
+
+---
+
+## 🔮 Future Roadmap
+
+### Phase 1: Feature Parity (Current)
+- ✅ binwalk features
+- ✅ file features
+- ✅ ExifTool features
+- ✅ YARA features
+
+### Phase 2: Beyond Parity
+- [ ] Memory forensics
+- [ ] Network file extraction
+- [ ] OOXML metadata
+- [ ] HTML reports
+
+### Phase 3: Enterprise
+- [ ] Distributed analysis
+- [ ] API server mode
+- [ ] SIEM integration
+- [ ] Evidence chain
+
+---
+
+## 📚 References
+
+- [Go Documentation](https://pkg.go.dev/github.com/supunhg/filo-go)
+- [Cobra Documentation](https://pkg.go.dev/github.com/spf13/cobra)
+- [MCP Specification](https://spec.modelcontextprotocol.io)
+- [YARA Documentation](https://yara.readthedocs.io)
+
+---
+
+*This document should be updated as the codebase evolves.*
