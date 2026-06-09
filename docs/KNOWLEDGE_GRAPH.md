@@ -1,9 +1,9 @@
 # filo-go Knowledge Graph
 
-> **Last Updated:** 2024-12-09  
-> **Version:** 0.2.0  
-> **Total LOC:** ~25,000  
-> **Test Coverage:** ~35%
+> **Last Updated:** 2026-06-09  
+> **Version:** 0.3.0  
+> **Total LOC:** 29,071  
+> **Test Coverage:** 61.6%
 
 ---
 
@@ -12,10 +12,10 @@
 **filo-go** is a Go-native forensic analysis toolkit that replaces multiple Python/C tools with a single, fast, cross-platform binary.
 
 ### Key Metrics
-- **Commands:** 35+
-- **Packages:** 25+
-- **Tests:** 300+
-- **Format Definitions:** 30+
+- **Commands:** 26
+- **Packages:** 36
+- **Test Files:** 36
+- **Format Definitions:** 30
 - **MCP Tools:** 9
 
 ---
