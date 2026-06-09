@@ -19,10 +19,10 @@ type Database struct {
 
 // Stats holds database statistics.
 type Stats struct {
-	TotalFiles    int `json:"total_files"`
-	TotalHashes   int `json:"total_hashes"`
-	MDF5Count     int `json:"md5_count"`
-	SHA1Count     int `json:"sha1_count"`
+	TotalFiles  int `json:"total_files"`
+	TotalHashes int `json:"total_hashes"`
+	MDF5Count   int `json:"md5_count"`
+	SHA1Count   int `json:"sha1_count"`
 }
 
 // Result holds lookup results.

@@ -12,29 +12,29 @@ import (
 // Result holds PE analysis results.
 type Result struct {
 	// Header info
-	Machine     uint16   `json:"machine"`
-	MachineStr  string   `json:"machine_str"`
-	Bits        int      `json:"bits"`
-	Sections    []Section `json:"sections"`
-	Imports     []string `json:"imports"`
-	DLLs        []string `json:"dlls"`
-	Subsystem   string   `json:"subsystem"`
-	ImageBase   uint64   `json:"image_base"`
-	EntryPoint  uint64   `json:"entry_point"`
-	Timestamp   uint32   `json:"timestamp"`
-	Characteristics uint16 `json:"characteristics"`
-	
+	Machine         uint16    `json:"machine"`
+	MachineStr      string    `json:"machine_str"`
+	Bits            int       `json:"bits"`
+	Sections        []Section `json:"sections"`
+	Imports         []string  `json:"imports"`
+	DLLs            []string  `json:"dlls"`
+	Subsystem       string    `json:"subsystem"`
+	ImageBase       uint64    `json:"image_base"`
+	EntryPoint      uint64    `json:"entry_point"`
+	Timestamp       uint32    `json:"timestamp"`
+	Characteristics uint16    `json:"characteristics"`
+
 	// Security features
-	TLS         *TLSInfo    `json:"tls,omitempty"`
-	DebugInfo   *DebugInfo  `json:"debug_info,omitempty"`
-	Resources   []Resource  `json:"resources,omitempty"`
-	Relocations []Reloc     `json:"relocations,omitempty"`
-	
+	TLS         *TLSInfo   `json:"tls,omitempty"`
+	DebugInfo   *DebugInfo `json:"debug_info,omitempty"`
+	Resources   []Resource `json:"resources,omitempty"`
+	Relocations []Reloc    `json:"relocations,omitempty"`
+
 	// Rich header
-	RichHeader  *RichHeader `json:"rich_header,omitempty"`
-	
+	RichHeader *RichHeader `json:"rich_header,omitempty"`
+
 	// Data directories
-	DataDirs    []DataDir   `json:"data_dirs,omitempty"`
+	DataDirs []DataDir `json:"data_dirs,omitempty"`
 }
 
 // Section represents a PE section.
@@ -52,15 +52,15 @@ type Section struct {
 
 // TLSInfo holds TLS directory information.
 type TLSInfo struct {
-	HasCallbacks bool     `json:"has_callbacks"`
+	HasCallbacks  bool     `json:"has_callbacks"`
 	CallbackAddrs []uint64 `json:"callback_addrs,omitempty"`
 }
 
 // DebugInfo holds debug directory information.
 type DebugInfo struct {
-	HasDebug   bool   `json:"has_debug"`
-	DebugType  string `json:"debug_type,omitempty"`
-	PDBPath    string `json:"pdb_path,omitempty"`
+	HasDebug  bool   `json:"has_debug"`
+	DebugType string `json:"debug_type,omitempty"`
+	PDBPath   string `json:"pdb_path,omitempty"`
 }
 
 // Resource represents a PE resource entry.
@@ -86,9 +86,9 @@ type RichHeader struct {
 
 // DataDir represents a data directory entry.
 type DataDir struct {
-	Name   string `json:"name"`
-	RVA    uint32 `json:"rva"`
-	Size   uint32 `json:"size"`
+	Name string `json:"name"`
+	RVA  uint32 `json:"rva"`
+	Size uint32 `json:"size"`
 }
 
 // Analyze performs deep PE analysis.
@@ -216,14 +216,14 @@ func parseSections(data []byte, offset uint32, count uint16) []Section {
 // checkSuspiciousSection checks if a section is suspicious.
 func checkSuspiciousSection(sec Section) (bool, string) {
 	suspiciousNames := map[string]string{
-		"UPX0":   "UPX packer section",
-		"UPX1":   "UPX packer section",
-		".vmp0":  "VMProtect packer section",
-		".vmp1":  "VMProtect packer section",
+		"UPX0":     "UPX packer section",
+		"UPX1":     "UPX packer section",
+		".vmp0":    "VMProtect packer section",
+		".vmp1":    "VMProtect packer section",
 		".themida": "Themida packer section",
 		".enigma1": "Enigma packer section",
 		".enigma2": "Enigma packer section",
-		".adata":  "AsProtect packer section",
+		".adata":   "AsProtect packer section",
 	}
 
 	if reason, ok := suspiciousNames[sec.Name]; ok {
@@ -347,7 +347,7 @@ func checkDebug(data []byte, bits int) *DebugInfo {
 	if strings.Contains(dataStr, ".pdb") {
 		info.HasDebug = true
 		info.DebugType = "PDB"
-		
+
 		// Try to extract PDB path
 		idx := strings.Index(dataStr, ".pdb")
 		if idx > 0 {
@@ -370,11 +370,11 @@ func parseResources(data []byte, bits int) []Resource {
 
 	// Look for common resource types
 	resourceTypes := map[string][]byte{
-		"RT_ICON":       {0x03, 0x00, 0x00, 0x00},
-		"RT_BITMAP":     {0x02, 0x00, 0x00, 0x00},
-		"RT_STRING":     {0x06, 0x00, 0x00, 0x00},
-		"RT_MANIFEST":   {0x18, 0x00, 0x00, 0x00},
-		"RT_VERSION":    {0x10, 0x00, 0x00, 0x00},
+		"RT_ICON":     {0x03, 0x00, 0x00, 0x00},
+		"RT_BITMAP":   {0x02, 0x00, 0x00, 0x00},
+		"RT_STRING":   {0x06, 0x00, 0x00, 0x00},
+		"RT_MANIFEST": {0x18, 0x00, 0x00, 0x00},
+		"RT_VERSION":  {0x10, 0x00, 0x00, 0x00},
 	}
 
 	for resType, sig := range resourceTypes {
@@ -451,8 +451,6 @@ func parseDataDirs(data []byte, optOffset uint32, magic uint16) []DataDir {
 
 	return dirs
 }
-
-
 
 // machineName returns the string name for a PE machine type.
 func machineName(machine uint16) string {

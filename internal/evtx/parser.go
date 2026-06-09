@@ -9,23 +9,23 @@ import (
 
 // Result holds EVTX analysis results.
 type Result struct {
-	FileName   string           `json:"file_name"`
-	TotalEvents int             `json:"total_events"`
-	Events     []Event          `json:"events"`
-	Stats      map[string]int   `json:"stats"`
-	Flags      []string         `json:"flags,omitempty"`
+	FileName    string         `json:"file_name"`
+	TotalEvents int            `json:"total_events"`
+	Events      []Event        `json:"events"`
+	Stats       map[string]int `json:"stats"`
+	Flags       []string       `json:"flags,omitempty"`
 }
 
 // Event represents a single Windows Event Log entry.
 type Event struct {
-	TimeCreated  time.Time `json:"time_created"`
-	EventID      uint16    `json:"event_id"`
-	Level        uint8     `json:"level"`
-	Provider     string    `json:"provider"`
-	Computer     string    `json:"computer"`
-	Message      string    `json:"message"`
-	Channel      string    `json:"channel"`
-	LevelName    string    `json:"level_name"`
+	TimeCreated time.Time `json:"time_created"`
+	EventID     uint16    `json:"event_id"`
+	Level       uint8     `json:"level"`
+	Provider    string    `json:"provider"`
+	Computer    string    `json:"computer"`
+	Message     string    `json:"message"`
+	Channel     string    `json:"channel"`
+	LevelName   string    `json:"level_name"`
 }
 
 var suspiciousEventIDs = map[uint16]string{

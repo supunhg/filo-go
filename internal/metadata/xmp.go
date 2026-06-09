@@ -10,7 +10,7 @@ import (
 
 // XMPData represents XMP metadata
 type XMPData struct {
-	XMLName     xml.Name        `xml:"xmpmeta"`
+	XMLName     xml.Name         `xml:"xmpmeta"`
 	Description []XMPDescription `xml:"RDF>Description"`
 }
 

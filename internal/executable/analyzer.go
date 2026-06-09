@@ -14,24 +14,24 @@ import (
 type Format string
 
 const (
-	FormatPE    Format = "PE"
-	FormatELF   Format = "ELF"
-	FormatMachO Format = "Mach-O"
+	FormatPE      Format = "PE"
+	FormatELF     Format = "ELF"
+	FormatMachO   Format = "Mach-O"
 	FormatUnknown Format = "Unknown"
 )
 
 // Result holds the complete executable analysis output.
 type Result struct {
-	Format         Format            `json:"format"`
-	FileName       string            `json:"file_name"`
-	FileSize       int64             `json:"file_size"`
-	SHA256         string            `json:"sha256"`
-	PE             *pe.Result        `json:"pe,omitempty"`
-	ELF            *elf.Result       `json:"elf,omitempty"`
-	MachO          *macho.Result     `json:"macho,omitempty"`
-	Packing        *packing.Result   `json:"packing,omitempty"`
-	Suspicious     []string          `json:"suspicious,omitempty"`
-	Evidence       []Evidence        `json:"evidence,omitempty"`
+	Format     Format          `json:"format"`
+	FileName   string          `json:"file_name"`
+	FileSize   int64           `json:"file_size"`
+	SHA256     string          `json:"sha256"`
+	PE         *pe.Result      `json:"pe,omitempty"`
+	ELF        *elf.Result     `json:"elf,omitempty"`
+	MachO      *macho.Result   `json:"macho,omitempty"`
+	Packing    *packing.Result `json:"packing,omitempty"`
+	Suspicious []string        `json:"suspicious,omitempty"`
+	Evidence   []Evidence      `json:"evidence,omitempty"`
 }
 
 // Evidence represents a single detection signal.
@@ -43,9 +43,9 @@ type Evidence struct {
 
 // Options controls analysis behavior.
 type Options struct {
-	DeepScan    bool
+	DeepScan       bool
 	ExtractStrings bool
-	MinStringLen int
+	MinStringLen   int
 }
 
 // DetectFormat identifies the executable format from magic bytes.

@@ -8,40 +8,40 @@ import (
 
 // TCPStream represents a reassembled TCP stream.
 type TCPStream struct {
-	ID        StreamID
-	Packets   []TCPPacket
-	Data      []byte // Reassembled payload
-	Protocol  string // Detected protocol (HTTP, DNS, etc.)
-	Metadata  StreamMetadata
+	ID       StreamID
+	Packets  []TCPPacket
+	Data     []byte // Reassembled payload
+	Protocol string // Detected protocol (HTTP, DNS, etc.)
+	Metadata StreamMetadata
 }
 
 // StreamID uniquely identifies a TCP stream.
 type StreamID struct {
-	SrcIP    uint32
-	DstIP    uint32
-	SrcPort  uint16
-	DstPort  uint16
+	SrcIP   uint32
+	DstIP   uint32
+	SrcPort uint16
+	DstPort uint16
 }
 
 // TCPPacket is a single TCP packet with metadata.
 type TCPPacket struct {
-	SeqNum   uint32
-	AckNum   uint32
-	Flags    uint8
-	Offset   int    // Offset in original capture
-	Payload  []byte
+	SeqNum    uint32
+	AckNum    uint32
+	Flags     uint8
+	Offset    int // Offset in original capture
+	Payload   []byte
 	Timestamp uint32
 }
 
 // StreamMetadata holds analysis results for a stream.
 type StreamMetadata struct {
-	PacketCount   int
-	TotalBytes    int
-	HasFIN        bool
-	HasSYN        bool
-	HasRST        bool
-	Direction     string // "client->server" or "server->client"
-	Application   string // Detected application protocol
+	PacketCount int
+	TotalBytes  int
+	HasFIN      bool
+	HasSYN      bool
+	HasRST      bool
+	Direction   string // "client->server" or "server->client"
+	Application string // Detected application protocol
 }
 
 const (
@@ -62,18 +62,18 @@ type Reassembler struct {
 
 // ReassemblyMetadata holds global reassembly stats.
 type ReassemblyMetadata struct {
-	TotalStreams   int
-	TCPPackets     int
-	UDPPackets     int
-	ICMPPackets    int
-	ARPackets      int
-	TotalBytes     int
+	TotalStreams int
+	TCPPackets   int
+	UDPPackets   int
+	ICMPPackets  int
+	ARPackets    int
+	TotalBytes   int
 }
 
 // NewReassembler creates a new TCP reassembler.
 func NewReassembler() *Reassembler {
 	return &Reassembler{
-		streams: make(map[StreamID]*TCPStream),
+		streams:  make(map[StreamID]*TCPStream),
 		metadata: &ReassemblyMetadata{},
 	}
 }
@@ -154,7 +154,7 @@ func (r *Reassembler) processTCP(ipHeader []byte, srcIP, dstIP uint32, offset in
 	stream, exists := r.streams[id]
 	if !exists {
 		stream = &TCPStream{
-			ID:      id,
+			ID:       id,
 			Metadata: StreamMetadata{},
 		}
 		r.streams[id] = stream
@@ -336,11 +336,4 @@ func (r *Reassembler) GetStreamsByProtocol(protocol string) []*TCPStream {
 // GetMetadata returns reassembly statistics.
 func (r *Reassembler) GetMetadata() *ReassemblyMetadata {
 	return r.metadata
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

@@ -9,17 +9,17 @@ import (
 
 // Result holds metadata extraction results.
 type Result struct {
-	FileName string                 `json:"file_name"`
-	Format   string                 `json:"format"`
-	Metadata map[string]interface{} `json:"metadata"`
-	Suspicious []string             `json:"suspicious,omitempty"`
+	FileName   string                 `json:"file_name"`
+	Format     string                 `json:"format"`
+	Metadata   map[string]interface{} `json:"metadata"`
+	Suspicious []string               `json:"suspicious,omitempty"`
 }
 
 // Extract pulls metadata from image files.
 func Extract(data []byte, fileName string) (*Result, error) {
 	result := &Result{
-		FileName: fileName,
-		Metadata: make(map[string]interface{}),
+		FileName:   fileName,
+		Metadata:   make(map[string]interface{}),
 		Suspicious: []string{},
 	}
 
@@ -241,14 +241,14 @@ func extractPDFMetadata(data []byte, r *Result) {
 
 	// Extract metadata fields
 	fields := map[string]string{
-		"/Author":     "author",
-		"/Title":      "title",
-		"/Subject":    "subject",
-		"/Creator":    "creator",
-		"/Producer":   "producer",
-		"/Keywords":   "keywords",
+		"/Author":       "author",
+		"/Title":        "title",
+		"/Subject":      "subject",
+		"/Creator":      "creator",
+		"/Producer":     "producer",
+		"/Keywords":     "keywords",
 		"/CreationDate": "creation_date",
-		"/ModDate":    "modification_date",
+		"/ModDate":      "modification_date",
 	}
 
 	for pdfField, metaKey := range fields {
@@ -304,8 +304,6 @@ func containsSuspicious(s string) bool {
 	}
 	return false
 }
-
-
 
 // Print displays metadata results.
 func Print(r *Result) {

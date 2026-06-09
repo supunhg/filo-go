@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	hexOffset int64
-	hexLength int
+	hexOffset  int64
+	hexLength  int
 	hexNoColor bool
 )
 

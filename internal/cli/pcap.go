@@ -10,8 +10,9 @@ import (
 
 var (
 	pcapExtract bool
-	pcapStreams  bool
+	pcapStreams bool
 	pcapProto   string
+	pcapOutput  string
 )
 
 var pcapCmd = &cobra.Command{
@@ -23,7 +24,8 @@ Examples:
   filo analyze capture.pcap           # Basic analysis
   filo pcap capture.pcap --streams    # Show TCP streams
   filo pcap capture.pcap --extract    # Extract files
-  filo pcap capture.pcap --proto tcp  # Filter by protocol`,
+  filo pcap capture.pcap --proto tcp  # Filter by protocol
+  filo pcap capture.pcap --extract --output ./extracted  # Save files`,
 	Args: cobra.ExactArgs(1),
 	RunE: runPCAP,
 }
@@ -32,6 +34,7 @@ func init() {
 	pcapCmd.Flags().BoolVar(&pcapExtract, "extract", false, "Extract files from capture")
 	pcapCmd.Flags().BoolVar(&pcapStreams, "streams", false, "Show TCP streams")
 	pcapCmd.Flags().StringVar(&pcapProto, "proto", "", "Filter by protocol (tcp, udp, http)")
+	pcapCmd.Flags().StringVar(&pcapOutput, "output", "", "Output directory for extracted files")
 	rootCmd.AddCommand(pcapCmd)
 }
 
@@ -130,34 +133,31 @@ func runPCAP(cmd *cobra.Command, args []string) error {
 			}
 			fmt.Println()
 		}
+	}
 
-		// Extract files if requested
-		if pcapExtract {
-			fmt.Println("\n  File Extraction")
-			fmt.Println("  ===============")
+	// Extract files using NetworkExtractor
+	if pcapExtract {
+		fmt.Println("\n  File Extraction")
+		fmt.Println("  ===============")
+		fmt.Println()
+
+		// Create output directory if specified
+		outputDir := pcapOutput
+		if outputDir == "" {
+			outputDir = "pcap_extracted"
+		}
+		if err := os.MkdirAll(outputDir, 0755); err != nil {
+			fmt.Printf("  Error creating output directory: %v", err)
 			fmt.Println()
-
-			extracted := 0
-			for _, stream := range streams {
-				if stream.Protocol == "HTTP" && len(stream.Data) > 0 {
-					// Try to extract HTTP body
-					bodyStart := findHTTPBody(stream.Data)
-					if bodyStart > 0 && bodyStart < len(stream.Data) {
-						body := stream.Data[bodyStart:]
-						if len(body) > 0 {
-							outPath := fmt.Sprintf("extracted_%d.bin", extracted)
-							if err := os.WriteFile(outPath, body, 0644); err == nil {
-								fmt.Printf("  Extracted: %s (%d bytes)", outPath, len(body))
-								fmt.Println()
-								extracted++
-							}
-						}
-					}
-				}
-			}
-
-			if extracted == 0 {
-				fmt.Println("  No files extracted")
+		} else {
+			// Use new NetworkExtractor
+			networkExtractor := pcap.NewNetworkExtractor(outputDir)
+			files, err := networkExtractor.ExtractFiles(data)
+			if err != nil {
+				fmt.Printf("  Extraction error: %v", err)
+				fmt.Println()
+			} else {
+				fmt.Println(pcap.FormatNetworkExtraction(files))
 			}
 		}
 	}
@@ -200,14 +200,4 @@ func printPCAPResult(result *pcap.Result) {
 		}
 		fmt.Println()
 	}
-}
-
-func findHTTPBody(data []byte) int {
-	// Find the end of HTTP headers
-	for i := 0; i < len(data)-4; i++ {
-		if data[i] == '\r' && data[i+1] == '\n' && data[i+2] == '\r' && data[i+3] == '\n' {
-			return i + 4
-		}
-	}
-	return -1
 }

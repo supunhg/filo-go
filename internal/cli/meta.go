@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	metaJSON  bool
-	metaSus   bool
-	metaAll   bool
+	metaJSON bool
+	metaSus  bool
+	metaAll  bool
 )
 
 var metaCmd = &cobra.Command{

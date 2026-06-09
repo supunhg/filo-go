@@ -5,13 +5,13 @@ import (
 )
 
 var (
-	version   = "0.1.0"
-	verbose   bool
-	quiet     bool
-	rootCmd   = &cobra.Command{
-		Use:   "filo",
-		Short: "Filo - Forensic Intelligence & Learning Operator",
-		Long:  `Battle-tested file forensics platform for security professionals.`,
+	version = "0.3.0"
+	verbose bool
+	quiet   bool
+	rootCmd = &cobra.Command{
+		Use:           "filo",
+		Short:         "Filo - Forensic Intelligence & Learning Operator",
+		Long:          `Battle-tested file forensics platform for security professionals.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
@@ -33,6 +33,7 @@ func init() {
 	rootCmd.AddCommand(extractCmd)
 	rootCmd.AddCommand(metaCmd)
 	rootCmd.AddCommand(firmwareCmd)
+	rootCmd.AddCommand(officeCmd)
 
 	rootCmd.AddCommand(stringsCmd)
 	rootCmd.AddCommand(lineageCmd)

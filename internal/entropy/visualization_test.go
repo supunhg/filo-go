@@ -122,7 +122,7 @@ func TestProfileMinMax(t *testing.T) {
 
 func TestInterpretEntropy(t *testing.T) {
 	tests := []struct {
-		entropy float64
+		entropy  float64
 		contains string
 	}{
 		{0.5, "Very low"},

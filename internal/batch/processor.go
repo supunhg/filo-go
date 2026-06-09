@@ -12,23 +12,23 @@ import (
 
 // Result holds batch processing results.
 type Result struct {
-	Directory     string             `json:"directory"`
-	TotalFiles    int                `json:"total_files"`
-	Analyzed      int                `json:"analyzed"`
-	Failed        int                `json:"failed"`
-	Skipped       int                `json:"skipped"`
-	Results       []*analyzer.Result `json:"results"`
-	Errors        []string           `json:"errors"`
-	Duration      time.Duration      `json:"duration"`
-	FilesPerSec   float64            `json:"files_per_sec"`
+	Directory   string             `json:"directory"`
+	TotalFiles  int                `json:"total_files"`
+	Analyzed    int                `json:"analyzed"`
+	Failed      int                `json:"failed"`
+	Skipped     int                `json:"skipped"`
+	Results     []*analyzer.Result `json:"results"`
+	Errors      []string           `json:"errors"`
+	Duration    time.Duration      `json:"duration"`
+	FilesPerSec float64            `json:"files_per_sec"`
 }
 
 // Options controls batch processing behavior.
 type Options struct {
-	Recursive     bool
-	Workers       int
-	MaxSizeMB     int
-	FormatsDir    string
+	Recursive  bool
+	Workers    int
+	MaxSizeMB  int
+	FormatsDir string
 }
 
 // Process analyzes all files in a directory.

@@ -71,12 +71,12 @@ func exportJSON(data interface{}, outputPath string) error {
 
 // SARIFResult represents a SARIF result entry.
 type SARIFResult struct {
-	RuleID              string           `json:"ruleId"`
-	RuleIndex           int              `json:"ruleIndex"`
-	Level               string           `json:"level"`
-	Message             SARIFMessage     `json:"message"`
-	Locations           []SARIFLocation  `json:"locations"`
-	Properties          map[string]interface{} `json:"properties,omitempty"`
+	RuleID     string                 `json:"ruleId"`
+	RuleIndex  int                    `json:"ruleIndex"`
+	Level      string                 `json:"level"`
+	Message    SARIFMessage           `json:"message"`
+	Locations  []SARIFLocation        `json:"locations"`
+	Properties map[string]interface{} `json:"properties,omitempty"`
 }
 
 type SARIFMessage struct {
@@ -102,11 +102,11 @@ type SARIFRegion struct {
 
 // SARIFAnalysisResult is the expected structure of an analysis result for SARIF export.
 type SARIFAnalysisResult struct {
-	FilePath      string   `json:"file_path"`
-	FileName      string   `json:"file_name"`
-	PrimaryFormat string   `json:"primary_format"`
-	Confidence    float64  `json:"confidence"`
-	Entropy       float64  `json:"entropy"`
+	FilePath       string   `json:"file_path"`
+	FileName       string   `json:"file_name"`
+	PrimaryFormat  string   `json:"primary_format"`
+	Confidence     float64  `json:"confidence"`
+	Entropy        float64  `json:"entropy"`
 	Contradictions []string `json:"contradictions,omitempty"`
 }
 
@@ -206,8 +206,8 @@ func buildSARIF(results []SARIFResult) map[string]interface{} {
 						"informationUri": "https://github.com/supunhg/filo-go",
 						"rules": []map[string]interface{}{
 							{
-								"id":          "filo-format-detection",
-								"name":        "File Format Detection",
+								"id":   "filo-format-detection",
+								"name": "File Format Detection",
 								"description": map[string]interface{}{
 									"text": "Detects file format and analyzes security indicators",
 								},
@@ -219,9 +219,9 @@ func buildSARIF(results []SARIFResult) map[string]interface{} {
 				"results": results,
 				"invocations": []map[string]interface{}{
 					{
-						"executionSuccessful": true,
+						"executionSuccessful":        true,
 						"toolExecutionNotifications": []map[string]interface{}{},
-						"startTimeUtc": time.Now().UTC().Format(time.RFC3339),
+						"startTimeUtc":               time.Now().UTC().Format(time.RFC3339),
 					},
 				},
 			},

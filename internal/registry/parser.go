@@ -41,44 +41,44 @@ type Artifact struct {
 }
 
 var knownArtifactPaths = map[string]string{
-	"Microsoft\\Windows\\CurrentVersion\\Run":                        "Persistence - Auto-start",
-	"Microsoft\\Windows\\CurrentVersion\\RunOnce":                    "Persistence - One-time auto-start",
-	"Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders":    "User folders",
+	"Microsoft\\Windows\\CurrentVersion\\Run":                          "Persistence - Auto-start",
+	"Microsoft\\Windows\\CurrentVersion\\RunOnce":                      "Persistence - One-time auto-start",
+	"Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders":      "User folders",
 	"Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders": "User folders (redirected)",
-	"Microsoft\\Windows NT\\CurrentVersion\\Winlogon":               "Winlogon settings",
-	"Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer":        "Policy settings",
-	"Microsoft\\Windows\\CurrentVersion\\Uninstall":                  "Installed software",
-	"SYSTEM\\CurrentControlSet\\Services":                            "Services",
-	"SYSTEM\\CurrentControlSet\\Control\\Session Manager":            "Session Manager",
-	"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion":                "Windows version",
-	"SYSTEM\\CurrentControlSet\\Control\\ComputerName":               "Computer name",
-	"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer":         "Explorer settings",
+	"Microsoft\\Windows NT\\CurrentVersion\\Winlogon":                  "Winlogon settings",
+	"Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer":           "Policy settings",
+	"Microsoft\\Windows\\CurrentVersion\\Uninstall":                    "Installed software",
+	"SYSTEM\\CurrentControlSet\\Services":                              "Services",
+	"SYSTEM\\CurrentControlSet\\Control\\Session Manager":              "Session Manager",
+	"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion":                  "Windows version",
+	"SYSTEM\\CurrentControlSet\\Control\\ComputerName":                 "Computer name",
+	"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer":           "Explorer settings",
 }
 
 // Hive-specific artifact paths for SAM, SYSTEM, and USER hives.
 var samArtifactPaths = map[string]string{
 	"SAM\\Domains\\Account\\Users":        "User accounts",
-	"SAM\\Domains\\Account\\Users\\Names":  "User account names",
+	"SAM\\Domains\\Account\\Users\\Names": "User account names",
 	"SAM\\Domains\\Account\\Aliases":      "Local group aliases",
 }
 
 var systemArtifactPaths = map[string]string{
-	"SYSTEM\\CurrentControlSet\\Services":                              "Services (SYSTEM)",
-	"SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName":  "Computer name",
-	"SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation":          "Timezone",
-	"SYSTEM\\CurrentControlSet\\Control\\Lsa":                          "LSA settings",
-	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\JD":                     "LSA JD (anti-hijack)",
-	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\Skew1":                  "LSA Skew1 (anti-hijack)",
-	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\GBG":                    "LSA GBG (anti-hijack)",
-	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\Data":                   "LSA Data",
-	"SYSTEM\\CurrentControlSet\\Control\\ProductOptions":              "Product options",
-	"SYSTEM\\CurrentControlSet\\Control\\Windows":                      "Windows settings",
-	"SYSTEM\\MountedDevices":                                          "Mounted devices",
-	"SYSTEM\\Setup":                                                   "Setup information",
+	"SYSTEM\\CurrentControlSet\\Services":                            "Services (SYSTEM)",
+	"SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName": "Computer name",
+	"SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation":        "Timezone",
+	"SYSTEM\\CurrentControlSet\\Control\\Lsa":                        "LSA settings",
+	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\JD":                    "LSA JD (anti-hijack)",
+	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\Skew1":                 "LSA Skew1 (anti-hijack)",
+	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\GBG":                   "LSA GBG (anti-hijack)",
+	"SYSTEM\\CurrentControlSet\\Control\\Lsa\\Data":                  "LSA Data",
+	"SYSTEM\\CurrentControlSet\\Control\\ProductOptions":             "Product options",
+	"SYSTEM\\CurrentControlSet\\Control\\Windows":                    "Windows settings",
+	"SYSTEM\\MountedDevices":                                         "Mounted devices",
+	"SYSTEM\\Setup":                                                  "Setup information",
 }
 
 var userArtifactPaths = map[string]string{
-	"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\RecentDocs":      "Recent documents",
+	"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\RecentDocs":     "Recent documents",
 	"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\RunMRU":         "Run dialog history",
 	"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\TypedPaths":     "Typed paths",
 	"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\WordWheelQuery": "Search history",

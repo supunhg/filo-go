@@ -23,14 +23,14 @@ type Extractor struct {
 
 // ExtractorOptions controls extraction behavior.
 type ExtractorOptions struct {
-	OutputDir   string
-	Recursive   bool
-	Force       bool
-	Verbose     bool
-	MaxDepth    int
-	Formats     []string
-	Offset      int64
-	Length      int64
+	OutputDir string
+	Recursive bool
+	Force     bool
+	Verbose   bool
+	MaxDepth  int
+	Formats   []string
+	Offset    int64
+	Length    int64
 }
 
 // NewExtractor creates a new file extractor.
@@ -51,9 +51,9 @@ func NewExtractor(opts *ExtractorOptions) *Extractor {
 
 // ExtractResult holds extraction results.
 type ExtractResult struct {
-	Files    []ExtractedFile `json:"files"`
-	Errors   []string        `json:"errors,omitempty"`
-	TotalSize int64          `json:"total_size"`
+	Files     []ExtractedFile `json:"files"`
+	Errors    []string        `json:"errors,omitempty"`
+	TotalSize int64           `json:"total_size"`
 }
 
 // ExtractedFile represents an extracted file.
@@ -188,6 +188,11 @@ func (e *Extractor) extractByFormat(data []byte, sig SignatureScan, opts *Extrac
 
 	if end <= offset {
 		return nil, fmt.Errorf("could not determine end of %s", sig.Format)
+	}
+
+	// Bounds check: ensure end doesn't exceed data length
+	if end > int64(len(data)) {
+		end = int64(len(data))
 	}
 
 	chunk := data[offset:end]
@@ -572,14 +577,14 @@ func IsCompressed(data []byte) bool {
 
 	// Check for common compression signatures
 	sigs := [][]byte{
-		{0x1F, 0x8B}, // GZIP
-		{0x42, 0x5A, 0x68}, // BZIP2
+		{0x1F, 0x8B},                         // GZIP
+		{0x42, 0x5A, 0x68},                   // BZIP2
 		{0xFD, 0x37, 0x7A, 0x58, 0x5A, 0x00}, // XZ
-		{0x50, 0x4B, 0x03, 0x04}, // ZIP
-		{0x37, 0x7A, 0xBC, 0xAF}, // 7z
-		{0x52, 0x61, 0x72}, // RAR
-		{0x1F, 0x9D}, // TAR
-		{0x1F, 0xA0}, // TAR
+		{0x50, 0x4B, 0x03, 0x04},             // ZIP
+		{0x37, 0x7A, 0xBC, 0xAF},             // 7z
+		{0x52, 0x61, 0x72},                   // RAR
+		{0x1F, 0x9D},                         // TAR
+		{0x1F, 0xA0},                         // TAR
 	}
 
 	for _, sig := range sigs {

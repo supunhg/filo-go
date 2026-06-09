@@ -30,7 +30,7 @@ var exifTags = map[uint16]string{
 	0x0213: "YCbCrPositioning",
 	0x8769: "ExifIFDPointer",
 	0x8825: "GPSInfoIFDPointer",
-	
+
 	// EXIF sub-tags
 	0x829A: "ExposureTime",
 	0x829D: "FNumber",
@@ -56,7 +56,7 @@ var exifTags = map[uint16]string{
 	0xA432: "LensInfo",
 	0xA433: "LensMake",
 	0xA434: "LensModel",
-	
+
 	// GPS tags
 	0x0000: "GPSVersionID",
 	0x0001: "GPSLatitudeRef",
@@ -71,18 +71,18 @@ var exifTags = map[uint16]string{
 
 // EXIF data types
 const (
-	exifTypeByte     = 1
-	exifTypeAscii    = 2
-	exifTypeShort    = 3
-	exifTypeLong     = 4
-	exifTypeRational = 5
-	exifTypeSByte    = 6
+	exifTypeByte      = 1
+	exifTypeAscii     = 2
+	exifTypeShort     = 3
+	exifTypeLong      = 4
+	exifTypeRational  = 5
+	exifTypeSByte     = 6
 	exifTypeUndefined = 7
-	exifTypeSShort   = 8
-	exifTypeSLong    = 9
+	exifTypeSShort    = 8
+	exifTypeSLong     = 9
 	exifTypeSRational = 10
-	exifTypeFloat    = 11
-	exifTypeDouble   = 12
+	exifTypeFloat     = 11
+	exifTypeDouble    = 12
 )
 
 // ExtractEXIF extracts EXIF metadata from a JPEG/TIFF file
@@ -259,10 +259,10 @@ func parseEXIFValue(dataType uint16, dataLen uint32, valueOffset uint32, data []
 		return int8(data[actualOffset]), nil
 
 	case exifTypeSShort:
-		return int16(byteOrder.Uint16(allData[actualOffset:actualOffset+2])), nil
+		return int16(byteOrder.Uint16(allData[actualOffset : actualOffset+2])), nil
 
 	case exifTypeSLong:
-		return int32(byteOrder.Uint32(allData[actualOffset:actualOffset+4])), nil
+		return int32(byteOrder.Uint32(allData[actualOffset : actualOffset+4])), nil
 
 	case exifTypeSRational:
 		if actualOffset+8 <= uint32(len(allData)) {

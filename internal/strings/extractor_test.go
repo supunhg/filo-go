@@ -143,8 +143,8 @@ func TestExtractEntropy(t *testing.T) {
 	// High entropy data (random bytes)
 	data := []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	opts := &Options{
-		MinLength: 1,
-		Type:      "ascii",
+		MinLength:  1,
+		Type:       "ascii",
 		MinEntropy: 3.0,
 	}
 

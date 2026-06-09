@@ -15,10 +15,10 @@ const (
 
 // JFFS2 node types
 const (
-	JFFS2NodeAccurate = 0x200
-	JFFS2NodeTypeDir  = 0x400
-	JFFS2NodeTypeFile = 0x800
-	JFFS2NodeClean    = 0xFF0
+	JFFS2NodeAccurate  = 0x200
+	JFFS2NodeTypeDir   = 0x400
+	JFFS2NodeTypeFile  = 0x800
+	JFFS2NodeClean     = 0xFF0
 	JFFS2NodeDirty     = 0xFE0
 	JFFS2NodeBitBucket = 0xFD0
 )
@@ -95,18 +95,18 @@ func ExtractJFFS2(srcPath, destDir string) (*ExtractionResult, error) {
 	}
 
 	result := &ExtractionResult{
-		Format:    "jffs2",
+		Format:     "jffs2",
 		SourceFile: srcPath,
 		OutputDir:  destDir,
-		Files:     []ExtractedFile{},
+		Files:      []ExtractedFile{},
 	}
 
 	// Add superblock as extracted file
 	result.Files = append(result.Files, ExtractedFile{
-		Name:      "superblock",
-		Size:      280,
-		Offset:    0,
-		IsDir:     false,
+		Name:   "superblock",
+		Size:   280,
+		Offset: 0,
+		IsDir:  false,
 	})
 
 	// Add info file
@@ -119,10 +119,10 @@ func ExtractJFFS2(srcPath, destDir string) (*ExtractionResult, error) {
 	}
 
 	result.Files = append(result.Files, ExtractedFile{
-		Name:    "jffs2-info.txt",
-		Size:    int64(len(info)),
-		Offset:  0,
-		IsDir:   false,
+		Name:   "jffs2-info.txt",
+		Size:   int64(len(info)),
+		Offset: 0,
+		IsDir:  false,
 	})
 
 	return result, nil

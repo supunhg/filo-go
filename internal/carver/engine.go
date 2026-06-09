@@ -9,9 +9,9 @@ import (
 
 // Result holds carving results.
 type Result struct {
-	FileName   string        `json:"file_name"`
-	Carved     []CarvedFile  `json:"carved"`
-	TotalFound int           `json:"total_found"`
+	FileName   string       `json:"file_name"`
+	Carved     []CarvedFile `json:"carved"`
+	TotalFound int          `json:"total_found"`
 }
 
 // CarvedFile represents a carved file.
@@ -134,5 +134,3 @@ func Carve(data []byte, filePath string, opts *Options) (*Result, error) {
 	result.TotalFound = len(result.Carved)
 	return result, nil
 }
-
-

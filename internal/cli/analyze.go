@@ -11,14 +11,14 @@ import (
 )
 
 var (
-	jsonOutput   bool
-	deepScan     bool
-	noML         bool
-	allEvidence  bool
-	allEmbedded  bool
-	explainMode  bool
-	entropyViz   bool
-	yaraRules    []string
+	jsonOutput  bool
+	deepScan    bool
+	noML        bool
+	allEvidence bool
+	allEmbedded bool
+	explainMode bool
+	entropyViz  bool
+	yaraRules   []string
 )
 
 var analyzeCmd = &cobra.Command{

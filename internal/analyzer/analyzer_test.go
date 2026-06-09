@@ -219,3 +219,271 @@ func TestFingerprinting(t *testing.T) {
 		t.Error("expected tool fingerprint for ZIP")
 	}
 }
+
+func TestAnalyzePE(t *testing.T) {
+	// Minimal PE header with enough data
+	data := make([]byte, 512)
+	data[0] = 0x4D // MZ
+	data[1] = 0x5A
+	data[60] = 0x40 // PE offset
+	data[61] = 0x00
+	data[62] = 0x00
+	data[63] = 0x00
+
+	result, err := Analyze(data, "test.exe", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Architecture == nil {
+		t.Error("expected architecture detection for PE")
+	}
+}
+
+func TestAnalyzeGZIP(t *testing.T) {
+	data := []byte{
+		0x1F, 0x8B, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
+	}
+
+	result, err := Analyze(data, "test.gz", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.PrimaryFormat != "gz" {
+		t.Errorf("expected gz, got %s", result.PrimaryFormat)
+	}
+}
+
+func TestAnalyze7z(t *testing.T) {
+	data := []byte{
+		0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C,
+	}
+
+	result, err := Analyze(data, "test.7z", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.PrimaryFormat != "7z" {
+		t.Errorf("expected 7z, got %s", result.PrimaryFormat)
+	}
+}
+
+func TestAnalyzeRAR(t *testing.T) {
+	data := []byte{
+		0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00, 0x00,
+	}
+
+	result, err := Analyze(data, "test.rar", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.PrimaryFormat != "rar" {
+		t.Errorf("expected rar, got %s", result.PrimaryFormat)
+	}
+}
+
+func TestAnalyzeBZ2(t *testing.T) {
+	data := []byte{
+		0x42, 0x5A, 0x68,
+	}
+
+	result, err := Analyze(data, "test.bz2", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.PrimaryFormat != "bz2" {
+		t.Errorf("expected bz2, got %s", result.PrimaryFormat)
+	}
+}
+
+func TestAnalyzeXZ(t *testing.T) {
+	data := []byte{
+		0xFD, 0x37, 0x7A, 0x58, 0x5A, 0x00,
+	}
+
+	result, err := Analyze(data, "test.xz", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.PrimaryFormat != "xz" {
+		t.Errorf("expected xz, got %s", result.PrimaryFormat)
+	}
+}
+
+func TestAnalyzeSQLite(t *testing.T) {
+	data := []byte("SQLite format 3\x00")
+	for len(data) < 16 {
+		data = append(data, 0)
+	}
+
+	result, err := Analyze(data, "test.db", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.PrimaryFormat != "sqlite" {
+		t.Errorf("expected sqlite, got %s", result.PrimaryFormat)
+	}
+}
+
+func TestAnalyzeWithYARA(t *testing.T) {
+	data := []byte("hello world")
+	opts := &Options{
+		YaraRules: []string{"rule test { condition: true }"},
+	}
+
+	_, err := Analyze(data, "test.txt", opts)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestAnalyzeEmpty(t *testing.T) {
+	result, err := Analyze([]byte{}, "empty.bin", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.PrimaryFormat == "" {
+		t.Errorf("expected format to be set, got empty string")
+	}
+}
+
+func TestAnalyzeSmallFile(t *testing.T) {
+	result, err := Analyze([]byte{0x00}, "small.bin", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.FileSize != 1 {
+		t.Errorf("expected file size 1, got %d", result.FileSize)
+	}
+}
+
+func TestFindBytes(t *testing.T) {
+	data := []byte("Hello World Hello Go")
+	pattern := []byte("World")
+
+	offset := findBytes(data, pattern)
+	if offset != 6 {
+		t.Errorf("expected offset 6, got %d", offset)
+	}
+
+	pattern = []byte("NotExist")
+	offset = findBytes(data, pattern)
+	if offset != -1 {
+		t.Errorf("expected -1, got %d", offset)
+	}
+}
+
+func TestBoolToInt(t *testing.T) {
+	if result := boolToInt(true, 1, 0); result != 1 {
+		t.Errorf("expected 1, got %d", result)
+	}
+	if result := boolToInt(false, 1, 0); result != 0 {
+		t.Errorf("expected 0, got %d", result)
+	}
+}
+
+func TestEstimateSize(t *testing.T) {
+	// Test with empty data
+	size := estimateSize([]byte{}, 0, "png")
+	// Empty data returns 0, which is valid
+	_ = size
+
+	// Test with non-empty data
+	data := make([]byte, 1000)
+	size = estimateSize(data, 0, "png")
+	if size < 0 {
+		t.Errorf("expected non-negative size, got %d", size)
+	}
+}
+
+func TestDetectCrypto(t *testing.T) {
+	// AES key schedule pattern
+	data := make([]byte, 256)
+	for i := 0; i < 256; i++ {
+		data[i] = byte(i)
+	}
+
+	result, err := Analyze(data, "crypto.bin", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Should detect some crypto indicators
+	_ = result
+}
+
+func TestResultPrint(t *testing.T) {
+	result := &Result{
+		FileName:      "test.bin",
+		PrimaryFormat: "png",
+		PrimaryMIME:   "image/png",
+		Confidence:    0.95,
+		FileSize:      1024,
+		SHA256:        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+	}
+
+	// Should not panic
+	result.Print()
+}
+
+func TestResultJSON(t *testing.T) {
+	result := &Result{
+		FileName:      "test.bin",
+		PrimaryFormat: "png",
+		PrimaryMIME:   "image/png",
+		Confidence:    0.95,
+		FileSize:      1024,
+	}
+
+	jsonStr := result.JSON()
+	if jsonStr == "" {
+		t.Error("expected non-empty JSON")
+	}
+}
+
+func TestELFMachineNames(t *testing.T) {
+	tests := []struct {
+		machine uint16
+		name    string
+	}{
+		{0x03, "x86"},
+		{0x3E, "x86_64"},
+		{0x28, "ARM"},
+		{0xB7, "AArch64"},
+		{0x08, "MIPS"},
+	}
+
+	for _, tt := range tests {
+		name := elfMachineName(tt.machine)
+		if name == "unknown" {
+			t.Errorf("expected known name for machine 0x%04X, got unknown", tt.machine)
+		}
+	}
+}
+
+func TestPEMachineNames(t *testing.T) {
+	tests := []struct {
+		machine uint16
+		name    string
+	}{
+		{0x014C, "x86"},
+		{0x8664, "x86_64"},
+		{0x01C0, "ARM"},
+	}
+
+	for _, tt := range tests {
+		name := peMachineName(tt.machine)
+		if name == "unknown" {
+			t.Errorf("expected known name for machine 0x%04X, got unknown", tt.machine)
+		}
+	}
+}

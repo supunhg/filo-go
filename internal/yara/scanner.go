@@ -7,9 +7,9 @@ import (
 
 // Result holds YARA scan results.
 type Result struct {
-	FileName string        `json:"file_name"`
-	Matches  []MatchResult `json:"matches"`
-	RuleCount int          `json:"rule_count"`
+	FileName  string        `json:"file_name"`
+	Matches   []MatchResult `json:"matches"`
+	RuleCount int           `json:"rule_count"`
 }
 
 // MatchResult represents a single rule match.
@@ -184,7 +184,6 @@ func bytesContains(data, pattern []byte) bool {
 func parseRuleSource(source string) []*Rule {
 	var rules []*Rule
 
-	// Simple rule parser
 	lines := strings.Split(source, "\n")
 	var currentRule *Rule
 
@@ -197,22 +196,25 @@ func parseRuleSource(source string) []*Rule {
 			}
 			parts := strings.SplitN(line[5:], ":", 2)
 			name := strings.TrimSpace(parts[0])
+			name = strings.TrimSuffix(name, " {")
 			currentRule = &Rule{
-				Name:   name,
-				Meta:   map[string]string{},
+				Name:    name,
+				Meta:    map[string]string{},
 				Strings: []YString{},
 			}
 			if len(parts) > 1 {
-				currentRule.Namespace = strings.TrimSpace(parts[1])
+				namespace := strings.TrimSpace(parts[1])
+				namespace = strings.TrimSuffix(namespace, " {")
+				currentRule.Namespace = namespace
 			}
 		} else if currentRule != nil {
 			if strings.HasPrefix(line, "strings:") {
-				// Parse strings section
+				// Section marker only
 			} else if strings.HasPrefix(line, "condition:") {
 				condition := strings.TrimPrefix(line, "condition:")
 				currentRule.Condition = strings.TrimSpace(condition)
-			} else if strings.HasPrefix(line, "$") {
-				// Parse string definition
+			} else if strings.HasPrefix(line, "$") && strings.Contains(line, "=") {
+				// String definition: $name = "value" or $name = { hex }
 				parts := strings.SplitN(line, "=", 2)
 				if len(parts) == 2 {
 					name := strings.TrimPrefix(strings.TrimSpace(parts[0]), "$")
@@ -225,6 +227,12 @@ func parseRuleSource(source string) []*Rule {
 					}
 					currentRule.Strings = append(currentRule.Strings, ys)
 				}
+			} else if strings.HasPrefix(line, "$") {
+				// Condition reference (no "=" means it's a condition, not a string def)
+				currentRule.Condition = strings.TrimSpace(line)
+			} else if currentRule.Condition == "" && strings.TrimSpace(line) != "" && !strings.HasPrefix(line, "}") {
+				// Multi-line condition
+				currentRule.Condition = strings.TrimSpace(line)
 			}
 		}
 	}

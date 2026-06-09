@@ -60,12 +60,12 @@ type Prediction struct {
 
 // Features extracted from file data.
 type Features struct {
-	Entropy      float64
-	PrintRatio   float64
-	NullRatio    float64
+	Entropy       float64
+	PrintRatio    float64
+	NullRatio     float64
 	HighByteRatio float64
-	Ngrams       map[string]int
-	HeaderBytes  []byte
+	Ngrams        map[string]int
+	HeaderBytes   []byte
 }
 
 func extractFeatures(data []byte) *Features {
@@ -210,8 +210,6 @@ func (d *Detector) loadBuiltinProfiles() {
 		},
 	}
 }
-
-
 
 // Print displays ML prediction results.
 func Print(p *Prediction) {
