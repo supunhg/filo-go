@@ -305,12 +305,7 @@ func containsSuspicious(s string) bool {
 	return false
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
+
 
 // Print displays metadata results.
 func Print(r *Result) {

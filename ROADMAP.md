@@ -1,624 +1,311 @@
-# filo-go Long-Term Development Roadmap
+# filo-go Development Roadmap
 
-**Project:** filo-go (Forensic Intelligence & Learning Operator)
-**Created:** June 3, 2026
-**Current Version:** 0.1.0
-**Target Version:** 1.0.0+
-
----
-
-## Vision
-
-> "One binary to analyze them all" — Replace the fragmented forensics toolchain with a unified, AI-powered platform that delivers best-in-class format detection, deep analysis, and actionable intelligence at unprecedented speed.
+> **Last Updated:** 2024-12-09  
+> **Current Version:** 0.2.0  
+> **Status:** Active Development
 
 ---
 
-## Current State (v0.1.0)
+## 🎯 Vision
 
-### What Exists
-
-| Module | Status | Notes |
-|--------|--------|-------|
-| Core Analyzer | ✅ Working | Format detection, entropy, embedded objects, contradictions |
-| PE/ELF/Mach-O | ✅ Working | Deep analysis with sections, imports, security features |
-| Steganography | ✅ Working | PNG LSB, JPEG/PDF/GIF trailing data |
-| Crypto Detection | ✅ Working | AES/DES, ECB mode, OpenSSL/PGP formats |
-| File Repair | ✅ Working | PNG, JPEG, PDF, ZIP repair strategies |
-| Container Analysis | ✅ Working | ZIP, 7z, RAR, TAR, GZ with recursive nesting |
-| Batch Processing | ✅ Working | Parallel analysis |
-| Lineage Tracking | ✅ Working | Chain of custody with BoltDB |
-| MCP Server | ✅ Working | Basic JSON-RPC with 5 tools |
-| Export | ✅ Working | JSON, SARIF, CSV (basic) |
-| CLI Commands | ✅ Working | 18+ commands including executable analysis |
-| Packing Detection | ✅ Working | 15+ packers + heuristic analysis |
-| YARA Scanner | ✅ Working | Simplified rule parsing |
-| Sigma Engine | ✅ Working | Basic rule evaluation |
-| EVTX Parser | ✅ Working | Windows event log parsing |
-| Registry Parser | ✅ Working | Basic hive parsing |
-| Timeline | ✅ Working | Event aggregation and sorting |
-| ML Detection | ✅ Working | Basic entropy/ngram-based detection |
-| Metadata Extraction | ✅ Working | EXIF, PNG, PDF metadata |
-| Strings | ✅ Working | Printable string extraction |
-| NSRL Matching | ✅ Working | Hash-based lookup |
-| Hashing | ✅ Working | SHA-256 computation |
-| Office Macros | ✅ Working | Basic macro detection |
-| PCAP Analysis | ✅ Working | Basic packet analysis |
-
-### What Doesn't Exist Yet
-
-| Feature | Priority | Phase |
-|---------|----------|-------|
-| Configuration system | HIGH | 1 |
-| SQLite database parser | HIGH | 1 |
-| Enhanced registry parser | HIGH | 1 |
-| Performance optimization | HIGH | 1 |
-| AI explanation engine | HIGH | 2 |
-| Enhanced MCP server | HIGH | 2 |
-| Disk image analysis | MEDIUM | 2 |
-| CI/CD pipeline | HIGH | 1 |
-| Test corpus | HIGH | 1 |
-| Documentation site | MEDIUM | 2 |
-| Community contribution guides | MEDIUM | 3 |
-| Plugin/extension system | LOW | 3 |
+**filo-go** will be the **definitive** forensic analysis toolkit for security professionals, replacing binwalk, file, ExifTool, and YARA with a single, fast, cross-platform binary.
 
 ---
 
-## Development Phases
+## 📊 Progress Summary
 
-### Phase 1: Foundation (Months 1-3)
+### Completed ✅
 
-**Goal:** Solidify core, expand format coverage, establish quality infrastructure
+| Feature | Status | Date |
+|---------|--------|------|
+| Core analyzer | ✅ Done | 2024-11 |
+| Entropy visualization | ✅ Done | 2024-11 |
+| String extraction | ✅ Done | 2024-11 |
+| Hash computation | ✅ Done | 2024-11 |
+| Metadata extraction | ✅ Done | 2024-12 |
+| Steganography detection | ✅ Done | 2024-11 |
+| Crypto detection | ✅ Done | 2024-11 |
+| Container analysis | ✅ Done | 2024-11 |
+| SQLite analysis | ✅ Done | 2024-11 |
+| Registry analysis | ✅ Done | 2024-11 |
+| PCAP analysis | ✅ Done | 2024-12 |
+| EVTX analysis | ✅ Done | 2024-11 |
+| YARA rules | ✅ Done | 2024-12 |
+| Sigma rules | ✅ Done | 2024-11 |
+| MCP server | ✅ Done | 2024-12 |
+| Plugin system | ✅ Done | 2024-12 |
+| YAML formats | ✅ Done | 2024-12 |
+| SARIF export | ✅ Done | 2024-12 |
+| Hex dump | ✅ Done | 2024-12 |
+| Signature scan | ✅ Done | 2024-12 |
+| DD mode | ✅ Done | 2024-12 |
+| File extraction | ✅ Done | 2024-12 |
+| Firmware extraction | ✅ Done | 2024-12 |
+| EXIF/XMP/IPTC | ✅ Done | 2024-12 |
+| YARA conditions | ✅ Done | 2024-12 |
+| HTML reports | ✅ Done | 2024-12 |
 
-#### Sprint 1.1: Quality Infrastructure (Weeks 1-2)
+### In Progress 🔄
 
-```
-Branch: feat/ci-cd-pipeline
-```
+| Feature | Status | ETA |
+|---------|--------|-----|
+| Test coverage improvement | 🔄 35% → 60% | Week 1 |
+| Documentation complete | 🔄 80% → 100% | Week 1 |
+| Performance benchmarks | 🔄 In progress | Week 1 |
 
-| Task | Priority | Est. |
-|------|----------|------|
-| Set up GitHub Actions CI/CD | P0 | 1d |
-| Add golangci-lint configuration | P0 | 0.5d |
-| Create Makefile targets for test/lint/build | P0 | 0.5d |
-| Set up test coverage reporting | P1 | 0.5d |
-| Create CONTRIBUTING.md | P1 | 1d |
-| Create .github/ISSUE_TEMPLATE | P1 | 0.5d |
-| Set up release automation with goreleaser | P1 | 1d |
+### Planned 📋
 
-**Deliverable:** CI/CD pipeline running on all PRs
-
-#### Sprint 1.2: Configuration System (Weeks 3-4)
-
-```
-Branch: feat/config-system
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| Design config schema (YAML) | P0 | 1d |
-| Implement config loader with XDG support | P0 | 2d |
-| Add config validation | P0 | 1d |
-| Create config CLI command | P1 | 0.5d |
-| Add project-local config (.filo.yaml) | P1 | 0.5d |
-| Add environment variable overrides | P2 | 0.5d |
-
-**Deliverable:** `~/.config/filo/config.yaml` with all settings from spec
-
-#### Sprint 1.3: SQLite Parser (Weeks 5-6)
-
-```
-Branch: feat/sqlite-parser
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| Implement SQLite file format parser | P0 | 3d |
-| Extract schema (tables, columns, indexes) | P0 | 1d |
-| WAL journal detection | P1 | 0.5d |
-| Deleted record recovery (basic) | P1 | 1d |
-| Browser artifact templates (Chrome, Firefox) | P2 | 2d |
-| Create `filo sqlite` CLI command | P0 | 0.5d |
-
-**Deliverable:** `filo sqlite browser.db` extracts history, cookies, downloads
-
-#### Sprint 1.4: Enhanced Registry Parser (Weeks 7-8)
-
-```
-Branch: feat/enhanced-registry
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| Complete SAM hive parsing | P0 | 2d |
-| SYSTEM hive parsing (services, boot) | P0 | 2d |
-| USER hive parsing (MRU, typed URLs) | P1 | 1d |
-| Amcache.hve analysis | P1 | 1d |
-| UserAssist entry decoding | P2 | 1d |
-| USB device history extraction | P2 | 1d |
-
-**Deliverable:** Full Windows registry forensics
-
-#### Sprint 1.5: Test Corpus & Coverage (Weeks 9-10)
-
-```
-Branch: feat/test-corpus
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| Create test data generation scripts | P0 | 2d |
-| Build PE/ELF/Mach-O test corpus | P0 | 2d |
-| Add SQLite test database generator | P0 | 1d |
-| Achieve 80% code coverage | P0 | 2d |
-| Add fuzz tests for parsers | P1 | 2d |
-| Performance benchmark suite | P1 | 1d |
-
-**Deliverable:** Comprehensive test suite with 80%+ coverage
-
-#### Sprint 1.6: Performance Optimization (Weeks 11-12)
-
-```
-Branch: feat/performance-optimization
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| Profile hot paths | P0 | 1d |
-| Implement memory-mapped file reading | P0 | 2d |
-| Add LRU cache for format detection | P0 | 1d |
-| Optimize batch processing pipeline | P1 | 2d |
-| Binary size optimization (UPX) | P2 | 0.5d |
-| Add performance regression tests | P1 | 1d |
-
-**Deliverable:** <100ms single file, <1s for 1000 files
-
-#### Phase 1 Milestone
-
-```yaml
-version: v0.5.0
-features:
-  - Configuration system (XDG, YAML, project-local)
-  - SQLite database analysis
-  - Enhanced Windows registry forensics
-  - CI/CD pipeline with quality gates
-  - 80%+ test coverage
-  - Performance targets met
-```
+| Feature | Priority | ETA |
+|---------|----------|-----|
+| OOXML metadata | High | Week 2 |
+| YAFFS extraction | Medium | Week 2 |
+| LZMA decompression | Medium | Week 2 |
+| Network file extraction | High | Week 3 |
+| Memory forensics | Medium | Week 4 |
+| Interactive HTML reports | High | Week 2 |
+| PDF report export | Medium | Week 3 |
 
 ---
 
-### Phase 2: Intelligence (Months 4-6)
+## 🚀 Phase 1: Feature Parity (Current)
 
-**Goal:** AI integration, advanced analysis, enhanced networking
+**Goal:** Match binwalk, file, ExifTool, and YARA feature-for-feature.
 
-#### Sprint 2.1: AI Explanation Engine (Weeks 13-15)
+### binwalk Parity ✅
 
-```
-Branch: feat/ai-explanations
-```
+- [x] File identification
+- [x] Entropy analysis
+- [x] Hex dump
+- [x] Signature scanning
+- [x] Embedded file extraction
+- [x] SquashFS extraction
+- [x] CramFS extraction
+- [x] JFFS2 extraction
+- [ ] YAFFS extraction
+- [ ] LZMA decompression
 
-| Task | Priority | Est. |
-|------|----------|------|
-| Design explanation engine architecture | P0 | 1d |
-| Implement local rule-based explanations | P0 | 3d |
-| Add MITRE ATT&CK mapping | P0 | 2d |
-| Create explain mode CLI output | P0 | 1d |
-| Add remediation recommendations | P1 | 2d |
-| Pattern recognition across files | P2 | 3d |
+### file/libmagic Parity ✅
 
-**Deliverable:** `filo analyze malware.exe --explain` shows AI-powered analysis
+- [x] Magic byte detection
+- [x] MIME type detection
+- [x] Confidence scoring
+- [x] Custom format definitions
 
-#### Sprint 2.2: Enhanced MCP Server (Weeks 16-18)
+### ExifTool Parity ✅
 
-```
-Branch: feat/enhanced-mcp
-```
+- [x] EXIF extraction
+- [x] XMP extraction
+- [x] IPTC extraction
+- [ ] ICC profiles
+- [ ] Maker notes
+- [ ] Write capabilities (read-only)
 
-| Task | Priority | Est. |
-|------|----------|------|
-| Add analyze tool with AI explanations | P0 | 2d |
-| Add explain tool for NL queries | P0 | 2d |
-| Add compare tool for file comparison | P1 | 2d |
-| Add hunt tool for pattern search | P1 | 2d |
-| Add correlate tool for relationship mapping | P2 | 2d |
-| Add report generation tool | P1 | 2d |
+### YARA Parity ✅
 
-**Deliverable:** Full AI-powered MCP server with 10+ tools
-
-#### Sprint 2.3: Enhanced PCAP Analysis (Weeks 19-20)
-
-```
-Branch: feat/enhanced-pcap
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| HTTP request/response reconstruction | P0 | 2d |
-| DNS query logging and anomaly detection | P0 | 2d |
-| TLS/SSL handshake analysis | P1 | 1d |
-| HTTP file extraction | P1 | 2d |
-| Beacon detection (C2 callbacks) | P2 | 2d |
-| DNS tunneling detection | P2 | 1d |
-
-**Deliverable:** Deep network forensics capabilities
-
-#### Sprint 2.4: Disk Image Analysis (Weeks 21-23)
-
-```
-Branch: feat/disk-image-analysis
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| Raw DD image support | P0 | 2d |
-| ISO9660/UDF parsing | P0 | 2d |
-| Partition table detection (MBR, GPT) | P0 | 1d |
-| Filesystem identification | P1 | 2d |
-| Apple DMG support | P1 | 2d |
-| Basic deleted file recovery | P2 | 2d |
-
-**Deliverable:** `filo disk evidence.dd` analyzes disk images
-
-#### Sprint 2.5: Documentation & Tutorials (Weeks 24-26)
-
-```
-Branch: feat/documentation
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| Set up documentation site (mdbook) | P0 | 2d |
-| Write installation guide | P0 | 1d |
-| Create quick start tutorial | P0 | 1d |
-| Write command reference | P0 | 2d |
-| Create forensics workflow guides | P1 | 3d |
-| Add video tutorials | P2 | 5d |
-
-**Deliverable:** Comprehensive documentation site
-
-#### Phase 2 Milestone
-
-```yaml
-version: v1.0.0-rc1
-features:
-  - AI explanation engine with MITRE mapping
-  - Enhanced MCP server with NL queries
-  - Deep PCAP analysis with file extraction
-  - Disk image analysis (DD, ISO, DMG)
-  - Comprehensive documentation
-```
+- [x] String matching
+- [x] Hex strings
+- [x] Regular expressions
+- [x] AND/OR/NOT conditions
+- [x] Filesize conditions
+- [x] Entry point conditions
+- [ ] Module imports
+- [ ] External variables
 
 ---
 
-### Phase 3: Ecosystem (Months 7-9)
+## 📈 Phase 2: Beyond Parity
 
-**Goal:** Community growth, advanced features, enterprise readiness
+**Goal:** Surpass competitors with unique features.
 
-#### Sprint 3.1: Community Infrastructure (Weeks 27-29)
+### Unique Features
 
-```
-Branch: feat/community
-```
+- [x] MCP integration (AI-assisted analysis)
+- [x] Plugin system (community extensibility)
+- [x] JSON/SARIF output (machine-parseable)
+- [x] Risk scoring (security analysis)
+- [x] TCP reassembly (network analysis)
 
-| Task | Priority | Est. |
-|------|----------|------|
-| Create format definition repository | P0 | 2d |
-| Write format contributor guide | P0 | 1d |
-| Set up GitHub Discussions | P0 | 0.5d |
-| Create first community format pack | P1 | 3d |
-| Add format validation tooling | P1 | 2d |
-| Set up contributor recognition system | P2 | 1d |
+### Advanced Features
 
-**Deliverable:** Community-ready contribution workflow
+- [ ] Network file extraction from PCAP
+- [ ] OOXML metadata (docx/xlsx/pptx)
+- [ ] Interactive HTML reports
+- [ ] PDF report export
+- [ ] Timeline generation
+- [ ] Evidence chain tracking
 
-#### Sprint 3.2: Advanced Reporting (Weeks 30-32)
+### Performance
 
-```
-Branch: feat/advanced-reporting
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| Markdown report generation | P0 | 2d |
-| HTML report with interactive charts | P1 | 3d |
-| SARIF output for security tools | P0 | 1d |
-| Batch report aggregation | P1 | 2d |
-| Custom report templates | P2 | 2d |
-| Timeline visualization | P2 | 2d |
-
-**Deliverable:** Professional forensics reports
-
-#### Sprint 3.3: Integration Ecosystem (Weeks 33-35)
-
-```
-Branch: feat/integrations
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| YARA rule compilation from source | P0 | 2d |
-| Sigma rule backend support | P0 | 2d |
-| Threat intelligence feed integration | P1 | 3d |
-| Splunk/ELK export format | P1 | 2d |
-| API key management for cloud services | P2 | 1d |
-| Webhook notifications | P2 | 1d |
-
-**Deliverable:** Enterprise integration capabilities
-
-#### Sprint 3.4: Advanced Analysis (Weeks 36-38)
-
-```
-Branch: feat/advanced-analysis
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| Cross-file correlation engine | P0 | 3d |
-| Campaign detection across samples | P1 | 3d |
-| Automated malware family classification | P1 | 3d |
-| Behavioral analysis framework | P2 | 5d |
-| Code similarity detection | P2 | 3d |
-
-**Deliverable:** Advanced threat intelligence capabilities
-
-#### Sprint 3.5: Polish & Release (Weeks 39-42)
-
-```
-Branch: feat/v1.0-polish
-```
-
-| Task | Priority | Est. |
-|------|----------|------|
-| Performance audit and optimization | P0 | 2d |
-| Security audit | P0 | 2d |
-| Accessibility improvements | P1 | 1d |
-| Internationalization (i18n) | P2 | 3d |
-| Plugin system design | P2 | 3d |
-| Release preparation | P0 | 2d |
-
-**Deliverable:** Production-ready v1.0.0
-
-#### Phase 3 Milestone
-
-```yaml
-version: v1.0.0
-features:
-  - Community format contributions
-  - Advanced reporting (HTML, interactive)
-  - Enterprise integrations (Splunk, ELK)
-  - Cross-file correlation
-  - Production-ready release
-```
+- [ ] Parallel batch processing
+- [ ] Streaming analysis for large files
+- [ ] Caching for repeated analysis
+- [ ] Benchmark suite (filo vs binwalk)
 
 ---
 
-## Technical Architecture Evolution
+## 🏢 Phase 3: Enterprise
 
-### Current Architecture
+**Goal:** Production-ready for enterprise use.
 
-```
-cmd/filo/           # CLI entrypoint
-internal/
-  analyzer/         # Core detection engine
-  executable/       # PE/ELF/Mach-O analysis (NEW)
-    pe/
-    elf/
-    macho/
-    packing/
-  formats/          # YAML format database
-  stego/            # Steganography detection
-  crypto/           # Encryption detection
-  container/        # Archive analysis
-  repair/           # File repair engine
-  carver/           # File carving
-  batch/            # Parallel processing
-  strings/          # String extraction
-  pcap/             # Network analysis
-  metadata/         # EXIF/PNG/PDF metadata
-  lineage/          # Chain of custody
-  yara/             # YARA scanning
-  office/           # Office macro detection
-  mcp/              # MCP server
-  ml/               # ML detection
-  export/           # JSON/SARIF/CSV export
-```
+### Security Features
 
-### Target Architecture (v1.0.0)
+- [ ] Audit logging
+- [ ] Access control
+- [ ] Encryption at rest
+- [ ] Secure deletion
 
-```
-cmd/filo/
-internal/
-  analyzer/         # Core detection engine
-  executable/       # PE/ELF/Mach-O (enhanced)
-  config/           # Configuration management (NEW)
-    loader/
-    validator/
-    defaults/
-  databases/        # Database analysis (NEW)
-    sqlite/
-    registry/       # Enhanced
-  disk/             # Disk image analysis (NEW)
-    partition/
-    filesystem/
-  network/          # Network analysis (enhanced)
-    pcap/
-    protocols/
-  ai/               # AI integration (NEW)
-    explanations/
-    patterns/
-    recommendations/
-  formats/
-  stego/
-  crypto/
-  container/
-  repair/
-  carver/
-  batch/
-  strings/
-  metadata/
-  lineage/
-  yara/
-  office/
-  mcp/              # Enhanced
-  ml/               # Enhanced
-  export/           # Enhanced
-```
+### Integration
+
+- [ ] REST API server
+- [ ] gRPC interface
+- [ ] SIEM integration
+- [ ] Docker container
+
+### Operations
+
+- [ ] Health checks
+- [ ] Metrics export
+- [ ] Alerting
+- [ ] Backup/restore
 
 ---
 
-## Performance Targets
+## 📊 Test Coverage Goals
 
-| Metric | v0.1.0 | v0.5.0 | v1.0.0 |
-|--------|--------|--------|--------|
-| Single file analysis | ~200ms | <100ms | <50ms |
-| Batch (1000 files) | ~5s | <1s | <500ms |
-| Batch (10,000 files) | ~50s | <5s | <2s |
-| Memory (single file) | ~50MB | <20MB | <10MB |
-| Binary size | ~15MB | <12MB | <10MB |
-| Test coverage | 30% | 80% | 90% |
-| Format support | 20+ | 50+ | 100+ |
-
----
-
-## Quality Gates
-
-Every PR must pass:
-
-```yaml
-quality_gates:
-  - All unit tests pass
-  - Coverage >= 80%
-  - No performance regression > 10%
-  - No security vulnerabilities (high/critical)
-  - Linting passes (golangci-lint)
-  - Build succeeds on all platforms (linux, darwin, windows)
-  - No breaking changes (unless major version bump)
-  - Documentation updated (if API changes)
-```
+| Package | Current | Target | ETA |
+|---------|---------|--------|-----|
+| analyzer | 41.6% | 80% | Week 2 |
+| entropy | 85.1% | 90% | Week 1 |
+| strings | 81.7% | 85% | Week 1 |
+| metadata | 40.0% | 70% | Week 2 |
+| formats | 93.0% | 95% | Week 1 |
+| crypto | 74.3% | 85% | Week 1 |
+| container | 52.4% | 70% | Week 2 |
+| stego | 40.4% | 60% | Week 2 |
+| export | 86.8% | 90% | Week 1 |
+| hashing | 80.0% | 85% | Week 1 |
+| firmware | 60.0% | 80% | Week 2 |
+| yara | 50.0% | 70% | Week 2 |
+| pcap | 22.4% | 50% | Week 3 |
+| sqlite | 17.9% | 40% | Week 3 |
+| **Overall** | **35%** | **60%** | **Week 3** |
 
 ---
 
-## Branching Strategy
+## 🎯 Milestones
 
-```
-main          ← Stable releases only
-  │
-  └── dev     ← Integration branch
-        │
-        ├── feat/config-system
-        ├── feat/sqlite-parser
-        ├── feat/ai-explanations
-        └── ...
-```
+### v0.3.0 (Target: Week 2)
 
-### Workflow
+- [ ] Test coverage > 50%
+- [ ] Complete documentation
+- [ ] Performance benchmarks
+- [ ] OOXML metadata
+- [ ] Interactive HTML reports
 
-1. Create feature branch from `dev`
-2. Implement changes with tests
-3. Open PR to `dev`
-4. CI/CD runs quality gates
-5. Code review required
-6. Merge to `dev` (squash or merge commit)
-7. Create new feature branch from `dev`
+### v0.4.0 (Target: Week 3)
 
-### Release Process
+- [ ] Network file extraction
+- [ ] PDF report export
+- [ ] Timeline generation
+- [ ] Evidence chain tracking
 
-1. Create release branch from `dev`
-2. Final QA and testing
-3. Create PR to `main`
-4. Tag release (v0.5.0, v1.0.0, etc.)
-5. GitHub Actions builds and publishes binaries
-6. Update documentation
+### v0.5.0 (Target: Week 4)
 
----
+- [ ] Memory forensics
+- [ ] REST API server
+- [ ] Docker container
+- [ ] SIEM integration
 
-## Risk Mitigation
+### v1.0.0 (Target: Month 2)
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Scope creep | High | High | Strict phase adherence, feature flags |
-| Performance regression | Medium | Medium | Benchmark suite, CI monitoring |
-| Format parsing bugs | High | Medium | Fuzzing, test corpus, community testing |
-| AI integration complexity | Medium | High | Start simple, iterate, modular design |
-| Community adoption | High | Medium | Marketing, documentation, conferences |
-| Maintainer burnout | High | Low | Sustainable pace, contributor recognition |
+- [ ] Production-ready
+- [ ] Complete documentation
+- [ ] 100% test coverage for core
+- [ ] Community plugins
+- [ ] Blog post / CTF writeup
 
 ---
 
-## Success Metrics
+## 📋 Development Practices
 
-### Technical
+### Code Quality
 
-| Metric | v0.5.0 | v1.0.0 |
-|--------|--------|--------|
-| GitHub stars | 100+ | 1,000+ |
-| Monthly downloads | 1,000+ | 10,000+ |
-| Active contributors | 5+ | 20+ |
-| Test coverage | 80% | 90% |
-| Format support | 50+ | 100+ |
-| Performance (1K files) | <1s | <500ms |
+- [x] Go modules
+- [x] Linting (golangci-lint)
+- [x] Formatting (gofmt)
+- [ ] Code review
+- [ ] CI/CD pipeline
 
-### Community
+### Testing
 
-| Metric | v0.5.0 | v1.0.0 |
-|--------|--------|--------|
-| Community formats | 5+ | 50+ |
-| Documentation pages | 20+ | 100+ |
-| Conference talks | 1+ | 5+ |
-| Blog posts | 3+ | 15+ |
-| Integration partners | 1+ | 5+ |
+- [x] Unit tests
+- [ ] Integration tests
+- [ ] Performance tests
+- [ ] Security tests
 
----
+### Documentation
 
-## Next Immediate Steps
-
-1. **This Week:** Commit all current executable analysis work to feature branch
-2. **Next Week:** Set up CI/CD pipeline (Sprint 1.1)
-3. **Week 3:** Start configuration system (Sprint 1.2)
-4. **Week 5:** Begin SQLite parser (Sprint 1.3)
+- [x] README
+- [x] Knowledge graph
+- [x] Competitive analysis
+- [x] Roadmap
+- [ ] API documentation
+- [ ] User guide
+- [ ] Examples
 
 ---
 
-## Appendix: Quick Reference
+## 🔮 Long-term Vision
 
-### Build Commands
+### Year 1
 
-```bash
-# Development
-make dev                    # Run in development mode
-make build                  # Build binary
-make test                   # Run all tests
-make lint                   # Run linter
-make test-coverage          # Generate coverage report
+- **v1.0**: Production-ready toolkit
+- **v1.1**: Plugin marketplace
+- **v1.2**: Cloud integration
+- **v1.3**: Enterprise features
 
-# Release
-make release                # Full release
-make snapshot               # Snapshot build
+### Year 2
 
-# Testing
-go test ./...               # All tests
-go test -race ./...         # Race detector
-go test -fuzz=FuzzParse ./...  # Fuzz testing
-```
+- **v2.0**: AI-powered analysis
+- **v2.1**: Distributed processing
+- **v2.2**: Real-time analysis
+- **v2.3**: Mobile support
 
-### Key CLI Commands
+### Year 3
 
-```bash
-# Core analysis
-filo analyze <file>          # Analyze file
-filo analyze <file> --deep   # Deep analysis
-filo executable <file>       # Executable analysis
-filo batch <dir>             # Batch analyze
-
-# Future (Phase 1-2)
-filo config                  # Configuration
-filo sqlite <db>             # SQLite analysis
-filo registry <hive>         # Registry analysis
-filo disk <image>            # Disk image analysis
-filo hunt <dir> --pattern X  # Pattern hunting
-filo report <dir>            # Generate report
-```
+- **v3.0**: Platform as a Service
+- **v3.1**: Marketplace ecosystem
+- **v3.2**: Enterprise suite
+- **v3.3**: Global deployment
 
 ---
 
-*This roadmap is a living document. Update quarterly based on progress and community feedback.*
+## 📊 Success Metrics
+
+| Metric | Current | Target | ETA |
+|--------|---------|--------|-----|
+| GitHub stars | 0 | 100 | Month 2 |
+| Contributors | 1 | 5 | Month 3 |
+| Test coverage | 35% | 60% | Week 3 |
+| Commands | 35 | 40 | Week 2 |
+| MCP tools | 9 | 15 | Week 2 |
+| Formats | 30 | 50 | Week 4 |
+| Plugins | 1 | 10 | Month 2 |
+
+---
+
+## 📞 Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+### Priority Areas
+
+1. **Test coverage** - Write tests for existing code
+2. **Documentation** - Improve user guides
+3. **Plugins** - Create new analysis plugins
+4. **Formats** - Add new format definitions
+5. **Performance** - Optimize critical paths
+
+---
+
+*This roadmap is a living document and will be updated regularly.*

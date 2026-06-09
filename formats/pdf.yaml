@@ -1,0 +1,41 @@
+format: pdf
+version: "1.7"
+mime:
+  - application/pdf
+category: document
+confidence_weight: 0.95
+extensions:
+  - pdf
+description: Portable Document Format
+references:
+  - https://www.adobe.com/devnet/pdf/pdf_reference.html
+signatures:
+  - offset: 0
+    hex: "25 50 44 46"
+    description: PDF header
+    weight: 1.0
+footers:
+  - hex: "25 25 45 4F 46"
+    description: PDF EOF marker
+structure:
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: PDF version header
+    - id: body
+      required: true
+      description: PDF objects
+    - id: xref
+      required: false
+      description: Cross-reference table
+    - id: trailer
+      required: false
+      description: Trailer dictionary
+repair_strategies:
+  - name: add_pdf_header
+    priority: 1
+    description: Prepend PDF-1.7 header
+  - name: add_pdf_eof
+    priority: 2
+    description: Append PDF EOF marker

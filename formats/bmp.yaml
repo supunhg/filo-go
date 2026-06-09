@@ -1,0 +1,35 @@
+format: bmp
+version: "1.0"
+mime:
+  - image/bmp
+  - image/x-bmp
+category: image
+confidence_weight: 0.95
+extensions:
+  - bmp
+  - dib
+description: Bitmap image
+references:
+  - https://learn.microsoft.com/en-us/windows/win32/gdi/bitmap-structures
+signatures:
+  - offset: 0
+    hex: "42 4D"
+    description: BM signature
+    weight: 1.0
+structure:
+  header_size: 14
+  chunks:
+    - id: file_header
+      required: true
+      position: 0
+      description: BITMAPFILEHEADER
+    - id: info_header
+      required: true
+      description: BITMAPINFOHEADER
+    - id: pixel_data
+      required: true
+      description: Pixel data
+repair_strategies:
+  - name: none
+    priority: 0
+    description: BMP files cannot be repaired

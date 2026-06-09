@@ -1,0 +1,39 @@
+format: gif
+version: "89a"
+mime:
+  - image/gif
+category: image
+confidence_weight: 0.95
+extensions:
+  - gif
+description: Graphics Interchange Format image
+references:
+  - https://www.w3.org/Graphics/GIF/spec-gif89a.txt
+signatures:
+  - offset: 0
+    hex: "47 49 46 38 37 61"
+    description: GIF87a header
+    weight: 1.0
+  - offset: 0
+    hex: "47 49 46 38 39 61"
+    description: GIF89a header
+    weight: 1.0
+footers:
+  - hex: "3B"
+    description: GIF trailer
+structure:
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: Logical screen descriptor
+    - id: image_descriptor
+      required: false
+      description: Image descriptor
+    - id: trailer
+      required: true
+      description: GIF trailer (0x3B)
+repair_strategies:
+  - name: add_trailer
+    priority: 1
+    description: Append GIF trailer byte

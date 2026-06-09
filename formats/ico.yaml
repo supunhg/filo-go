@@ -1,0 +1,39 @@
+format: ico
+version: "1.0"
+mime:
+  - image/x-icon
+  - image/vnd.microsoft.icon
+category: image
+confidence_weight: 0.95
+extensions:
+  - ico
+  - cur
+description: Windows icon/cursor file
+references:
+  - https://learn.microsoft.com/en-us/windows/win32/multimedia/icon-formats
+signatures:
+  - offset: 0
+    hex: "00 00 01 00"
+    description: ICO signature
+    weight: 1.0
+  - offset: 0
+    hex: "00 00 02 00"
+    description: CUR signature
+    weight: 1.0
+structure:
+  header_size: 6
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: ICO/CUR header
+    - id: directory
+      required: true
+      description: Image directory
+    - id: image_data
+      required: true
+      description: Image data
+repair_strategies:
+  - name: none
+    priority: 0
+    description: ICO files cannot be repaired

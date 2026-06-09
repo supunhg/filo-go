@@ -1,0 +1,41 @@
+format: tiff
+version: "1.0"
+mime:
+  - image/tiff
+category: image
+confidence_weight: 0.95
+extensions:
+  - tif
+  - tiff
+description: Tagged Image File Format
+references:
+  - https://www.awaresystems.be/imaging/tiff/tifftags.html
+signatures:
+  - offset: 0
+    hex: "49 49 2A 00"
+    description: TIFF little-endian
+    weight: 1.0
+  - offset: 0
+    hex: "4D 4D 00 2A"
+    description: TIFF big-endian
+    weight: 1.0
+structure:
+  header_size: 8
+  endianness: variable
+  chunks:
+    - id: byte_order
+      required: true
+      position: 0
+      description: Byte order (II or MM)
+    - id: magic
+      required: true
+      position: 2
+      description: Magic number (42)
+    - id: ifd_offset
+      required: true
+      position: 4
+      description: IFD offset
+repair_strategies:
+  - name: none
+    priority: 0
+    description: TIFF files cannot be repaired

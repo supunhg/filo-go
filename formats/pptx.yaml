@@ -1,0 +1,36 @@
+format: pptx
+version: "1.0"
+mime:
+  - application/vnd.openxmlformats-officedocument.presentationml.presentation
+category: document
+confidence_weight: 0.95
+extensions:
+  - pptx
+  - pptm
+description: Microsoft PowerPoint Open XML presentation
+references:
+  - https://docs.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/
+signatures:
+  - offset: 0
+    hex: "50 4B 03 04"
+    description: ZIP header (OOXML is ZIP-based)
+    weight: 0.5
+  - offset: 30
+    hex: "70 70 74 2F"
+    description: "ppt/ path in ZIP"
+    weight: 0.9
+structure:
+  chunks:
+    - id: zip_container
+      required: true
+      description: ZIP container
+    - id: content_types
+      required: true
+      description: Content_Types.xml
+    - id: presentation
+      required: true
+      description: ppt/presentation.xml
+repair_strategies:
+  - name: none
+    priority: 0
+    description: OOXML files cannot be repaired

@@ -1,0 +1,44 @@
+format: ffmpeg
+version: "1.0"
+mime:
+  - application/octet-stream
+category: multimedia
+confidence_weight: 0.85
+extensions:
+  - mp4
+  - mov
+  - avi
+  - mkv
+  - webm
+  - flv
+  - wmv
+  - m4v
+  - 3gp
+description: FFmpeg multimedia container
+references:
+  - https://ffmpeg.org/
+signatures:
+  - offset: 4
+    hex: "66 74 79 70"
+    description: "ftyp signature (MP4/MOV)"
+    weight: 0.9
+  - offset: 0
+    hex: "1A 45 DF A3"
+    description: EBML header (MKV/WebM)"
+    weight: 0.9
+structure:
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: Container header
+    - id: tracks
+      required: true
+      description: Track definitions
+    - id: data
+      required: true
+      description: Media data
+repair_strategies:
+  - name: none
+    priority: 0
+    description: Multimedia files cannot be repaired

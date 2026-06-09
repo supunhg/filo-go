@@ -3,6 +3,8 @@ package ml
 import (
 	"math"
 	"strings"
+
+	"github.com/supunhg/filo-go/internal/entropy"
 )
 
 // Detector provides ML-powered file type detection.
@@ -73,7 +75,7 @@ func extractFeatures(data []byte) *Features {
 	}
 
 	// Calculate entropy
-	f.Entropy = calculateEntropy(data)
+	f.Entropy = entropy.Calculate(data)
 
 	// Calculate ratios
 	printable := 0
@@ -132,27 +134,6 @@ func compareFeatures(f *Features, p *Profile) float64 {
 	score += ngramScore * 0.4
 
 	return score
-}
-
-func calculateEntropy(data []byte) float64 {
-	if len(data) == 0 {
-		return 0
-	}
-
-	freq := make([]int, 256)
-	for _, b := range data {
-		freq[b]++
-	}
-
-	entropy := 0.0
-	size := float64(len(data))
-	for _, f := range freq {
-		if f > 0 {
-			p := float64(f) / size
-			entropy -= p * math.Log2(p)
-		}
-	}
-	return entropy
 }
 
 func (d *Detector) loadBuiltinProfiles() {
@@ -230,12 +211,7 @@ func (d *Detector) loadBuiltinProfiles() {
 	}
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
+
 
 // Print displays ML prediction results.
 func Print(p *Prediction) {

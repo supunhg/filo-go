@@ -33,7 +33,6 @@ func init() {
 	executableCmd.Flags().BoolVar(&execExtractStrings, "strings", false, "Extract printable strings")
 	executableCmd.Flags().IntVarP(&execMinStringLen, "min-string-len", "n", 4, "Minimum string length for extraction")
 	executableCmd.Flags().BoolVarP(&execJSONOutput, "json", "j", false, "Output as JSON")
-	rootCmd.AddCommand(executableCmd)
 }
 
 func runExecutable(cmd *cobra.Command, args []string) error {

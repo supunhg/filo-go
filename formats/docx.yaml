@@ -1,0 +1,36 @@
+format: docx
+version: "1.0"
+mime:
+  - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+category: document
+confidence_weight: 0.95
+extensions:
+  - docx
+  - docm
+description: Microsoft Word Open XML document
+references:
+  - https://docs.microsoft.com/en-us/openspecs/office_standards/ms-oi29500/
+signatures:
+  - offset: 0
+    hex: "50 4B 03 04"
+    description: ZIP header (OOXML is ZIP-based)
+    weight: 0.5
+  - offset: 30
+    hex: "77 6F 72 64 2F"
+    description: "word/ path in ZIP"
+    weight: 0.9
+structure:
+  chunks:
+    - id: zip_container
+      required: true
+      description: ZIP container
+    - id: content_types
+      required: true
+      description: Content_Types.xml
+    - id: word_document
+      required: true
+      description: word/document.xml
+repair_strategies:
+  - name: none
+    priority: 0
+    description: OOXML files cannot be repaired

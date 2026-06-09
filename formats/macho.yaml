@@ -1,0 +1,51 @@
+format: macho
+version: "1.0"
+mime:
+  - application/x-mach-binary
+category: executable
+confidence_weight: 0.98
+extensions:
+  - macho
+  - dylib
+  - bundle
+  - kext
+description: Mach-O executable (macOS/iOS)
+references:
+  - https://developer.apple.com/documentation/kernel/olddyld_mach_header
+signatures:
+  - offset: 0
+    hex: "FE ED FA CE"
+    description: Mach-O 32-bit big-endian
+    weight: 1.0
+  - offset: 0
+    hex: "FE ED FA CF"
+    description: Mach-O 64-bit big-endian
+    weight: 1.0
+  - offset: 0
+    hex: "CE FA ED FE"
+    description: Mach-O 32-bit little-endian
+    weight: 1.0
+  - offset: 0
+    hex: "CF FA ED FE"
+    description: Mach-O 64-bit little-endian
+    weight: 1.0
+  - offset: 0
+    hex: "BE BA FE CA"
+    description: Mach-O universal binary (fat)
+    weight: 0.9
+structure:
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: Mach-O header
+    - id: load_commands
+      required: true
+      description: Load commands
+    - id: segments
+      required: false
+      description: Segment data
+repair_strategies:
+  - name: none
+    priority: 0
+    description: Mach-O files cannot be repaired

@@ -1,0 +1,38 @@
+format: gzip
+version: "1.0"
+mime:
+  - application/gzip
+  - application/x-gzip
+category: archive
+confidence_weight: 0.95
+extensions:
+  - gz
+  - gzip
+description: gzip compressed archive
+references:
+  - https://www.rfc-editor.org/rfc/rfc1952
+signatures:
+  - offset: 0
+    hex: "1F 8B"
+    description: gzip magic bytes
+    weight: 1.0
+structure:
+  header_size: 10
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: gzip header
+    - id: body
+      required: true
+      description: Deflate compressed data
+    - id: crc32
+      required: false
+      description: CRC32 checksum
+    - id: isize
+      required: false
+      description: Original size modulo 2^32
+repair_strategies:
+  - name: none
+    priority: 0
+    description: gzip files cannot be repaired

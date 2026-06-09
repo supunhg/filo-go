@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+
+	"github.com/supunhg/filo-go/internal/entropy"
 )
 
 // Result holds crypto detection results.
@@ -28,13 +30,13 @@ func Analyze(data []byte) *Result {
 	}
 
 	// Calculate entropy
-	entropy := calculateEntropy(data)
-	result.Entropy = entropy
+	ent := entropy.Calculate(data)
+	result.Entropy = ent
 
 	// High entropy indicates encryption
-	if entropy > 7.5 {
+	if ent > 7.5 {
 		result.Detected = true
-		result.Confidence = math.Min(entropy/8.0, 0.95)
+		result.Confidence = math.Min(ent/8.0, 0.95)
 	}
 
 	// Check block alignment
@@ -90,27 +92,6 @@ func Analyze(data []byte) *Result {
 	}
 
 	return result
-}
-
-func calculateEntropy(data []byte) float64 {
-	if len(data) == 0 {
-		return 0
-	}
-
-	freq := make([]int, 256)
-	for _, b := range data {
-		freq[b]++
-	}
-
-	entropy := 0.0
-	size := float64(len(data))
-	for _, f := range freq {
-		if f > 0 {
-			p := float64(f) / size
-			entropy -= p * math.Log2(p)
-		}
-	}
-	return entropy
 }
 
 func detectECB(data []byte, blockSize int) bool {

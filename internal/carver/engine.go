@@ -135,9 +135,4 @@ func Carve(data []byte, filePath string, opts *Options) (*Result, error) {
 	return result, nil
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
+

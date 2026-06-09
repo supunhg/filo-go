@@ -1,0 +1,32 @@
+format: regf
+version: "1.0"
+mime:
+  - application/x-windows-registry
+category: system
+confidence_weight: 0.98
+extensions:
+  - reg
+  - dat
+  - hive
+description: Windows Registry hive
+references:
+  - https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2003/cc780771(v=ws.10)
+signatures:
+  - offset: 0
+    hex: "72 65 67 66"
+    description: "regf signature"
+    weight: 1.0
+structure:
+  header_size: 4096
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: Registry file header
+    - id: cells
+      required: true
+      description: Registry cells
+repair_strategies:
+  - name: none
+    priority: 0
+    description: Registry files cannot be repaired

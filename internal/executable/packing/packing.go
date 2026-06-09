@@ -3,6 +3,8 @@ package packing
 import (
 	"bytes"
 	"math"
+
+	"github.com/supunhg/filo-go/internal/entropy"
 )
 
 // Result holds packing detection results.
@@ -182,8 +184,8 @@ func heuristicDetection(data []byte) *Result {
 	codeSections := findCodeSections(data)
 	if len(codeSections) > 0 {
 		for _, section := range codeSections {
-			entropy := calculateEntropy(section.Data)
-			if entropy > 7.0 {
+			ent := entropy.Calculate(section.Data)
+			if ent > 7.0 {
 				result.Indicators = append(result.Indicators,
 					"High entropy in code section (%.2f)")
 				result.Confidence += 0.3
@@ -306,31 +308,4 @@ func hasObfuscation(data []byte) bool {
 	return float64(jmpCount) > threshold
 }
 
-// calculateEntropy calculates Shannon entropy.
-func calculateEntropy(data []byte) float64 {
-	if len(data) == 0 {
-		return 0
-	}
 
-	freq := make([]int, 256)
-	for _, b := range data {
-		freq[b]++
-	}
-
-	entropy := 0.0
-	size := float64(len(data))
-	for _, f := range freq {
-		if f > 0 {
-			p := float64(f) / size
-			entropy -= p * math.Log2(p)
-		}
-	}
-	return entropy
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

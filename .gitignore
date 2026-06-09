@@ -41,3 +41,27 @@ CLAUDE.md
 .cursor/
 .cursorrules
 .github/copilot-instructions.md
+
+# Build artifacts
+/tmp/
+*.prof
+*.cpu
+*.mem
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.cache
+
+# Test artifacts
+cover.out
+cover.html
+coverage.txt
+
+# Binary files
+*.bin
+*.dat
+*.db
+*.sqlite
+*.sqlite3

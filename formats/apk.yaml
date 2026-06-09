@@ -1,0 +1,36 @@
+format: apk
+version: "1.0"
+mime:
+  - application/vnd.android.package-archive
+category: mobile
+confidence_weight: 0.95
+extensions:
+  - apk
+  - aab
+description: Android application package
+references:
+  - https://developer.android.com/studio/build
+signatures:
+  - offset: 0
+    hex: "50 4B 03 04"
+    description: ZIP header (APK is ZIP-based)
+    weight: 0.5
+  - offset: 30
+    hex: "61 6E 64 72 6F 69 64 2F"
+    description: "android/ path in ZIP"
+    weight: 0.9
+structure:
+  chunks:
+    - id: zip_container
+      required: true
+      description: ZIP container
+    - id: android_manifest
+      required: true
+      description: AndroidManifest.xml
+    - id: classes_dex
+      required: true
+      description: classes.dex
+repair_strategies:
+  - name: none
+    priority: 0
+    description: APK files cannot be repaired

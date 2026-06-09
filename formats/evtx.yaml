@@ -1,0 +1,31 @@
+format: evtx
+version: "1.0"
+mime:
+  - application/vnd.microsoft.evtx
+category: system
+confidence_weight: 0.98
+extensions:
+  - evtx
+  - evt
+description: Windows Event Log
+references:
+  - https://docs.microsoft.com/en-us/windows/win32/wes/eventschema-schema
+signatures:
+  - offset: 0
+    hex: "45 6C 66 46 69 6C 65 00"
+    description: "ElfFile signature"
+    weight: 1.0
+structure:
+  header_size: 4096
+  chunks:
+    - id: header
+      required: true
+      position: 0
+      description: EVTX file header (4096 bytes)
+    - id: chunks
+      required: true
+      description: Event chunks
+repair_strategies:
+  - name: none
+    priority: 0
+    description: EVTX files cannot be repaired
