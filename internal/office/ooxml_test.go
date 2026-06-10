@@ -264,15 +264,46 @@ func TestDocumentProperties(t *testing.T) {
 
 func TestCustomProperty(t *testing.T) {
 	prop := CustomProperty{
-		Fmtid:    "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
-		Pid:      2,
-		Name:     "Status",
-		DataType: 1,
-		Value:    "Draft",
+		Fmtid:  "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
+		Pid:    2,
+		Name:   "Status",
+		LPWStr: "Draft",
 	}
 
 	if prop.Name != "Status" {
 		t.Errorf("Expected name 'Status', got %s", prop.Name)
+	}
+	if prop.LPWStr != "Draft" {
+		t.Errorf("Expected LPWStr 'Draft', got %q", prop.LPWStr)
+	}
+	if prop.VTValue() != "Draft" {
+		t.Errorf("Expected VTValue() 'Draft', got %q", prop.VTValue())
+	}
+}
+
+func TestCustomPropertyVTValueDispatch(t *testing.T) {
+	tests := []struct {
+		name string
+		prop CustomProperty
+		want string
+	}{
+		{"lpwstr", CustomProperty{LPWStr: "hello"}, "hello"},
+		{"lpstr", CustomProperty{LPSTR: "world"}, "world"},
+		{"i4", CustomProperty{I4: "42"}, "42"},
+		{"i8", CustomProperty{I8: "99"}, "99"},
+		{"r4", CustomProperty{R4: "1.5"}, "1.5"},
+		{"r8", CustomProperty{R8: "2.5"}, "2.5"},
+		{"bool-true", CustomProperty{Bool: "true"}, "true"},
+		{"filetime", CustomProperty{Filetime: "2024-01-01T00:00:00Z"}, "2024-01-01T00:00:00Z"},
+		{"blob", CustomProperty{Blob: "AAEC"}, "AAEC"},
+		{"empty", CustomProperty{}, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.prop.VTValue(); got != tt.want {
+				t.Errorf("CustomProperty.VTValue() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 

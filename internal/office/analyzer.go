@@ -8,12 +8,15 @@ import (
 
 // Result holds office macro analysis results.
 type Result struct {
-	FileName   string   `json:"file_name"`
-	HasMacros  bool     `json:"has_macros"`
-	MacroCount int      `json:"macro_count"`
-	AutoExec   []string `json:"auto_exec,omitempty"`
-	Suspicious []string `json:"suspicious,omitempty"`
-	App        string   `json:"app,omitempty"`
+	FileName   string         `json:"file_name"`
+	Format     string         `json:"format,omitempty"`     // "ooxml" or "ole2"
+	Type       string         `json:"type,omitempty"`       // "docx"/"xlsx"/"pptx" for OOXML
+	HasMacros  bool           `json:"has_macros"`
+	MacroCount int            `json:"macro_count"`
+	AutoExec   []string       `json:"auto_exec,omitempty"`
+	Suspicious []string       `json:"suspicious,omitempty"`
+	App        string         `json:"app,omitempty"`
+	Metadata   *OOXMLDocument `json:"metadata,omitempty"`
 }
 
 var autoExecPatterns = []string{
@@ -33,7 +36,7 @@ var suspiciousKeywords = []string{
 	"CallByName", "Chr(", "ChrW(",
 }
 
-// Analyze detects VBA macros in OLE2 documents.
+// Analyze detects VBA macros in OLE2 documents and extracts metadata from OOXML documents.
 func Analyze(data []byte, fileName string) *Result {
 	result := &Result{
 		FileName: fileName,
@@ -43,10 +46,24 @@ func Analyze(data []byte, fileName string) *Result {
 		return result
 	}
 
+	// OOXML (ZIP) takes precedence: the analyzer extracts metadata and skips macro detection
+	// (macros in OOXML are stored in vbaProject.bin, not as OLE2 streams).
+	if ooxmlType := DetectOOXMLBytes(data); ooxmlType != "" {
+		result.Format = "ooxml"
+		result.Type = ooxmlType
+		doc, err := ExtractOOXMLFromBytes(data)
+		if err == nil && doc != nil {
+			result.Metadata = doc
+			result.App = ooxmlAppName(ooxmlType)
+		}
+		return result
+	}
+
 	// Check for OLE2 magic
 	if !isOLE2(data) {
 		return result
 	}
+	result.Format = "ole2"
 
 	// Parse directory structure
 	streams := extractOLE2Streams(data)
@@ -150,9 +167,28 @@ func detectApp(streams []string) string {
 	return "Microsoft Office"
 }
 
+// ooxmlAppName maps an OOXML type code to a human-readable application name.
+func ooxmlAppName(t string) string {
+	switch t {
+	case "docx":
+		return "Microsoft Word"
+	case "xlsx":
+		return "Microsoft Excel"
+	case "pptx":
+		return "Microsoft PowerPoint"
+	default:
+		return "Microsoft Office"
+	}
+}
+
 // Print displays office analysis results.
 func Print(r *Result) {
 	fmt.Println()
+	if r.Metadata != nil {
+		fmt.Printf("  Office OOXML Analysis: %s\n", r.FileName)
+		fmt.Println(FormatOOXML(r.Metadata))
+		return
+	}
 	if r.HasMacros {
 		fmt.Printf("  Office Macro Analysis: %s\n", r.FileName)
 		fmt.Printf("  Application: %s\n", r.App)
