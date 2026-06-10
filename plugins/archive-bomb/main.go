@@ -15,6 +15,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 
 	"github.com/supunhg/filo-go/internal/plugins"
 )
@@ -333,13 +334,7 @@ func log2(x float64) float64 {
 	if x <= 0 {
 		return 0
 	}
-	// Simple log2 implementation
-	ln := 0.0
-	for x > 2 {
-		x /= 2
-		ln++
-	}
-	return ln
+	return math.Log2(x)
 }
 
 func main() {
