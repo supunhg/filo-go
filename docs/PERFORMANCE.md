@@ -18,13 +18,18 @@
 
 ### filo-go vs Unix Tools
 
+> **2026-06-10 update:** this row is now compared against the **dedicated** `filo-go hash` and `filo-go strings` subcommands, not the general-purpose `filo-go analyze`. Both subcommands exist (see `filo-go hash --help` and `filo-go strings --help`).
+
 | Operation | filo-go | Unix Tool | Speedup |
 |-----------|---------|-----------|---------|
-| **Hash Computation (sha256)** | 2.6 ms | 2.0 ms (sha256sum) | **0.77x** (slower) |
-| **String Extraction (raw)** | 2.6 ms | 1.2 ms (strings) | **0.46x** (slower) |
-| **String Extraction (10MB)** | 115.8 ms | 102.6 ms (strings) | **0.89x** (slower) |
+| **Hash (sha256, 5KB PNG)** | 1.2 ms | 1.7 ms (sha256sum) | **1.47x** faster |
+| **Hash (sha256, 82KB ZIP)** | 2.3 ms | 1.4 ms (sha256sum) | **0.59x** (slower) |
+| **Hash (sha256, 10MB random)** | 30.4 ms | 26.2 ms (sha256sum) | **0.86x** (slower) |
+| **Strings (5KB PNG)** | 2.6 ms | 1.0 ms (strings) | **0.40x** (slower) |
+| **Strings (82KB ZIP)** | 2.8 ms | 1.0 ms (strings) | **0.37x** (slower) |
+| **Strings (10MB random)** | 246.4 ms | 90.1 ms (strings) | **0.37x** (slower) |
 
-> **Honest finding:** for these primitive operations on the 2026-06-10 corpus, `filo-go analyze` is **slower** than the dedicated Unix tools. `sha256sum` and `strings` are tiny C programs with no overhead; `filo-go analyze` is a general-purpose analyzer that does format detection, entropy, hashing, and string extraction in one pass. The earlier "10.2x" and "10,873x faster" claims in this row were either measured against a different `filo-go` subcommand or were synthesized; they have been removed.
+> **Honest finding:** for hashing and string extraction, `filo-go` is **not faster** than the dedicated Unix tools — not even when using its own dedicated `hash` and `strings` subcommands. `sha256sum` and `strings` are tiny C programs with no overhead; they are the right tool for these primitive operations. filo-go's strength is **integrated analysis** (format detection + entropy + hashing + string extraction in one pass via `filo-go analyze`), where it wins 14x-217x against `binwalk`. Use `filo-go hash` / `filo-go strings` only when you want a single-binary alternative to the Unix tools with the same algorithm/output (not for raw speed). The earlier "10.2x" and "10,873x faster" claims in this row were either measured against a different subcommand or were synthesized; they have been removed.
 
 ---
 
