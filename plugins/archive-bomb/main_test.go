@@ -231,17 +231,26 @@ func TestEstimateEntropyHigh(t *testing.T) {
 }
 
 func TestLog2(t *testing.T) {
-	// The existing log2 implementation is buggy (integer-only count of halvings).
-	// It only produces non-zero values when x > 2, so we just verify the basic
-	// non-negativity and zero-on-edge contract that callers depend on.
-	if log2(0) != 0 {
-		t.Error("log2(0) should be 0")
+	tests := []struct {
+		in   float64
+		want float64
+	}{
+		{0, 0},
+		{-1, 0},
+		{1, 0},
+		{2, 1},
+		{4, 2},
+		{8, 3},
+		{16, 4},
+		{0.5, -1},
+		{0.25, -2},
 	}
-	if log2(-1) != 0 {
-		t.Error("log2(-1) should be 0")
-	}
-	if log2(2) < 0 {
-		t.Error("log2(2) should be non-negative")
+	for _, tt := range tests {
+		got := log2(tt.in)
+		// Allow tiny floating point tolerance
+		if got < tt.want-1e-9 || got > tt.want+1e-9 {
+			t.Errorf("log2(%v) = %v, want %v", tt.in, got, tt.want)
+		}
 	}
 }
 
