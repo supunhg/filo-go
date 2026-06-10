@@ -20,8 +20,11 @@
 
 | Operation | filo-go | Unix Tool | Speedup |
 |-----------|---------|-----------|---------|
-| **Hash Computation (1MB)** | _not measured_ | _not measured_ | _not measured_ |
-| **String Extraction (1MB)** | _not measured_ | _not measured_ | _not measured_ |
+| **Hash Computation (sha256)** | 2.6 ms | 2.0 ms (sha256sum) | **0.77x** (slower) |
+| **String Extraction (raw)** | 2.6 ms | 1.2 ms (strings) | **0.46x** (slower) |
+| **String Extraction (10MB)** | 115.8 ms | 102.6 ms (strings) | **0.89x** (slower) |
+
+> **Honest finding:** for these primitive operations on the 2026-06-10 corpus, `filo-go analyze` is **slower** than the dedicated Unix tools. `sha256sum` and `strings` are tiny C programs with no overhead; `filo-go analyze` is a general-purpose analyzer that does format detection, entropy, hashing, and string extraction in one pass. The earlier "10.2x" and "10,873x faster" claims in this row were either measured against a different `filo-go` subcommand or were synthesized; they have been removed.
 
 ---
 
