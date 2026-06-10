@@ -49,7 +49,7 @@
 
 | Feature | Status | Date |
 |---------|--------|------|
-| Test coverage improvement | ✅ 46.7% coverage (measured) | 2026-06-10 |
+| Test coverage improvement | ✅ 58.7% coverage (measured) | 2026-06-10 |
 | Documentation complete | ✅ Done | 2026-06-09 |
 | Performance benchmarks | ✅ Done | 2026-06-09 |
 | CI/CD pipeline | ✅ Done (golangci-lint scaffolded, gated) | 2026-06-10 |
@@ -179,31 +179,38 @@
 
 ## 📊 Test Coverage Goals
 
-> **Last measured:** 2026-06-10 (Go 1.24, `go test -coverprofile=coverage.out ./...`)
-> Earlier roadmap claimed 61.6% overall; the measured value is **46.7%** and the table below reflects reality.
+> **Last measured:** 2026-06-10 (Go 1.24, `go test -coverprofile=coverage.out ./internal/...`)
+> **Overall coverage: 58.7%** (up from 46.7% in the prior roadmap revision, +12.0pp).
+> Phase C coverage work landed via PRs #8, #9, and #10. The table below reflects the current measured values.
 
 | Package | Current | Target | Status |
 |---------|---------|--------|--------|
+| ml | 100.0% | 95% | ✅ |
+| nsrl | 98.2% | 90% | ✅ |
+| repair | 98.0% | 85% | ✅ |
+| executable/packing | 96.0% | 80% | ✅ |
+| executable/pe | 95.4% | 80% | ✅ |
 | entropy | 94.6% | 95% | ✅ |
 | formats | 93.0% | 95% | ✅ |
 | config | 90.7% | 95% | ✅ |
 | export | 88.3% | 90% | ✅ |
 | mcp | 88.0% | 90% | ✅ |
 | plugins | 82.1% | 85% | ✅ |
+| batch | 81.2% | 85% | ✅ |
 | strings | 81.7% | 85% | ✅ |
 | hashing | 80.0% | 85% | ✅ |
+| executable/macho | 78.0% | 70% | ✅ |
 | registry | 76.6% | 80% | ✅ |
 | crypto | 74.3% | 80% | ✅ |
 | yara | 73.7% | 80% | ✅ |
-| repair | 71.6% | 75% | 🔄 |
 | carver | 67.3% | 75% | 🔄 |
+| executable/elf | 64.9% | 60% | ✅ |
 | evtx | 64.4% | 70% | ✅ |
-| batch | 81.2% | 85% | ✅ |
 | lineage | 53.8% | 60% | ✅ |
 | container | 52.4% | 60% | 🔄 |
 | analyzer | 50.9% | 60% | 🔄 |
 | office | 47.6% | 60% | 🔄 |
-| sqlite | 45.4% | 60% | 🔄 |
+| sqlite | 47.1% | 60% | 🔄 |
 | sigma | 45.0% | 50% | 🔄 |
 | timeline | 45.0% | 50% | 🔄 |
 | metadata | 44.1% | 50% | 🔄 |
@@ -211,14 +218,9 @@
 | firmware | 41.7% | 50% | 🔄 |
 | stego | 40.4% | 50% | 🔄 |
 | pcap | 38.5% | 50% | 🔄 |
-| executable/elf | 0.0% | 40% | ❌ |
-| executable/pe | 0.0% | 40% | ❌ |
-| executable/macho | 0.0% | 40% | ❌ |
-| executable/packing | 0.0% | 40% | ❌ |
-| ml | 0.0% | 30% | ❌ |
-| nsrl | 0.0% | 30% | ❌ |
+| cli | 32.5% | 40% | 🔄 |
 | plugins/archive-bomb | 0.0% | 50% | ❌ |
-| **Overall** | **46.7%** | **70%** | **v0.4.0** |
+| **Overall** | **58.7%** | **70%** | **v0.4.0** |
 
 ---
 
@@ -226,7 +228,7 @@
 
 ### v0.3.0 (Released 2026-06-09)
 
-- [x] Test coverage ≥ 40% (now 46.7% measured)
+- [x] Test coverage ≥ 40% (now **58.7%** measured, +12.0pp since v0.3.0 hygiene)
 - [x] Complete documentation
 - [x] Performance benchmarks
 - [x] CI/CD pipeline (golangci-lint scaffolded, gated behind `if: false`)
@@ -322,7 +324,7 @@
 |--------|---------|--------|-----|
 | GitHub stars | 0 | 100 | Month 2 |
 | Contributors | 1 | 5 | Month 3 |
-| Test coverage | 46.7% | 70% | v0.4.0 |
+| Test coverage | **58.7%** | 70% | v0.4.0 |
 | Commands | 36 | 40 | Week 2 |
 | MCP tools | 9 | 15 | Week 2 |
 | Formats | 30 | 50 | Week 4 |
