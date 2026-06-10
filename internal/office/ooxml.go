@@ -184,6 +184,36 @@ func DetectOOXMLBytes(data []byte) string {
 	return ""
 }
 
+// ExtractVBAProjectBytes scans an in-memory OOXML document for an embedded
+// vbaProject.bin and returns its raw bytes. Returns nil if no VBA project is
+// present. The returned blob is itself an OLE2 (CFB) file that can be fed back
+// to Analyze for macro detection.
+func ExtractVBAProjectBytes(data []byte) []byte {
+	if DetectOOXMLBytes(data) == "" {
+		return nil
+	}
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil
+	}
+	for _, f := range zr.File {
+		switch f.Name {
+		case "word/vbaProject.bin", "xl/vbaProject.bin", "ppt/vbaProject.bin":
+			rc, err := f.Open()
+			if err != nil {
+				return nil
+			}
+			d, err := io.ReadAll(rc)
+			rc.Close()
+			if err != nil {
+				return nil
+			}
+			return d
+		}
+	}
+	return nil
+}
+
 // ExtractOOXMLFromBytes extracts metadata from an in-memory OOXML document.
 func ExtractOOXMLFromBytes(data []byte) (*OOXMLDocument, error) {
 	docType := DetectOOXMLBytes(data)
@@ -330,6 +360,21 @@ func ExtractOOXML(filePath string) (*OOXMLDocument, error) {
 	}
 
 	return doc, nil
+}
+
+// ExtractVBAProject scans an OOXML file for an embedded vbaProject.bin and
+// returns its raw bytes. Returns nil if no VBA project is present.
+func ExtractVBAProject(filePath string) []byte {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil
+	}
+	return ExtractVBAProjectBytes(data)
 }
 
 // parseCoreProperties parses the core.xml file
