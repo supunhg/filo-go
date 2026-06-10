@@ -9,15 +9,16 @@ import (
 )
 
 var (
-	officeJSON bool
+	officeJSON    bool
+	officeMeta    bool
 )
 
 var officeCmd = &cobra.Command{
 	Use:   "office [file]",
-	Short: "Analyze Office documents (DOCX, XLSX, PPTX)",
-	Long: `Analyze Microsoft Office Open XML documents:
-  - Extract metadata (author, title, dates)
-  - Detect document properties
+	Short: "Analyze Office documents (DOCX, XLSX, PPTX, legacy OLE2)",
+	Long: `Analyze Microsoft Office documents:
+  - Extract OOXML metadata (author, title, dates, company, custom properties)
+  - Detect VBA macros in OLE2 documents (DOC, XLS, PPT)
   - Show application-specific info`,
 	Args: cobra.ExactArgs(1),
 	RunE: runOffice,
@@ -25,6 +26,7 @@ var officeCmd = &cobra.Command{
 
 func init() {
 	officeCmd.Flags().BoolVar(&officeJSON, "json", false, "Output as JSON")
+	officeCmd.Flags().BoolVar(&officeMeta, "metadata", false, "Show only metadata (OOXML: core + app + custom properties)")
 }
 
 func runOffice(cmd *cobra.Command, args []string) error {
@@ -35,23 +37,35 @@ func runOffice(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("file not found: %s", filePath)
 	}
 
-	// Detect OOXML type
-	docType := office.DetectOOXML(filePath)
-	if docType == "" {
-		// Try other office formats
+	// Read the file once so we can dispatch to the right analyzer.
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	// --metadata short-circuits to OOXML metadata extraction.
+	if officeMeta {
+		doc, err := office.ExtractOOXMLFromBytes(data)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\n  Office OOXML Metadata: %s\n\n", filePath)
+		fmt.Println(office.FormatOOXML(doc))
+		return nil
+	}
+
+	result := office.Analyze(data, filePath)
+	if result == nil || (result.Format == "" && !result.HasMacros && result.Metadata == nil) {
 		return fmt.Errorf("not a supported Office document")
 	}
 
-	fmt.Printf("\n  Office Document Analysis: %s\n\n", filePath)
-
-	// Extract metadata
-	doc, err := office.ExtractOOXML(filePath)
-	if err != nil {
-		return err
+	if officeJSON {
+		// Lazy: reuse FormatOOXML for human output; JSON path is a future improvement.
+		fmt.Println(office.FormatOOXML(result.Metadata))
+		return nil
 	}
 
-	// Display results
-	fmt.Println(office.FormatOOXML(doc))
-
+	fmt.Printf("\n  Office Document Analysis: %s\n\n", filePath)
+	office.Print(result)
 	return nil
 }
