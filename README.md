@@ -5,6 +5,19 @@
 [![CI](https://github.com/supunhg/filo-go/actions/workflows/ci.yml/badge.svg)](https://github.com/supunhg/filo-go/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/supunhg/filo-go)](https://goreportcard.com/report/github.com/supunhg/filo-go)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Latest release](https://img.shields.io/badge/release-v0.4.0-blue)](https://github.com/supunhg/filo-go/releases/tag/v0.4.0)
+
+**Latest release: v0.4.0 (2026-06-10)** — 65.9% test coverage, measured 14x–217x speedup vs binwalk, OOXML metadata + VBA extraction, Apache 2.0.
+
+---
+
+## ⚠️ Known limitations
+
+- `filo-go strings` is **~2x slower** than GNU `strings(1)` on large binary inputs (the C binary is structurally faster at the printable-scan hot path; a streaming-writer optimization narrowed the gap but did not close it).
+- `filo-go hash` is **~0.8x the speed of `sha256sum`** for the same structural reason. Use `sha256sum` directly if raw speed matters.
+- These gaps only apply to the dedicated primitive commands. **Integrated analysis** (`filo-go analyze`, which does format detection + entropy + hashing + string extraction in one pass) is **14x–217x faster than binwalk** on the same inputs.
+
+See [docs/PERFORMANCE.md](docs/PERFORMANCE.md) for the full measured numbers, and [benchmarks/results/2026-06-10.md](benchmarks/results/2026-06-10.md) for the source of truth.
 
 ---
 
