@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/supunhg/filo-go/actions/workflows/ci.yml/badge.svg)](https://github.com/supunhg/filo-go/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/supunhg/filo-go)](https://goreportcard.com/report/github.com/supunhg/filo-go)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ---
 
@@ -335,7 +335,7 @@ filo-go is **6x to 10,873x faster** than binwalk and Unix tools:
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ---
 

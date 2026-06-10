@@ -1,8 +1,8 @@
 # filo-go Development Roadmap
 
-> **Last Updated:** 2026-06-09  
+> **Last Updated:** 2026-06-10  
 > **Current Version:** 0.3.0  
-> **Status:** Production Ready
+> **Status:** In active development (v0.3.0 hygiene + roadmap accuracy release)
 
 ---
 
@@ -49,14 +49,15 @@
 
 | Feature | Status | Date |
 |---------|--------|------|
-| Test coverage improvement | ✅ 61.6% coverage | 2026-06-09 |
+| Test coverage improvement | ✅ 46.7% coverage (measured) | 2026-06-10 |
 | Documentation complete | ✅ Done | 2026-06-09 |
 | Performance benchmarks | ✅ Done | 2026-06-09 |
-| CI/CD pipeline | ✅ Done | 2026-06-09 |
+| CI/CD pipeline | ✅ Done (golangci-lint scaffolded, gated) | 2026-06-10 |
 | bzip2 decompression | ✅ Done | 2026-06-09 |
 | Network file extraction | ✅ Done | 2026-06-09 |
 | Real benchmark data | ✅ Done | 2026-06-09 |
-| Bug fixes and polish | ✅ Done | 2026-06-09 |
+| License updated to Apache 2.0 | ✅ Done | 2026-06-10 |
+| CHANGELOG.md created | ✅ Done | 2026-06-10 |
 
 ### Planned 📋
 
@@ -178,47 +179,61 @@
 
 ## 📊 Test Coverage Goals
 
+> **Last measured:** 2026-06-10 (Go 1.24, `go test -coverprofile=coverage.out ./...`)
+> Earlier roadmap claimed 61.6% overall; the measured value is **46.7%** and the table below reflects reality.
+
 | Package | Current | Target | Status |
 |---------|---------|--------|--------|
 | entropy | 94.6% | 95% | ✅ |
 | formats | 93.0% | 95% | ✅ |
 | config | 90.7% | 95% | ✅ |
 | export | 88.3% | 90% | ✅ |
+| mcp | 88.0% | 90% | ✅ |
 | plugins | 82.1% | 85% | ✅ |
 | strings | 81.7% | 85% | ✅ |
 | hashing | 80.0% | 85% | ✅ |
 | registry | 76.6% | 80% | ✅ |
 | crypto | 74.3% | 80% | ✅ |
+| yara | 73.7% | 80% | ✅ |
+| repair | 71.6% | 75% | 🔄 |
+| carver | 67.3% | 75% | 🔄 |
 | evtx | 64.4% | 70% | ✅ |
+| batch | 81.2% | 85% | ✅ |
 | lineage | 53.8% | 60% | ✅ |
 | container | 52.4% | 60% | 🔄 |
+| analyzer | 50.9% | 60% | 🔄 |
+| office | 47.6% | 60% | 🔄 |
+| sqlite | 45.4% | 60% | 🔄 |
 | sigma | 45.0% | 50% | 🔄 |
 | timeline | 45.0% | 50% | 🔄 |
-| office | 43.4% | 50% | 🔄 |
+| metadata | 44.1% | 50% | 🔄 |
+| executable | 42.3% | 50% | 🔄 |
 | firmware | 41.7% | 50% | 🔄 |
 | stego | 40.4% | 50% | 🔄 |
-| pcap | 39.0% | 50% | 🔄 |
-| analyzer | 36.0% | 50% | 🔄 |
-| yara | 32.8% | 50% | 🔄 |
-| mcp | 23.2% | 40% | 🔄 |
-| repair | 23.5% | 40% | 🔄 |
-| executable | 22.4% | 40% | 🔄 |
-| metadata | 18.0% | 30% | 🔄 |
-| sqlite | 17.9% | 30% | 🔄 |
-| **Overall** | **61.6%** | **70%** | **v0.4.0** |
+| pcap | 38.5% | 50% | 🔄 |
+| executable/elf | 0.0% | 40% | ❌ |
+| executable/pe | 0.0% | 40% | ❌ |
+| executable/macho | 0.0% | 40% | ❌ |
+| executable/packing | 0.0% | 40% | ❌ |
+| ml | 0.0% | 30% | ❌ |
+| nsrl | 0.0% | 30% | ❌ |
+| plugins/archive-bomb | 0.0% | 50% | ❌ |
+| **Overall** | **46.7%** | **70%** | **v0.4.0** |
 
 ---
 
 ## 🎯 Milestones
 
-### v0.3.0 (Target: Week 2)
+### v0.3.0 (Released 2026-06-09)
 
-- [x] Test coverage > 40%
+- [x] Test coverage ≥ 40% (now 46.7% measured)
 - [x] Complete documentation
 - [x] Performance benchmarks
-- [x] CI/CD pipeline
+- [x] CI/CD pipeline (golangci-lint scaffolded, gated behind `if: false`)
 - [x] bzip2 decompression
 - [x] Network file extraction
+- [x] License harmonized to Apache 2.0
+- [x] CHANGELOG.md introduced
 - [ ] OOXML metadata
 - [ ] Interactive HTML reports
 
@@ -307,7 +322,7 @@
 |--------|---------|--------|-----|
 | GitHub stars | 0 | 100 | Month 2 |
 | Contributors | 1 | 5 | Month 3 |
-| Test coverage | 61.6% | 70% | v0.4.0 |
+| Test coverage | 46.7% | 70% | v0.4.0 |
 | Commands | 36 | 40 | Week 2 |
 | MCP tools | 9 | 15 | Week 2 |
 | Formats | 30 | 50 | Week 4 |
