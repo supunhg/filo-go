@@ -12,17 +12,16 @@
 
 | Operation | filo-go | binwalk | Speedup |
 |-----------|---------|---------|---------|
-| **File Analysis (1MB)** | 1.26 ms | 621 ms | **493x faster** |
-| **Entropy Analysis (1MB)** | 594 µs | 849 ms | **1,430x faster** |
-| **File Carving (10MB)** | 13.0 ms | 2.15 s | **166x faster** |
-| **Signature Scanning (10MB)** | 355 ms | 2.11 s | **6.0x faster** |
+| **PNG analysis (5KB, with tEXt chunks)** | 3.9 ms | 757.5 ms | **193.86x faster** |
+| **ZIP archive analysis (82KB, 500 entries)** | 3.8 ms | 814.2 ms | **216.78x faster** |
+| **Random 10MB blob scan** | 243.8 ms | 3,397.4 ms | **13.94x faster** |
 
 ### filo-go vs Unix Tools
 
 | Operation | filo-go | Unix Tool | Speedup |
 |-----------|---------|-----------|---------|
-| **Hash Computation (1MB)** | 811 µs | 8.26 ms (sha256sum) | **10.2x faster** |
-| **String Extraction (1MB)** | 1.27 µs | 13.8 ms (strings) | **10,873x faster** |
+| **Hash Computation (1MB)** | _not measured_ | _not measured_ | _not measured_ |
+| **String Extraction (1MB)** | _not measured_ | _not measured_ | _not measured_ |
 
 ---
 
@@ -217,7 +216,7 @@ go test -bench=BenchmarkBinwalk -benchmem ./benchmarks/
 
 ## Conclusion
 
-filo-go delivers **6x to 10,873x faster performance** than binwalk and Unix tools across all operations. The Go-native implementation eliminates Python interpreter overhead while providing hardware-accelerated cryptography and zero-allocation analysis paths.
+filo-go delivers **14x to 217x faster performance** than binwalk on the measured corpus (see [`benchmarks/results/2026-06-10.md`](../benchmarks/results/2026-06-10.md), reproducible via `benchmarks/competitor_bench.sh`). The Go-native implementation eliminates Python interpreter overhead while providing hardware-accelerated cryptography and zero-allocation analysis paths.
 
 For security professionals analyzing firmware, malware, or forensic images, filo-go provides:
 - **Predictable performance** that scales linearly with file size

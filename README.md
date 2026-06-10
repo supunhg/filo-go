@@ -38,15 +38,13 @@
 
 ### 🚀 Performance
 
-filo-go is **6x to 10,873x faster** than binwalk and Unix tools:
+filo-go is **14x to 217x faster** than binwalk on a measured corpus (see [benchmarks/results/2026-06-10.md](benchmarks/results/2026-06-10.md), reproducible via `benchmarks/competitor_bench.sh`):
 
 | Operation | filo-go | binwalk | Speedup |
 |-----------|---------|---------|----------|
-| File Analysis (1MB) | 1.26 ms | 621 ms | **493x** |
-| Entropy Analysis (1MB) | 594 µs | 849 ms | **1,430x** |
-| File Carving (10MB) | 13 ms | 2.15 s | **166x** |
-| Hash Computation (1MB) | 811 µs | 8.26 ms | **10.2x** |
-| String Extraction (1MB) | 1.27 µs | 13.8 ms | **10,873x** |
+| PNG analysis (5KB, with tEXt chunks) | 3.9 ms | 757.5 ms | **193.86x** |
+| ZIP archive analysis (82KB, 500 entries) | 3.8 ms | 814.2 ms | **216.78x** |
+| Random 10MB blob scan | 243.8 ms | 3,397.4 ms | **13.94x** |
 
 See [Performance Benchmarks](docs/PERFORMANCE.md) for detailed analysis.
 
@@ -309,15 +307,13 @@ go test ./internal/entropy/ -v
 
 ## 📈 Performance
 
-filo-go is **6x to 10,873x faster** than binwalk and Unix tools:
+filo-go is **14x to 217x faster** than binwalk on a measured corpus (see [benchmarks/results/2026-06-10.md](benchmarks/results/2026-06-10.md), reproducible via `benchmarks/competitor_bench.sh`):
 
-| Operation | filo-go | binwalk/Unix | Speedup |
-|-----------|---------|--------------|----------|
-| File Analysis (1MB) | 1.07 ms | 644 ms (binwalk) | **600x** |
-| Entropy Analysis (1MB) | 595 µs | 632 ms (binwalk) | **1,061x** |
-| File Carving (10MB) | 14.6 ms | 2.22 s (binwalk) | **153x** |
-| Hash Computation (1MB) | 885 µs | 5.47 ms (sha256sum) | **6.2x** |
-| String Extraction (1MB) | 633 ns | 9.54 ms (strings) | **15,078x** |
+| Operation | filo-go | binwalk | Speedup |
+|-----------|---------|---------|----------|
+| PNG analysis (5KB, with tEXt chunks) | 3.9 ms | 757.5 ms | **193.86x** |
+| ZIP archive analysis (82KB, 500 entries) | 3.8 ms | 814.2 ms | **216.78x** |
+| Random 10MB blob scan | 243.8 ms | 3,397.4 ms | **13.94x** |
 
 *Benchmarks measured on Intel Xeon Platinum 8488C, Linux AMD64*
 
