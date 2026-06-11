@@ -80,3 +80,142 @@ func TestCount(t *testing.T) {
 		t.Errorf("Expected 1 entry in cat2, got %d", counts["cat2"])
 	}
 }
+
+func TestPrint(t *testing.T) {
+	tl := New()
+
+	// Test empty timeline
+	tl.Print()
+
+	// Test with events
+	tl.Add(time.Now(), "test", "event1", "detail", "cat1")
+	tl.Add(time.Now(), "test", "event2", "", "cat2")
+
+	tl.Print()
+}
+
+func TestPrintSummary(t *testing.T) {
+	tl := New()
+
+	// Test empty timeline
+	tl.PrintSummary()
+
+	// Test with events
+	tl.Add(time.Now(), "test", "event1", "detail", "cat1")
+	tl.Add(time.Now(), "test", "event2", "detail", "cat1")
+	tl.Add(time.Now(), "test", "event3", "detail", "cat2")
+
+	tl.PrintSummary()
+}
+
+func TestAddMultipleEvents(t *testing.T) {
+	tl := New()
+
+	for i := 0; i < 10; i++ {
+		tl.Add(time.Now().Add(time.Duration(i)*time.Second), "test", "event", "detail", "cat")
+	}
+
+	if len(tl.Entries) != 10 {
+		t.Errorf("Expected 10 entries, got %d", len(tl.Entries))
+	}
+}
+
+func TestSortMultipleEvents(t *testing.T) {
+	tl := New()
+
+	// Add events in reverse order
+	for i := 9; i >= 0; i-- {
+		tl.Add(time.Now().Add(time.Duration(i)*time.Second), "test", "event", "detail", "cat")
+	}
+
+	tl.Sort()
+
+	// Verify sorted order
+	for i := 1; i < len(tl.Entries); i++ {
+		if tl.Entries[i].Timestamp.Before(tl.Entries[i-1].Timestamp) {
+			t.Errorf("Events not sorted correctly at index %d", i)
+		}
+	}
+}
+
+func TestFilterByTimeEdgeCases(t *testing.T) {
+	tl := New()
+
+	now := time.Now()
+	tl.Add(now, "test", "event1", "detail", "cat")
+	tl.Add(now.Add(time.Hour), "test", "event2", "detail", "cat")
+
+	// Filter with exact start time
+	filtered := tl.FilterByTime(now, now.Add(time.Hour))
+	if len(filtered.Entries) != 2 {
+		t.Errorf("Expected 2 entries, got %d", len(filtered.Entries))
+	}
+
+	// Filter with exact end time
+	filtered = tl.FilterByTime(now, now.Add(time.Hour))
+	if len(filtered.Entries) != 2 {
+		t.Errorf("Expected 2 entries, got %d", len(filtered.Entries))
+	}
+
+	// Filter with no matches
+	filtered = tl.FilterByTime(now.Add(2*time.Hour), now.Add(3*time.Hour))
+	if len(filtered.Entries) != 0 {
+		t.Errorf("Expected 0 entries, got %d", len(filtered.Entries))
+	}
+}
+
+func TestFilterByCategoryEdgeCases(t *testing.T) {
+	tl := New()
+
+	tl.Add(time.Now(), "test", "event1", "detail", "cat1")
+	tl.Add(time.Now(), "test", "event2", "detail", "cat2")
+
+	// Filter with non-existent category
+	filtered := tl.FilterByCategory("nonexistent")
+	if len(filtered.Entries) != 0 {
+		t.Errorf("Expected 0 entries, got %d", len(filtered.Entries))
+	}
+
+	// Filter with empty category
+	filtered = tl.FilterByCategory("")
+	if len(filtered.Entries) != 0 {
+		t.Errorf("Expected 0 entries, got %d", len(filtered.Entries))
+	}
+}
+
+func TestCountEmpty(t *testing.T) {
+	tl := New()
+
+	counts := tl.Count()
+
+	if len(counts) != 0 {
+		t.Errorf("Expected 0 categories, got %d", len(counts))
+	}
+}
+
+func TestEntryStructure(t *testing.T) {
+	now := time.Now()
+	entry := Entry{
+		Timestamp: now,
+		Source:    "test_source",
+		Event:     "test_event",
+		Detail:    "test_detail",
+		Category:  "test_category",
+	}
+
+	if entry.Timestamp != now {
+		t.Error("Timestamp mismatch")
+	}
+	if entry.Source != "test_source" {
+		t.Error("Source mismatch")
+	}
+	if entry.Event != "test_event" {
+		t.Error("Event mismatch")
+	}
+	if entry.Detail != "test_detail" {
+		t.Error("Detail mismatch")
+	}
+	if entry.Category != "test_category" {
+		t.Error("Category mismatch")
+	}
+}

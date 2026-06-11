@@ -36,6 +36,9 @@ func DetectFirmware(filePath string) string {
 	if DetectJFFS2(filePath) {
 		return "jffs2"
 	}
+	if DetectYAFFS(filePath) {
+		return "yaffs"
+	}
 	return "unknown"
 }
 
@@ -48,6 +51,8 @@ func ExtractFirmware(srcPath, destDir, format string) (*ExtractionResult, error)
 		return ExtractCramFS(srcPath, destDir)
 	case "jffs2":
 		return ExtractJFFS2(srcPath, destDir)
+	case "yaffs":
+		return ExtractYAFFS(srcPath, destDir)
 	default:
 		return nil, fmt.Errorf("unsupported firmware format: %s", format)
 	}
@@ -67,6 +72,10 @@ func FormatFirmwareInfo(format string, data interface{}) string {
 	case "jffs2":
 		if sb, ok := data.(*JFFS2Superblock); ok {
 			return FormatJFFS2Superblock(sb)
+		}
+	case "yaffs":
+		if sb, ok := data.(*YAFFSSuperblock); ok {
+			return FormatYAFFSSuperblock(sb)
 		}
 	}
 	return "Unknown firmware format"

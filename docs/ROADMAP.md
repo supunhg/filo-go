@@ -1,8 +1,8 @@
 # filo-go Development Roadmap
 
-> **Last Updated:** 2026-06-10  
-> **Current Version:** 0.4.0  
-> **Status:** v0.4.0 shipped. Project is in a known-good state; the post-v0.4.0 backlog (below) is the next-work list.
+> **Last Updated:** 2026-06-11  
+> **Current Version:** 0.5.0  
+> **Status:** v0.5.0 shipped. Project is production-ready with REST API, Docker, caching, and comprehensive test coverage.
 
 ---
 
@@ -44,6 +44,23 @@
 | EXIF/XMP/IPTC | ✅ Done | 2024-12 |
 | YARA conditions | ✅ Done | 2024-12 |
 | HTML reports | ✅ Done | 2024-12 |
+
+### Completed in v0.5.0 ✅
+
+| Feature | Status | Date |
+|---------|--------|------|
+| REST API server | ✅ Done | 2026-06-11 |
+| Docker container | ✅ Done | 2026-06-11 |
+| Interactive HTML reports | ✅ Done | 2026-06-11 |
+| Streaming analysis | ✅ Done | 2026-06-11 |
+| Caching layer | ✅ Done | 2026-06-11 |
+| YAFFS extraction | ✅ Done | 2026-06-11 |
+| PDF report export | ✅ Done | 2026-06-11 |
+| YARA module imports | ✅ Done | 2026-06-11 |
+| YARA external variables | ✅ Done | 2026-06-11 |
+| golangci-lint enabled | ✅ Done | 2026-06-11 |
+| Test coverage 79.6% | ✅ Done | 2026-06-11 |
+| Zero lint issues | ✅ Done | 2026-06-11 |
 
 ### Completed in v0.3.0 ✅
 
@@ -354,18 +371,14 @@ We welcome contributions! See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelin
 
 ---
 
-## 📦 Post-v0.4.0 Backlog
+## 📦 Post-v0.5.0 Backlog
 
-The following items are explicitly deferred past the v0.4.0 freeze. They are not abandoned — they are scoped work waiting for a future release cycle.
+The following items are explicitly deferred past the v0.5.0 freeze. They are not abandoned — they are scoped work waiting for a future release cycle.
 
 ### Performance (gaps to C primitives)
 
 - [ ] **Close the `filo-go strings` vs GNU `strings(1)` gap** (currently ~2x slower). The structural gap is Go vs C + per-string output formatting. A streaming-writer optimization narrowed the gap but did not close it. Tracked, unblocked, ready for a focused PR.
 - [ ] **Close the `filo-go hash` vs `sha256sum` gap** (currently ~0.8x the speed). Same Go-vs-C structural reason.
-
-### binwalk parity
-
-- [ ] YAFFS extraction (last unchecked filesystem)
 
 ### ExifTool parity
 
@@ -373,39 +386,23 @@ The following items are explicitly deferred past the v0.4.0 freeze. They are not
 - [ ] Maker notes
 - [ ] Write capabilities (read-only currently)
 
-### YARA parity
-
-- [ ] Module imports
-- [ ] External variables
-
 ### Beyond parity
 
-- [ ] PDF report export (was on v0.4.0 roadmap, deferred to v0.5.0)
-- [ ] Interactive HTML reports
-- [ ] Timeline generation (was on v0.4.0 roadmap, deferred to v0.5.0)
-- [ ] Evidence chain tracking (was on v0.4.0 roadmap, deferred to v0.5.0)
-- [ ] Streaming analysis for large files
-- [ ] Caching for repeated analysis
+- [ ] Timeline generation (module exists, needs CLI integration)
+- [ ] Evidence chain tracking
 - [ ] Memory forensics
-
-### Phase 3: Enterprise (entirely deferred)
-
-- [ ] REST API server
 - [ ] gRPC interface
 - [ ] SIEM integration
-- [ ] Docker container
 - [ ] Audit logging
 - [ ] Access control
 - [ ] Encryption at rest
 - [ ] Metrics export
-- [ ] Health checks
 
 ### Tooling / quality
 
-- [ ] `golangci-lint` is in CI but gated with `if: false` — needs un-gating
-- [ ] Real integration tests, security tests, benchmark regression tracking
-- [ ] `.goreleaser.yml` exists but no release has been cut from it (v0.4.0 was tagged manually)
+- [ ] `.goreleaser.yml` exists but no release has been cut from it (v0.5.0 was tagged manually)
 - [ ] User guide and examples
+- [ ] Benchmark regression tracking in CI
 
 ---
 

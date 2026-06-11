@@ -54,12 +54,8 @@ jobs:
         flags: unittests
       if: matrix.go-version == '1.24'
 
-  # golangci-lint scaffolding. The job is intentionally gated with `if: ${{ false }}`
-  # so it does not block the build until golangci-lint is provisioned in the
-  # environment. Flip the condition to `if: ${{ true }}` (or remove it) to enable.
   lint:
     runs-on: ubuntu-latest
-    if: ${{ false }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

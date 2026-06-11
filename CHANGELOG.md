@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-11
+
+### Highlights
+
+- **REST API server**: Full HTTP API with 10 endpoints (analyze, hash, strings, crypto, stego, metadata, batch, upload). Start with `filo api --addr :8080`.
+- **Docker support**: Multi-stage Dockerfile, docker-compose.yml, non-root user, health checks.
+- **Interactive HTML reports**: Self-contained HTML with drill-down sections, real-time filtering, entropy visualization charts, and security dashboard.
+- **Streaming analysis**: Memory-efficient chunked processing for files >100MB without loading entirely into memory.
+- **Caching layer**: BoltDB-based analysis caching with SHA256 file hashing and TTL support.
+- **YARA module imports**: PE, ELF, Mach-O module structs for YARA rule context.
+- **YARA external variables**: SetVariable/GetVariable for rule customization.
+- **YAFFS extraction**: Complete binwalk parity with YAFFS1/YAFFS2 filesystem detection and extraction.
+- **PDF report export**: Basic PDF generation for forensic reports.
+- **Test coverage**: 65.9% → **79.6%** across all `internal/...` packages.
+- **Zero lint issues**: All golangci-lint issues resolved.
+
+### Added
+
+- `internal/api/` - REST API server with 10 endpoints
+- `internal/api/server.go` - HTTP server with analyze, hash, strings, crypto, stego, metadata, batch, upload endpoints
+- `internal/api/server_test.go` - 13 API tests
+- `internal/cache/cache.go` - BoltDB-based caching layer
+- `internal/cache/cache_test.go` - 11 cache tests
+- `internal/analyzer/stream.go` - Streaming analysis for large files
+- `internal/analyzer/stream_test.go` - 7 streaming tests
+- `internal/export/interactive.go` - Interactive HTML report generation
+- `internal/export/interactive_test.go` - 5 interactive report tests
+- `internal/export/pdf.go` - PDF report generation
+- `internal/export/exporter_test.go` - PDF export tests
+- `internal/firmware/yaffs.go` - YAFFS1/YAFFS2 detection and extraction
+- `internal/cli/api.go` - `filo api` command for REST API server
+- `Dockerfile` - Multi-stage Docker build
+- `docker-compose.yml` - Docker Compose with API and MCP services
+- `.dockerignore` - Docker build exclusions
+- YARA module imports: `PEInfo`, `ELFInfo`, `MachOInfo` structs
+- YARA external variables: `SetVariable`, `GetVariable`, `Rule.AddVariable`
+- 50+ new CLI integration tests for batch, carve, extract, meta, stego, firmware, office, evtx, registry, sigma, timeline, config, executable, sqlite, repair
+- Comprehensive tests for analyzer (schema, entropy viz, Print), container (ExtractTo, nested ZIP), sqlite (varint, WAL, record types), sigma (keyword matching, builtin rules), timeline (Print, edge cases)
+
+### Changed
+
+- `internal/cli/root.go`: Version 0.3.0 → 0.4.0, `SilenceErrors: false`
+- `.github/workflows/ci.yml`: Enabled golangci-lint job (removed `if: false` gate)
+- `.golangci.yml`: Updated for v2 format with govet, ineffassign, staticcheck, misspell, unconvert
+- `go.mod`: Updated dependencies
+- All lint issues resolved (tagged switches, unnecessary conversions, empty branches, error capitalization, etc.)
+
+### Fixed
+
+- `internal/executable/macho/macho.go`: Error string capitalization ("Fat" → "fat")
+- `internal/firmware/yaffs.go`: uint16 comparison, unnecessary fmt.Sprintf
+- `internal/export/pdf.go`: Unnecessary fmt.Sprintf
+- `internal/firmware/{cramfs,jffs2,squashfs}.go`: Unnecessary fmt.Sprintf
+- `internal/entropy/visualization.go`: Tagged switch, removed fmt.Sprintf
+- `internal/executable/pe/pe.go`: Tagged switches (3 locations)
+- `internal/export/html.go`: Tagged switch
+- `internal/metadata/extractor.go`: Tagged switch
+- `internal/pcap/analyzer.go`: Simplified append loop
+- `internal/carver/extractor.go`: Unnecessary type conversion
+- `internal/cli/meta.go`: Simplified nil check
+- `internal/executable/analyzer.go`: Simplified nil check
+
+### Coverage Summary
+
+| Package | Coverage |
+|---------|----------|
+| ml, sigma, timeline | 100% |
+| nsrl | 98.2% |
+| repair | 98.0% |
+| executable/packing | 96.0% |
+| executable/pe | 95.3% |
+| entropy | 94.5% |
+| formats | 93.0% |
+| export | 92.9% |
+| config | 90.7% |
+| mcp | 88.0% |
+| pcap | 85.9% |
+| office | 84.3% |
+| plugins | 82.1% |
+| strings | 81.7% |
+| batch | 81.2% |
+| executable | 80.6% |
+| hashing | 80.0% |
+| **Overall** | **79.6%** |
+
 ## [0.4.0] - 2026-06-10
 
 ### Highlights

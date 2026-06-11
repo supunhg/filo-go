@@ -85,7 +85,7 @@ func Analyze(data []byte, deepScan bool) (*Result, error) {
 // analyzeFat analyzes a universal (fat) binary.
 func analyzeFat(data []byte, deepScan bool) (*Result, error) {
 	if len(data) < 8 {
-		return nil, fmt.Errorf("Fat binary too small")
+		return nil, fmt.Errorf("fat binary too small")
 	}
 
 	nfatArch := binary.BigEndian.Uint32(data[4:8])

@@ -44,13 +44,14 @@ func Visualize(data []byte, opts *VizOptions) string {
 		threshold := float64(row) / float64(opts.Height) * 8.0
 
 		// Y-axis label
-		if row == opts.Height {
-			sb.WriteString(fmt.Sprintf(" 8.0 │"))
-		} else if row == opts.Height/2 {
-			sb.WriteString(fmt.Sprintf(" 4.0 │"))
-		} else if row == 1 {
-			sb.WriteString(fmt.Sprintf(" 0.0 │"))
-		} else {
+		switch row {
+		case opts.Height:
+			sb.WriteString(" 8.0 │")
+		case opts.Height / 2:
+			sb.WriteString(" 4.0 │")
+		case 1:
+			sb.WriteString(" 0.0 │")
+		default:
 			sb.WriteString("     │")
 		}
 

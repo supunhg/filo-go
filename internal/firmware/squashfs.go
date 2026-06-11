@@ -124,7 +124,7 @@ func ExtractSquashFS(srcPath, destDir string) (*ExtractionResult, error) {
 
 	// Add info file
 	infoPath := destDir + "/squashfs-info.txt"
-	info := fmt.Sprintf("SquashFS Filesystem Info\n")
+	info := "SquashFS Filesystem Info\n"
 	info += fmt.Sprintf("Magic: 0x%08X\n", sb.Magic)
 	info += fmt.Sprintf("Inodes: %d\n", sb.Inodes)
 	info += fmt.Sprintf("Block Size: %d\n", sb.BlockSize)

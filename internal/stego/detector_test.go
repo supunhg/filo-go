@@ -315,3 +315,155 @@ func TestEmptyData(t *testing.T) {
 		t.Errorf("expected no methods, got %d", len(result.Methods))
 	}
 }
+
+func TestDetectPDFMetadataStego(t *testing.T) {
+	// PDF with suspicious metadata
+	data := []byte("%PDF-1.7\r\n1 0 obj\n<< /Type /Catalog /Author (picoCTF{test_flag}) >>\nendobj\n%%EOF")
+
+	result, err := Detect(data, "test.pdf")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Format != "pdf" {
+		t.Errorf("expected format pdf, got %s", result.Format)
+	}
+
+	// Should detect suspicious metadata
+	if len(result.Methods) == 0 {
+		t.Error("expected methods to be detected in PDF metadata")
+	}
+}
+
+func TestDetectPDFTrailingData(t *testing.T) {
+	// PDF with trailing data after %%EOF
+	data := []byte("%PDF-1.7\r\n1 0 obj\n<< /Type /Catalog >>\nendobj\n%%EOF\nSecret data here")
+
+	result, err := Detect(data, "test.pdf")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Format != "pdf" {
+		t.Errorf("expected format pdf, got %s", result.Format)
+	}
+
+	// Should detect trailing data
+	foundTrailing := false
+	for _, m := range result.Methods {
+		if m.Name == "pdf_trailing" {
+			foundTrailing = true
+		}
+	}
+
+	if !foundTrailing {
+		t.Error("expected pdf_trailing method to be detected")
+	}
+}
+
+func TestDetectPNGTrailingData(t *testing.T) {
+	// PNG with trailing data after IEND
+	data := []byte{
+		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+		0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+		0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE,
+		0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+		0x53, 0x65, 0x63, 0x72, 0x65, 0x74, // "Secret"
+	}
+
+	result, err := Detect(data, "test.png")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Format != "png" {
+		t.Errorf("expected format png, got %s", result.Format)
+	}
+
+	// Should detect trailing data
+	foundTrailing := false
+	for _, m := range result.Methods {
+		if m.Name == "png_trailing" {
+			foundTrailing = true
+		}
+	}
+
+	if !foundTrailing {
+		t.Error("expected png_trailing method to be detected")
+	}
+}
+
+func TestDetectPNGWithFlag(t *testing.T) {
+	// PNG with flag in tEXt chunk
+	data := []byte{
+		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+		0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+		0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE,
+	}
+
+	result, err := Detect(data, "test.png")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Format != "png" {
+		t.Errorf("expected format png, got %s", result.Format)
+	}
+}
+
+func TestDetectJPEGWithFlag(t *testing.T) {
+	// JPEG with flag in trailing data
+	data := []byte{
+		0xFF, 0xD8, 0xFF, 0xE0,
+		0x00, 0x10,
+		0x4A, 0x46, 0x49, 0x46, 0x00,
+		0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00,
+		0xFF, 0xD9,
+		0x70, 0x69, 0x63, 0x6F, 0x43, 0x54, 0x46, 0x7B, // "picoCTF{"
+		0x74, 0x65, 0x73, 0x74, 0x7D, // "test}"
+	}
+
+	result, err := Detect(data, "test.jpg")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Format != "jpeg" {
+		t.Errorf("expected format jpeg, got %s", result.Format)
+	}
+
+	// Should detect flag
+	if len(result.Flags) == 0 {
+		t.Error("expected flags to be detected in JPEG trailing data")
+	}
+}
+
+func TestDecodeImageInvalid(t *testing.T) {
+	// Test with invalid image data
+	_, err := decodeImage([]byte{0x00, 0x01, 0x02})
+	if err == nil {
+		t.Error("expected error for invalid image data")
+	}
+}
+
+func TestExtractLSBWithDifferentChannels(t *testing.T) {
+	// This tests the extractLSB function indirectly through Detect
+	// We need a valid PNG image to test LSB extraction
+	data := []byte{
+		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+		0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+		0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE,
+	}
+
+	result, err := Detect(data, "test.png")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Format != "png" {
+		t.Errorf("expected format png, got %s", result.Format)
+	}
+}

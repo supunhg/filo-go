@@ -53,8 +53,12 @@ func TestDecompressGzip(t *testing.T) {
 	original := []byte("Hello, World! This is test data for gzip compression.")
 	var buf bytes.Buffer
 	w := gzip.NewWriter(&buf)
-	w.Write(original)
-	w.Close()
+	if _, err := w.Write(original); err != nil {
+		t.Fatalf("Write error: %v", err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("Close error: %v", err)
+	}
 
 	decompressed, err := Decompress(buf.Bytes(), CompressionGzip)
 	if err != nil {
@@ -126,6 +130,9 @@ func TestDecompressBzip2(t *testing.T) {
 	}
 
 	decompressed, err := Decompress(compressed.Bytes(), CompressionBzip2)
+	if err != nil {
+		t.Fatalf("Decompress() error = %v", err)
+	}
 	if err != nil {
 		t.Fatalf("Decompress() error = %v", err)
 	}

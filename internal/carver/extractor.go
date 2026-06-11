@@ -554,7 +554,7 @@ func DDFromReader(reader io.Reader, outputPath string, offset, count int64) erro
 		}
 	}
 
-	var reader2 io.Reader = reader
+	reader2 := reader
 	if count > 0 {
 		reader2 = io.LimitReader(reader, count)
 	}

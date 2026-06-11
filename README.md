@@ -5,9 +5,9 @@
 [![CI](https://github.com/supunhg/filo-go/actions/workflows/ci.yml/badge.svg)](https://github.com/supunhg/filo-go/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/supunhg/filo-go)](https://goreportcard.com/report/github.com/supunhg/filo-go)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Latest release](https://img.shields.io/badge/release-v0.4.0-blue)](https://github.com/supunhg/filo-go/releases/tag/v0.4.0)
+[![Latest release](https://img.shields.io/badge/release-v0.5.0-blue)](https://github.com/supunhg/filo-go/releases/tag/v0.5.0)
 
-**Latest release: v0.4.0 (2026-06-10)** — 65.9% test coverage, measured 14x–217x speedup vs binwalk, OOXML metadata + VBA extraction, Apache 2.0.
+**Latest release: v0.5.0 (2026-06-11)** — 79.6% test coverage, REST API server, Docker support, interactive HTML reports, streaming analysis, caching layer, YARA module imports, YAFFS extraction, zero lint issues, Apache 2.0.
 
 ---
 
@@ -159,8 +159,82 @@ filo firmware -x rootfs.squashfs
 |---------|-------------|---------|
 | `batch` | Analyze directory of files | `filo batch /path/to/samples/` |
 | `mcp` | Start MCP server for AI | `filo mcp` |
+| `api` | Start REST API server | `filo api --addr :8080` |
 | `plugins` | Manage plugins | `filo plugins list` |
 | `formats` | List supported formats | `filo formats list` |
+
+---
+
+## 🔌 REST API
+
+filo-go includes a built-in REST API server for remote analysis.
+
+### Starting the Server
+
+```bash
+# Start on default port (8080)
+filo api
+
+# Start on custom port
+filo api --addr :9090
+```
+
+### Available Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/version` | Version info |
+| `POST` | `/api/analyze` | Analyze file |
+| `POST` | `/api/hash` | Compute hashes |
+| `POST` | `/api/strings` | Extract strings |
+| `POST` | `/api/crypto` | Detect encryption |
+| `POST` | `/api/stego` | Detect steganography |
+| `POST` | `/api/metadata` | Extract metadata |
+| `POST` | `/api/batch` | Batch analysis |
+| `POST` | `/api/upload` | Upload and analyze |
+
+### Example Usage
+
+```bash
+# Analyze a file
+curl -X POST http://localhost:8080/api/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"path": "/path/to/file.bin"}'
+
+# Compute hashes
+curl -X POST http://localhost:8080/api/hash \
+  -H "Content-Type: application/json" \
+  -d '{"path": "/path/to/file.bin", "algorithms": ["sha256", "md5"]}'
+
+# Upload and analyze
+curl -X POST http://localhost:8080/api/upload \
+  -F "file=@/path/to/file.bin"
+```
+
+---
+
+## 🐳 Docker
+
+filo-go includes Docker support for production deployment.
+
+### Quick Start
+
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+
+# Or build manually
+docker build -t filo-go .
+docker run -p 8080:8080 filo-go api --addr :8080
+```
+
+### Docker Compose Services
+
+| Service | Description | Port |
+|---------|-------------|------|
+| `filo` | REST API server | 8080 |
+| `filo-mcp` | MCP server (stdin/stdout) | - |
 
 ---
 

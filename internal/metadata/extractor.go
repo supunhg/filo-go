@@ -72,7 +72,8 @@ func extractJPEGMetadata(data []byte, r *Result) {
 			break
 		}
 
-		if marker == 0xE0 { // APP0 (JFIF)
+		switch marker {
+		case 0xE0: // APP0 (JFIF)
 			length := int(binary.BigEndian.Uint16(data[offset+2 : offset+4]))
 			if offset+2+length <= len(data) {
 				appData := data[offset+4 : offset+2+length]
@@ -84,7 +85,7 @@ func extractJPEGMetadata(data []byte, r *Result) {
 				}
 			}
 			offset += 2 + length
-		} else if marker == 0xE1 { // APP1 (EXIF)
+		case 0xE1: // APP1 (EXIF)
 			length := int(binary.BigEndian.Uint16(data[offset+2 : offset+4]))
 			if offset+2+length <= len(data) {
 				appData := data[offset+4 : offset+2+length]
@@ -93,7 +94,7 @@ func extractJPEGMetadata(data []byte, r *Result) {
 				}
 			}
 			offset += 2 + length
-		} else if marker == 0xFE { // COM (Comment)
+		case 0xFE: // COM (Comment)
 			length := int(binary.BigEndian.Uint16(data[offset+2 : offset+4]))
 			if offset+2+length <= len(data) {
 				comment := string(data[offset+4 : offset+2+length])
@@ -103,7 +104,7 @@ func extractJPEGMetadata(data []byte, r *Result) {
 				}
 			}
 			offset += 2 + length
-		} else {
+		default:
 			// Skip unknown marker
 			length := int(binary.BigEndian.Uint16(data[offset+2 : offset+4]))
 			offset += 2 + length

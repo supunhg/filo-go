@@ -98,19 +98,17 @@ func BenchmarkGzipDecompress(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		r, _ := gzip.NewReader(bytes.NewReader(compressed))
-		buf := make([]byte, 0, len(original))
-		buf = buf[:0]
+		size := 0
 		for {
 			chunk := make([]byte, 1024)
 			n, err := r.Read(chunk)
-			if n > 0 {
-				buf = append(buf, chunk[:n]...)
-			}
+			size += n
 			if err != nil {
 				break
 			}
 		}
 		r.Close()
+		_ = size
 	}
 }
 
@@ -141,14 +139,16 @@ func formatSize(bytes int) string {
 		return "1MB"
 	case bytes >= KB:
 		kb := bytes / KB
-		if kb == 1 {
+		switch kb {
+		case 1:
 			return "1KB"
-		} else if kb == 10 {
+		case 10:
 			return "10KB"
-		} else if kb == 100 {
+		case 100:
 			return "100KB"
+		default:
+			return "1KB"
 		}
-		return "1KB"
 	default:
 		return "1B"
 	}

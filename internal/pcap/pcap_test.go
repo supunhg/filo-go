@@ -65,7 +65,8 @@ func buildIPv4Packet(t *testing.T, srcIP, dstIP [4]byte, srcPort, dstPort uint16
 
 	// L4 header for TCP (20 bytes) or UDP (8 bytes)
 	var l4 []byte
-	if protocol == 6 { // TCP
+	switch protocol {
+	case 6: // TCP
 		l4 = make([]byte, 20)
 		binary.BigEndian.PutUint16(l4[0:2], srcPort)
 		binary.BigEndian.PutUint16(l4[2:4], dstPort)
@@ -73,7 +74,7 @@ func buildIPv4Packet(t *testing.T, srcIP, dstIP [4]byte, srcPort, dstPort uint16
 		binary.BigEndian.PutUint32(l4[8:12], 0) // ack
 		l4[12] = 0x50 // data offset = 5 (20 bytes)
 		l4[13] = TCPACK | TCPSYN
-	} else if protocol == 17 { // UDP
+	case 17: // UDP
 		l4 = make([]byte, 8)
 		binary.BigEndian.PutUint16(l4[0:2], srcPort)
 		binary.BigEndian.PutUint16(l4[2:4], dstPort)

@@ -118,7 +118,7 @@ func TestLoadFromCSVSkipsBadRows(t *testing.T) {
 func TestLookupByDataMD5(t *testing.T) {
 	db := NewDatabase()
 	data := []byte("test data for lookup")
-	md5Hash := strings.ToUpper(string(md5HashBytes(data)))
+	md5Hash := strings.ToUpper(md5HashBytes(data))
 	// Load via a synthetic list
 	tmpDir := t.TempDir()
 	path := filepath.Join(tmpDir, "hashes.txt")

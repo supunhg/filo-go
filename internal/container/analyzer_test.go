@@ -302,3 +302,190 @@ func TestResultJSON(t *testing.T) {
 		t.Errorf("expected format zip, got %s", result.Format)
 	}
 }
+
+func TestExtractToZIP(t *testing.T) {
+	// Create a valid ZIP file
+	var buf bytes.Buffer
+	w := zip.NewWriter(&buf)
+
+	fw, err := w.Create("test.txt")
+	if err != nil {
+		t.Fatalf("failed to create file in zip: %v", err)
+	}
+	if _, err := fw.Write([]byte("Hello, World!")); err != nil {
+		t.Fatalf("failed to write to zip: %v", err)
+	}
+
+	if err := w.Close(); err != nil {
+		t.Fatalf("failed to close zip writer: %v", err)
+	}
+
+	tmpDir := t.TempDir()
+	err = ExtractTo(buf.Bytes(), "zip", tmpDir)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestExtractToTAR(t *testing.T) {
+	// Test with invalid tar data
+	data := make([]byte, 512)
+	copy(data[257:], "ustar")
+
+	tmpDir := t.TempDir()
+	err := ExtractTo(data, "tar", tmpDir)
+	// Should fail with invalid tar
+	if err == nil {
+		t.Error("expected error for invalid tar data")
+	}
+}
+
+func TestExtractToUnsupported(t *testing.T) {
+	tmpDir := t.TempDir()
+	err := ExtractTo([]byte{}, "7z", tmpDir)
+	if err == nil {
+		t.Error("expected error for unsupported format")
+	}
+}
+
+func TestAnalyzeTarGz(t *testing.T) {
+	// Test with invalid gzip data
+	data := []byte{0x1F, 0x8B, 0x08, 0x00}
+
+	result, err := Analyze(data, "archive.tar.gz", 0)
+	// Should return error or empty result for invalid data
+	if err != nil {
+		t.Logf("Expected error for invalid tar.gz: %v", err)
+	}
+	if result != nil {
+		t.Logf("Got result with format: %s", result.Format)
+	}
+}
+
+func TestAnalyzeZIPWithNested(t *testing.T) {
+	// Create a ZIP with another ZIP inside
+	var outerBuf bytes.Buffer
+	outer := zip.NewWriter(&outerBuf)
+
+	// Create inner ZIP
+	var innerBuf bytes.Buffer
+	inner := zip.NewWriter(&innerBuf)
+
+	innerFile, err := inner.Create("inner.txt")
+	if err != nil {
+		t.Fatalf("failed to create inner file: %v", err)
+	}
+	if _, err := innerFile.Write([]byte("inner content")); err != nil {
+		t.Fatalf("failed to write inner file: %v", err)
+	}
+	if err := inner.Close(); err != nil {
+		t.Fatalf("failed to close inner zip: %v", err)
+	}
+
+	// Add inner ZIP to outer
+	outerFile, err := outer.Create("inner.zip")
+	if err != nil {
+		t.Fatalf("failed to create outer file: %v", err)
+	}
+	if _, err := outerFile.Write(innerBuf.Bytes()); err != nil {
+		t.Fatalf("failed to write outer file: %v", err)
+	}
+
+	// Add a regular file
+	regularFile, err := outer.Create("regular.txt")
+	if err != nil {
+		t.Fatalf("failed to create regular file: %v", err)
+	}
+	if _, err := regularFile.Write([]byte("regular content")); err != nil {
+		t.Fatalf("failed to write regular file: %v", err)
+	}
+
+	if err := outer.Close(); err != nil {
+		t.Fatalf("failed to close outer zip: %v", err)
+	}
+
+	result, err := Analyze(outerBuf.Bytes(), "nested.zip", 2)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Format != "zip" {
+		t.Errorf("expected format zip, got %s", result.Format)
+	}
+
+	if result.EntryCount < 2 {
+		t.Errorf("expected at least 2 entries, got %d", result.EntryCount)
+	}
+}
+
+func TestAnalyzeZIPWithDir(t *testing.T) {
+	// Create a ZIP with a directory
+	var buf bytes.Buffer
+	w := zip.NewWriter(&buf)
+
+	// Add a directory entry
+	_, err := w.Create("mydir/")
+	if err != nil {
+		t.Fatalf("failed to create directory in zip: %v", err)
+	}
+
+	// Add a file in the directory
+	fw, err := w.Create("mydir/file.txt")
+	if err != nil {
+		t.Fatalf("failed to create file in zip: %v", err)
+	}
+	if _, err := fw.Write([]byte("content")); err != nil {
+		t.Fatalf("failed to write to zip: %v", err)
+	}
+
+	if err := w.Close(); err != nil {
+		t.Fatalf("failed to close zip writer: %v", err)
+	}
+
+	result, err := Analyze(buf.Bytes(), "dir.zip", 1)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Format != "zip" {
+		t.Errorf("expected format zip, got %s", result.Format)
+	}
+
+	// Should have 2 entries (dir + file)
+	if result.EntryCount != 2 {
+		t.Errorf("expected 2 entries, got %d", result.EntryCount)
+	}
+}
+
+func TestAnalyzeGzipWithInner(t *testing.T) {
+	// Test gzip format detection (returns error for invalid inner data)
+	data := []byte{0x1F, 0x8B, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00}
+
+	result, err := Analyze(data, "test.gz", 0)
+	if err == nil {
+		if result.Format != "gzip" {
+			t.Errorf("expected gzip, got %s", result.Format)
+		}
+	}
+}
+
+func TestDetectContainerFormatTar(t *testing.T) {
+	// TAR detection
+	data := make([]byte, 512)
+	copy(data[257:], "ustar")
+
+	format := detectContainerFormat(data)
+	if format != "tar" {
+		t.Errorf("expected tar, got %s", format)
+	}
+}
+
+func TestDetectContainerFormatShort(t *testing.T) {
+	// Short data
+	data := []byte{0x00, 0x01}
+
+	format := detectContainerFormat(data)
+	if format != "unknown" {
+		t.Errorf("expected unknown, got %s", format)
+	}
+}

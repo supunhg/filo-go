@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	version = "0.3.0"
+	version = "0.4.0"
 	verbose bool
 	quiet   bool
 	rootCmd = &cobra.Command{
@@ -13,7 +13,7 @@ var (
 		Short:         "Filo - Forensic Intelligence & Learning Operator",
 		Long:          `Battle-tested file forensics platform for security professionals.`,
 		SilenceUsage:  true,
-		SilenceErrors: true,
+		SilenceErrors: false,
 	}
 )
 
