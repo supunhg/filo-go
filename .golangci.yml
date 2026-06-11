@@ -8,9 +8,8 @@ linters:
     - staticcheck
     - misspell
     - unconvert
-
-linters-settings:
-  staticcheck:
-    checks:
-      - all
-      - -QF1012  # Disable "Use fmt.Fprintf instead of WriteString(fmt.Sprintf(...))"
+  settings:
+    staticcheck:
+      checks:
+        - all
+        - -QF1012
