@@ -9,17 +9,9 @@ linters:
     - misspell
     - unconvert
 
-formatters:
-  settings:
-    gofmt:
-      simplify: true
-
-linters-settings:
-  govet:
-    shadow: true
-
-issues:
-  exclude-rules:
+exclusions:
+  generated: lax
+  rules:
     - path: ".*_test\\.go$"
       linters:
         - staticcheck
