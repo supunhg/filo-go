@@ -58,7 +58,7 @@ func EntropyViz(chunks []EntropyChunk, width int) string {
 		// Choose color based on entropy level
 		color := entropyColor(avg)
 		bar := strings.Repeat("█", barLen)
-		sb.WriteString(fmt.Sprintf("  %s%s\033[0m\n", color, bar))
+		fmt.Fprintf(&sb, "  %s%s\033[0m\n", color, bar)
 	}
 
 	sb.WriteString("\n  Scale: 0.0 ")
