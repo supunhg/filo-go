@@ -13,7 +13,7 @@ var (
 		Short:         "Filo - Forensic Intelligence & Learning Operator",
 		Long:          `Battle-tested file forensics platform for security professionals.`,
 		SilenceUsage:  true,
-		SilenceErrors: false,
+		SilenceErrors: true,
 	}
 )
 
