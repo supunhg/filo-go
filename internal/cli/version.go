@@ -10,6 +10,6 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Show version and exit",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("filo-go %s\n", version)
+		fmt.Fprintf(cmd.OutOrStdout(), "filo-go %s\n", version)
 	},
 }

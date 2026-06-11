@@ -96,7 +96,7 @@ func (s *Server) handleRequest(req Request) *Response {
 				},
 				"serverInfo": map[string]interface{}{
 					"name":        "filo-go",
-					"version":     "0.3.0",
+					"version":     "0.5.0",
 					"description": "AI-powered forensic analysis toolkit",
 				},
 			},
