@@ -1,16 +1,18 @@
 version: "2"
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - govet
     - ineffassign
     - staticcheck
     - misspell
     - unconvert
-  disable:
-    - errcheck
-    - unused
+
+formatters:
+  settings:
+    gofmt:
+      simplify: true
 
 linters-settings:
   govet:
