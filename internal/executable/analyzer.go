@@ -373,7 +373,7 @@ func printPE(r *pe.Result) {
 		fmt.Println("    Debug: Present")
 	}
 
-	if r.Resources != nil && len(r.Resources) > 0 {
+	if len(r.Resources) > 0 {
 		fmt.Printf("    Resources: %d\n", len(r.Resources))
 	}
 

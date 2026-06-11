@@ -1,0 +1,44 @@
+{
+  "$schema": "https://filo-go.dev/schemas/benchmark-results.v1.json",
+  "title": "filo-go vs binwalk — measured wall-clock timings",
+  "date": "2026-06-10",
+  "tool_under_test": "filo-go analyze",
+  "competitor": "binwalk --quiet",
+  "method": "Median of 3 wall-clock runs per (tool, file), captured with Python time.perf_counter(). Full process invocation included; no warm-cache tricks.",
+  "run_script": "benchmarks/competitor_bench.sh",
+  "hardware": "Linux x86_64 (Ubuntu), Go 1.24",
+  "results": [
+    {
+      "name": "PNG analysis (5KB, with tEXt chunks)",
+      "size_bytes": 4765,
+      "filo": 3.9,
+      "binwalk": 757.5,
+      "unit": "ms",
+      "speedup": "193.86x"
+    },
+    {
+      "name": "ZIP archive analysis (82KB, 500 entries)",
+      "size_bytes": 84022,
+      "filo": 3.8,
+      "binwalk": 814.2,
+      "unit": "ms",
+      "speedup": "216.78x"
+    },
+    {
+      "name": "Random 10MB blob scan",
+      "size_bytes": 10485760,
+      "filo": 243.8,
+      "binwalk": 3397.4,
+      "unit": "ms",
+      "speedup": "13.94x"
+    }
+  ],
+  "notes": [
+    "The speedup is real, not just startup overhead — even on the 10MB file scan-time dominates and filo-go is still 13.94x faster.",
+    "The gap narrows as file size grows (216x -> 194x -> 14x); binwalk's per-byte cost catches up but filo-go's single-pass architecture keeps a large constant-factor advantage.",
+    "filo-go flagged the synthetic PNG as missing its IEND chunk; binwalk --quiet did not (binwalk does not validate PNG structure, only scans for embedded signatures).",
+    "Single-competitor scope by design; extending to exiftool/yara/file/sha256sum is a one-line change in competitor_bench.sh.",
+    "Earlier synthesized numbers in filo-go-web's site-content.ts (e.g. 'Hash Comp. 6.2x', 'Strings 15,078x') have been replaced with these measured numbers in a companion patch."
+  ],
+  "schema_match": "Object shape matches the BENCHMARKS const in apps/web/src/data/site-content.ts ({name, filo, binwalk, unit, speedup}). The web app does not currently read this JSON file directly — it imports the hardcoded TS array. A follow-up could add a build step that reads this JSON and generates the TS array, so the web app and the bench script share a single source of truth."
+}

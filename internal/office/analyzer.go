@@ -8,12 +8,15 @@ import (
 
 // Result holds office macro analysis results.
 type Result struct {
-	FileName   string   `json:"file_name"`
-	HasMacros  bool     `json:"has_macros"`
-	MacroCount int      `json:"macro_count"`
-	AutoExec   []string `json:"auto_exec,omitempty"`
-	Suspicious []string `json:"suspicious,omitempty"`
-	App        string   `json:"app,omitempty"`
+	FileName   string         `json:"file_name"`
+	Format     string         `json:"format,omitempty"`     // "ooxml" or "ole2"
+	Type       string         `json:"type,omitempty"`       // "docx"/"xlsx"/"pptx" for OOXML
+	HasMacros  bool           `json:"has_macros"`
+	MacroCount int            `json:"macro_count"`
+	AutoExec   []string       `json:"auto_exec,omitempty"`
+	Suspicious []string       `json:"suspicious,omitempty"`
+	App        string         `json:"app,omitempty"`
+	Metadata   *OOXMLDocument `json:"metadata,omitempty"`
 }
 
 var autoExecPatterns = []string{
@@ -33,7 +36,8 @@ var suspiciousKeywords = []string{
 	"CallByName", "Chr(", "ChrW(",
 }
 
-// Analyze detects VBA macros in OLE2 documents.
+// Analyze detects VBA macros in OLE2 documents and extracts metadata (and any
+// embedded VBA) from OOXML documents.
 func Analyze(data []byte, fileName string) *Result {
 	result := &Result{
 		FileName: fileName,
@@ -43,58 +47,99 @@ func Analyze(data []byte, fileName string) *Result {
 		return result
 	}
 
-	// Check for OLE2 magic
+	// OOXML (ZIP) takes precedence: extract metadata, then drill into the
+	// embedded vbaProject.bin (if present) for macro analysis.
+	if ooxmlType := DetectOOXMLBytes(data); ooxmlType != "" {
+		result.Format = "ooxml"
+		result.Type = ooxmlType
+		doc, err := ExtractOOXMLFromBytes(data)
+		if err == nil && doc != nil {
+			result.Metadata = doc
+			result.App = ooxmlAppName(ooxmlType)
+		}
+		// Macros in OOXML live in vbaProject.bin, which is itself an OLE2 file.
+		if vba := ExtractVBAProjectBytes(data); vba != nil {
+			mergeMacroFields(result, analyzeOLE2VBA(vba, fileName))
+		}
+		return result
+	}
+
+	// Plain OLE2 (legacy .doc/.xls/.ppt)
 	if !isOLE2(data) {
 		return result
 	}
+	result.Format = "ole2"
+	mergeMacroFields(result, analyzeOLE2VBA(data, fileName))
+	return result
+}
 
-	// Parse directory structure
+// mergeMacroFields copies macro-detection fields from src into dst, leaving
+// other fields on dst untouched. App is only filled in if dst doesn't already
+// have one — the OOXML app name (Word/Excel/PowerPoint) is more reliable than
+// the OLE2 fallback ("Microsoft Office") when the vbaProject.bin is partial.
+func mergeMacroFields(dst, src *Result) {
+	if src == nil {
+		return
+	}
+	dst.HasMacros = src.HasMacros
+	dst.MacroCount = src.MacroCount
+	dst.AutoExec = src.AutoExec
+	dst.Suspicious = src.Suspicious
+	if dst.App == "" && src.App != "" {
+		dst.App = src.App
+	}
+}
+
+// analyzeOLE2VBA inspects the bytes of an OLE2 document (either a standalone
+// legacy Office file or an embedded vbaProject.bin) and returns the macro
+// fields (HasMacros, MacroCount, AutoExec, Suspicious, App).
+func analyzeOLE2VBA(data []byte, fileName string) *Result {
+	r := &Result{FileName: fileName}
+
 	streams := extractOLE2Streams(data)
 	if len(streams) == 0 {
-		return result
+		return r
 	}
 
-	// Check for VBA project streams
+	// VBA project streams
 	vbaStreams := []string{"VBA/", "_VBA_PROJECT", "ThisDocument", "ThisWorkbook"}
 	for _, stream := range streams {
 		for _, vba := range vbaStreams {
 			if strings.Contains(stream, vba) {
-				result.HasMacros = true
+				r.HasMacros = true
 				break
 			}
 		}
 	}
 
-	if !result.HasMacros {
-		return result
+	if !r.HasMacros {
+		return r
 	}
 
 	// Count macro modules
 	for _, stream := range streams {
 		if strings.HasPrefix(stream, "Module") || strings.HasPrefix(stream, "Class") || stream == "ThisDocument" || stream == "ThisWorkbook" {
-			result.MacroCount++
+			r.MacroCount++
 		}
 	}
 
-	// Check for auto-exec patterns
+	// Auto-exec patterns
 	macroContent := extractMacroContent(data)
 	for _, pattern := range autoExecPatterns {
 		if strings.Contains(macroContent, pattern) {
-			result.AutoExec = append(result.AutoExec, pattern)
+			r.AutoExec = append(r.AutoExec, pattern)
 		}
 	}
 
-	// Check for suspicious keywords
+	// Suspicious keywords
 	for _, keyword := range suspiciousKeywords {
 		if strings.Contains(macroContent, keyword) {
-			result.Suspicious = append(result.Suspicious, keyword)
+			r.Suspicious = append(r.Suspicious, keyword)
 		}
 	}
 
-	// Detect application
-	result.App = detectApp(streams)
-
-	return result
+	r.App = detectApp(streams)
+	return r
 }
 
 func isOLE2(data []byte) bool {
@@ -150,9 +195,32 @@ func detectApp(streams []string) string {
 	return "Microsoft Office"
 }
 
+// ooxmlAppName maps an OOXML type code to a human-readable application name.
+func ooxmlAppName(t string) string {
+	switch t {
+	case "docx":
+		return "Microsoft Word"
+	case "xlsx":
+		return "Microsoft Excel"
+	case "pptx":
+		return "Microsoft PowerPoint"
+	default:
+		return "Microsoft Office"
+	}
+}
+
 // Print displays office analysis results.
 func Print(r *Result) {
 	fmt.Println()
+	if r.Metadata != nil {
+		fmt.Printf("  Office OOXML Analysis: %s\n", r.FileName)
+		fmt.Println(FormatOOXML(r.Metadata))
+		if r.HasMacros {
+			fmt.Println()
+			printMacroSummary(r)
+		}
+		return
+	}
 	if r.HasMacros {
 		fmt.Printf("  Office Macro Analysis: %s\n", r.FileName)
 		fmt.Printf("  Application: %s\n", r.App)
@@ -177,4 +245,23 @@ func Print(r *Result) {
 		fmt.Printf("  No macros detected: %s\n", r.FileName)
 	}
 	fmt.Println()
+}
+
+// printMacroSummary prints just the macro-related fields of r.
+func printMacroSummary(r *Result) {
+	fmt.Printf("  Embedded VBA Project:\n")
+	fmt.Printf("    Application: %s\n", r.App)
+	fmt.Printf("    Macro Modules: %d\n", r.MacroCount)
+	if len(r.AutoExec) > 0 {
+		fmt.Println("    ⚠  Auto-Exec Patterns:")
+		for _, p := range r.AutoExec {
+			fmt.Printf("      %s\n", p)
+		}
+	}
+	if len(r.Suspicious) > 0 {
+		fmt.Println("    ⚠  Suspicious Keywords:")
+		for _, s := range r.Suspicious {
+			fmt.Printf("      %s\n", s)
+		}
+	}
 }

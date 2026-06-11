@@ -12,17 +12,24 @@
 
 | Operation | filo-go | binwalk | Speedup |
 |-----------|---------|---------|---------|
-| **File Analysis (1MB)** | 1.26 ms | 621 ms | **493x faster** |
-| **Entropy Analysis (1MB)** | 594 µs | 849 ms | **1,430x faster** |
-| **File Carving (10MB)** | 13.0 ms | 2.15 s | **166x faster** |
-| **Signature Scanning (10MB)** | 355 ms | 2.11 s | **6.0x faster** |
+| **PNG analysis (5KB, with tEXt chunks)** | 3.9 ms | 757.5 ms | **193.86x faster** |
+| **ZIP archive analysis (82KB, 500 entries)** | 3.8 ms | 814.2 ms | **216.78x faster** |
+| **Random 10MB blob scan** | 243.8 ms | 3,397.4 ms | **13.94x faster** |
 
 ### filo-go vs Unix Tools
 
+> **2026-06-10 update:** this row is now compared against the **dedicated** `filo-go hash` and `filo-go strings` subcommands, not the general-purpose `filo-go analyze`. Both subcommands exist (see `filo-go hash --help` and `filo-go strings --help`).
+
 | Operation | filo-go | Unix Tool | Speedup |
 |-----------|---------|-----------|---------|
-| **Hash Computation (1MB)** | 811 µs | 8.26 ms (sha256sum) | **10.2x faster** |
-| **String Extraction (1MB)** | 1.27 µs | 13.8 ms (strings) | **10,873x faster** |
+| **Hash (sha256, 5KB PNG)** | 1.2 ms | 1.7 ms (sha256sum) | **1.47x** faster |
+| **Hash (sha256, 82KB ZIP)** | 2.3 ms | 1.4 ms (sha256sum) | **0.59x** (slower) |
+| **Hash (sha256, 10MB random)** | 30.4 ms | 26.2 ms (sha256sum) | **0.86x** (slower) |
+| **Strings (5KB PNG)** | 2.6 ms | 1.0 ms (strings) | **0.40x** (slower) |
+| **Strings (82KB ZIP)** | 2.8 ms | 1.0 ms (strings) | **0.37x** (slower) |
+| **Strings (10MB random)** | 246.4 ms | 90.1 ms (strings) | **0.37x** (slower) |
+
+> **Honest finding:** for hashing and string extraction, `filo-go` is **not faster** than the dedicated Unix tools — not even when using its own dedicated `hash` and `strings` subcommands. `sha256sum` and `strings` are tiny C programs with no overhead; they are the right tool for these primitive operations. filo-go's strength is **integrated analysis** (format detection + entropy + hashing + string extraction in one pass via `filo-go analyze`), where it wins 14x-217x against `binwalk`. Use `filo-go hash` / `filo-go strings` only when you want a single-binary alternative to the Unix tools with the same algorithm/output (not for raw speed). The earlier "10.2x" and "10,873x faster" claims in this row were either measured against a different subcommand or were synthesized; they have been removed.
 
 ---
 
@@ -217,7 +224,7 @@ go test -bench=BenchmarkBinwalk -benchmem ./benchmarks/
 
 ## Conclusion
 
-filo-go delivers **6x to 10,873x faster performance** than binwalk and Unix tools across all operations. The Go-native implementation eliminates Python interpreter overhead while providing hardware-accelerated cryptography and zero-allocation analysis paths.
+filo-go delivers **14x to 217x faster performance** than binwalk on the measured corpus (see [`benchmarks/results/2026-06-10.md`](../benchmarks/results/2026-06-10.md), reproducible via `benchmarks/competitor_bench.sh`). The Go-native implementation eliminates Python interpreter overhead while providing hardware-accelerated cryptography and zero-allocation analysis paths.
 
 For security professionals analyzing firmware, malware, or forensic images, filo-go provides:
 - **Predictable performance** that scales linearly with file size

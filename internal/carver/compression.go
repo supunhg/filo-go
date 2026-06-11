@@ -241,12 +241,12 @@ func FormatCompressionInfo(info *CompressionInfo) string {
 	}
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Compression: %s\n", info.Type))
-	sb.WriteString(fmt.Sprintf("  Compressed size: %d bytes\n", info.CompressedSize))
+	fmt.Fprintf(&sb, "Compression: %s\n", info.Type)
+	fmt.Fprintf(&sb, "  Compressed size: %d bytes\n", info.CompressedSize)
 
 	if info.OriginalSize > 0 {
-		sb.WriteString(fmt.Sprintf("  Original size: %d bytes\n", info.OriginalSize))
-		sb.WriteString(fmt.Sprintf("  Compression ratio: %.2f:1\n", info.Ratio))
+		fmt.Fprintf(&sb, "  Original size: %d bytes\n", info.OriginalSize)
+		fmt.Fprintf(&sb, "  Compression ratio: %.2f:1\n", info.Ratio)
 	}
 
 	return sb.String()

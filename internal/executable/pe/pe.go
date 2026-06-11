@@ -132,14 +132,15 @@ func Analyze(data []byte, deepScan bool) (*Result, error) {
 	optOffset := coffOffset + 20
 	magic := binary.LittleEndian.Uint16(data[optOffset : optOffset+2])
 
-	if magic == 0x10B { // PE32
+	switch magic {
+	case 0x10B: // PE32
 		if int(optOffset)+96 > len(data) {
 			return nil, fmt.Errorf("PE32 optional header too small")
 		}
 		result.ImageBase = uint64(binary.LittleEndian.Uint32(data[optOffset+28 : optOffset+32]))
 		result.EntryPoint = uint64(binary.LittleEndian.Uint32(data[optOffset+16 : optOffset+20]))
 		result.Subsystem = subsystemName(binary.LittleEndian.Uint16(data[optOffset+68 : optOffset+70]))
-	} else if magic == 0x20B { // PE32+ (64-bit)
+	case 0x20B: // PE32+ (64-bit)
 		if int(optOffset)+112 > len(data) {
 			return nil, fmt.Errorf("PE32+ optional header too small")
 		}
@@ -260,9 +261,10 @@ func parseImports(data []byte, bits int) ([]string, []string) {
 	magic := binary.LittleEndian.Uint16(data[optOffset : optOffset+2])
 
 	var importDirOffset uint32
-	if magic == 0x10B {
+	switch magic {
+	case 0x10B:
 		importDirOffset = optOffset + 96 + 8
-	} else if magic == 0x20B {
+	case 0x20B:
 		importDirOffset = optOffset + 112 + 8
 	}
 
@@ -425,9 +427,10 @@ func parseDataDirs(data []byte, optOffset uint32, magic uint16) []DataDir {
 
 	// Data directories start after standard optional header fields
 	var dirStart uint32
-	if magic == 0x10B {
+	switch magic {
+	case 0x10B:
 		dirStart = optOffset + 96
-	} else if magic == 0x20B {
+	case 0x20B:
 		dirStart = optOffset + 112
 	}
 

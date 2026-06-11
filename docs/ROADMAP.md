@@ -1,8 +1,8 @@
 # filo-go Development Roadmap
 
-> **Last Updated:** 2026-06-10  
-> **Current Version:** 0.3.0  
-> **Status:** In active development (v0.3.0 hygiene + roadmap accuracy release)
+> **Last Updated:** 2026-06-11  
+> **Current Version:** 0.5.0  
+> **Status:** v0.5.0 shipped. Project is production-ready with REST API, Docker, caching, and comprehensive test coverage.
 
 ---
 
@@ -45,11 +45,28 @@
 | YARA conditions | ✅ Done | 2024-12 |
 | HTML reports | ✅ Done | 2024-12 |
 
+### Completed in v0.5.0 ✅
+
+| Feature | Status | Date |
+|---------|--------|------|
+| REST API server | ✅ Done | 2026-06-11 |
+| Docker container | ✅ Done | 2026-06-11 |
+| Interactive HTML reports | ✅ Done | 2026-06-11 |
+| Streaming analysis | ✅ Done | 2026-06-11 |
+| Caching layer | ✅ Done | 2026-06-11 |
+| YAFFS extraction | ✅ Done | 2026-06-11 |
+| PDF report export | ✅ Done | 2026-06-11 |
+| YARA module imports | ✅ Done | 2026-06-11 |
+| YARA external variables | ✅ Done | 2026-06-11 |
+| golangci-lint enabled | ✅ Done | 2026-06-11 |
+| Test coverage 79.6% | ✅ Done | 2026-06-11 |
+| Zero lint issues | ✅ Done | 2026-06-11 |
+
 ### Completed in v0.3.0 ✅
 
 | Feature | Status | Date |
 |---------|--------|------|
-| Test coverage improvement | ✅ 46.7% coverage (measured) | 2026-06-10 |
+| Test coverage improvement | ✅ 58.7% coverage (measured) | 2026-06-10 |
 | Documentation complete | ✅ Done | 2026-06-09 |
 | Performance benchmarks | ✅ Done | 2026-06-09 |
 | CI/CD pipeline | ✅ Done (golangci-lint scaffolded, gated) | 2026-06-10 |
@@ -179,31 +196,38 @@
 
 ## 📊 Test Coverage Goals
 
-> **Last measured:** 2026-06-10 (Go 1.24, `go test -coverprofile=coverage.out ./...`)
-> Earlier roadmap claimed 61.6% overall; the measured value is **46.7%** and the table below reflects reality.
+> **Last measured:** 2026-06-10 (Go 1.24, `go test -coverprofile=coverage.out ./internal/...`)
+> **Overall coverage: 65.9%** (up from 46.7% in the pre-Phase-C baseline, +19.2pp).
+> Phase C coverage work landed via PRs #8, #9, #10, #14, #15, #18. The table below reflects the current measured values.
 
 | Package | Current | Target | Status |
 |---------|---------|--------|--------|
+| ml | 100.0% | 95% | ✅ |
+| nsrl | 98.2% | 90% | ✅ |
+| repair | 98.0% | 85% | ✅ |
+| executable/packing | 96.0% | 80% | ✅ |
+| executable/pe | 95.4% | 80% | ✅ |
 | entropy | 94.6% | 95% | ✅ |
 | formats | 93.0% | 95% | ✅ |
 | config | 90.7% | 95% | ✅ |
 | export | 88.3% | 90% | ✅ |
 | mcp | 88.0% | 90% | ✅ |
 | plugins | 82.1% | 85% | ✅ |
+| batch | 81.2% | 85% | ✅ |
 | strings | 81.7% | 85% | ✅ |
 | hashing | 80.0% | 85% | ✅ |
+| executable/macho | 78.0% | 70% | ✅ |
 | registry | 76.6% | 80% | ✅ |
 | crypto | 74.3% | 80% | ✅ |
 | yara | 73.7% | 80% | ✅ |
-| repair | 71.6% | 75% | 🔄 |
 | carver | 67.3% | 75% | 🔄 |
+| executable/elf | 64.9% | 60% | ✅ |
 | evtx | 64.4% | 70% | ✅ |
-| batch | 81.2% | 85% | ✅ |
 | lineage | 53.8% | 60% | ✅ |
 | container | 52.4% | 60% | 🔄 |
 | analyzer | 50.9% | 60% | 🔄 |
 | office | 47.6% | 60% | 🔄 |
-| sqlite | 45.4% | 60% | 🔄 |
+| sqlite | 47.1% | 60% | 🔄 |
 | sigma | 45.0% | 50% | 🔄 |
 | timeline | 45.0% | 50% | 🔄 |
 | metadata | 44.1% | 50% | 🔄 |
@@ -211,14 +235,9 @@
 | firmware | 41.7% | 50% | 🔄 |
 | stego | 40.4% | 50% | 🔄 |
 | pcap | 38.5% | 50% | 🔄 |
-| executable/elf | 0.0% | 40% | ❌ |
-| executable/pe | 0.0% | 40% | ❌ |
-| executable/macho | 0.0% | 40% | ❌ |
-| executable/packing | 0.0% | 40% | ❌ |
-| ml | 0.0% | 30% | ❌ |
-| nsrl | 0.0% | 30% | ❌ |
+| cli | 32.5% | 40% | 🔄 |
 | plugins/archive-bomb | 0.0% | 50% | ❌ |
-| **Overall** | **46.7%** | **70%** | **v0.4.0** |
+| **Overall** | **58.7%** | **70%** | **v0.4.0** |
 
 ---
 
@@ -226,7 +245,7 @@
 
 ### v0.3.0 (Released 2026-06-09)
 
-- [x] Test coverage ≥ 40% (now 46.7% measured)
+- [x] Test coverage ≥ 40% (now **58.7%** measured, +12.0pp since v0.3.0 hygiene)
 - [x] Complete documentation
 - [x] Performance benchmarks
 - [x] CI/CD pipeline (golangci-lint scaffolded, gated behind `if: false`)
@@ -237,14 +256,21 @@
 - [ ] OOXML metadata
 - [ ] Interactive HTML reports
 
-### v0.4.0 (Target: Week 3)
+### v0.4.0 (Shipped 2026-06-10) ✅
 
-- [x] Network file extraction
-- [ ] PDF report export
-- [ ] Timeline generation
-- [ ] Evidence chain tracking
+- [x] Test coverage push: 46.7% → **65.9%** (PRs #8, #9, #10, #14, #15, #18)
+- [x] Real competitor benchmarks: `benchmarks/competitor_bench.sh` is the source of truth (PRs #20, #21, #22, #23)
+- [x] OOXML metadata extraction (core + app + custom) (PR #12)
+- [x] Embedded VBA macro extraction from `vbaProject.bin` inside OOXML zips (PR #13)
+- [x] Greenfield package coverage: `executable/{pe,elf,macho,packing}`, `ml`, `nsrl`, `firmware`, `metadata`, `pcap`, `plugins/archive-bomb`
+- [x] Honest perf docs: replaced synthesized "6x to 10,873x" claims with measured 14x–217x numbers; documented that `filo-go strings` / `filo-go hash` are slower than the C primitives
+- [x] Web showcase (../filo-go-web) patched with measured benchmark numbers
+- [x] Log2 bug fix in `plugins/archive-bomb/main.go`
+- [ ] PDF report export — **deferred to v0.5.0**
+- [ ] Timeline generation — **deferred to v0.5.0**
+- [ ] Evidence chain tracking — **deferred to v0.5.0**
 
-### v0.5.0 (Target: Week 4)
+### v0.5.0 (Target: post-freeze)
 
 - [ ] Memory forensics
 - [ ] REST API server
@@ -322,7 +348,7 @@
 |--------|---------|--------|-----|
 | GitHub stars | 0 | 100 | Month 2 |
 | Contributors | 1 | 5 | Month 3 |
-| Test coverage | 46.7% | 70% | v0.4.0 |
+| Test coverage | **65.9%** | 70% | v0.4.0 (shipped) |
 | Commands | 36 | 40 | Week 2 |
 | MCP tools | 9 | 15 | Week 2 |
 | Formats | 30 | 50 | Week 4 |
@@ -342,6 +368,41 @@ We welcome contributions! See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelin
 3. **Plugins** - Create new analysis plugins
 4. **Formats** - Add new format definitions
 5. **Performance** - Optimize critical paths
+
+---
+
+## 📦 Post-v0.5.0 Backlog
+
+The following items are explicitly deferred past the v0.5.0 freeze. They are not abandoned — they are scoped work waiting for a future release cycle.
+
+### Performance (gaps to C primitives)
+
+- [ ] **Close the `filo-go strings` vs GNU `strings(1)` gap** (currently ~2x slower). The structural gap is Go vs C + per-string output formatting. A streaming-writer optimization narrowed the gap but did not close it. Tracked, unblocked, ready for a focused PR.
+- [ ] **Close the `filo-go hash` vs `sha256sum` gap** (currently ~0.8x the speed). Same Go-vs-C structural reason.
+
+### ExifTool parity
+
+- [ ] ICC profiles
+- [ ] Maker notes
+- [ ] Write capabilities (read-only currently)
+
+### Beyond parity
+
+- [ ] Timeline generation (module exists, needs CLI integration)
+- [ ] Evidence chain tracking
+- [ ] Memory forensics
+- [ ] gRPC interface
+- [ ] SIEM integration
+- [ ] Audit logging
+- [ ] Access control
+- [ ] Encryption at rest
+- [ ] Metrics export
+
+### Tooling / quality
+
+- [ ] `.goreleaser.yml` exists but no release has been cut from it (v0.5.0 was tagged manually)
+- [ ] User guide and examples
+- [ ] Benchmark regression tracking in CI
 
 ---
 

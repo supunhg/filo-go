@@ -225,3 +225,257 @@ func TestPrintMachOResults(t *testing.T) {
 	// Test that Print doesn't panic
 	Print(result)
 }
+
+func TestPEEvidence(t *testing.T) {
+	tests := []struct {
+		name string
+		pe   *pe.Result
+		min  int
+	}{
+		{
+			name: "with subsystem",
+			pe: &pe.Result{
+				Subsystem: "Windows CUI",
+			},
+			min: 1,
+		},
+		{
+			name: "with imports",
+			pe: &pe.Result{
+				Imports: []string{"VirtualAlloc", "CreateRemoteThread"},
+			},
+			min: 1,
+		},
+		{
+			name: "with TLS callbacks",
+			pe: &pe.Result{
+				TLS: &pe.TLSInfo{HasCallbacks: true},
+			},
+			min: 1,
+		},
+		{
+			name: "with debug info",
+			pe: &pe.Result{
+				DebugInfo: &pe.DebugInfo{HasDebug: true},
+			},
+			min: 1,
+		},
+		{
+			name: "empty",
+			pe:   &pe.Result{},
+			min:  0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			evidence := peEvidence(tt.pe)
+			if len(evidence) < tt.min {
+				t.Errorf("expected at least %d evidence, got %d", tt.min, len(evidence))
+			}
+		})
+	}
+}
+
+func TestELFEvidence(t *testing.T) {
+	tests := []struct {
+		name string
+		elf  *elf.Result
+		min  int
+	}{
+		{
+			name: "no NX",
+			elf: &elf.Result{
+				Security: &elf.Security{NX: false},
+			},
+			min: 1,
+		},
+		{
+			name: "no PIE",
+			elf: &elf.Result{
+				Security: &elf.Security{PIE: false},
+			},
+			min: 1,
+		},
+		{
+			name: "no RELRO",
+			elf: &elf.Result{
+				Security: &elf.Security{Relro: "None"},
+			},
+			min: 1,
+		},
+		{
+			name: "with notes",
+			elf: &elf.Result{
+				Notes: []elf.Note{
+					{Name: "GNU", Type: "1"},
+				},
+			},
+			min: 1,
+		},
+		{
+			name: "empty",
+			elf:  &elf.Result{},
+			min:  0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			evidence := elfEvidence(tt.elf)
+			if len(evidence) < tt.min {
+				t.Errorf("expected at least %d evidence, got %d", tt.min, len(evidence))
+			}
+		})
+	}
+}
+
+func TestMachOEvidence(t *testing.T) {
+	tests := []struct {
+		name   string
+		macho  *macho.Result
+		min    int
+	}{
+		{
+			name: "fat header",
+			macho: &macho.Result{
+				FatHeader: &macho.FatHeader{NFatArch: 2},
+			},
+			min: 1,
+		},
+		{
+			name: "with load commands",
+			macho: &macho.Result{
+				LoadCommands: []macho.LoadCommand{
+					{Type: "LC_SEGMENT_64"},
+				},
+			},
+			min: 1,
+		},
+		{
+			name: "with code signature",
+			macho: &macho.Result{
+				CodeSignature: &macho.CodeSignature{Present: true},
+			},
+			min: 1,
+		},
+		{
+			name:  "empty",
+			macho: &macho.Result{},
+			min:   0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			evidence := machoEvidence(tt.macho)
+			if len(evidence) < tt.min {
+				t.Errorf("expected at least %d evidence, got %d", tt.min, len(evidence))
+			}
+		})
+	}
+}
+
+func TestPrintWithAllFields(t *testing.T) {
+	result := &Result{
+		Format:   FormatPE,
+		FileName: "test.exe",
+		FileSize: 1024,
+		PE: &pe.Result{
+			MachineStr: "x86_64",
+			Bits:       64,
+			Subsystem:  "Windows CUI",
+			ImageBase:  0x140000000,
+			EntryPoint: 0x1000,
+			Timestamp:  1234567890,
+			Sections: []pe.Section{
+				{Name: ".text", VirtualAddress: 0x1000, VirtualSize: 0x100, RawSize: 0x100, Entropy: 6.5},
+				{Name: ".data", VirtualAddress: 0x2000, VirtualSize: 0x50, RawSize: 0x50, Entropy: 3.0, Suspicious: true, Reason: "writable+executable"},
+			},
+			Imports: []string{"kernel32.dll", "user32.dll", "VirtualAlloc"},
+			DLLs:    []string{"kernel32.dll", "user32.dll"},
+			TLS:     &pe.TLSInfo{HasCallbacks: true},
+			DebugInfo: &pe.DebugInfo{HasDebug: true},
+		},
+		Suspicious: []string{"Packing detected: UPX"},
+		Evidence: []Evidence{
+			{Source: "pe_subsystem", Confidence: 0.9, Details: "Subsystem: Windows CUI"},
+		},
+	}
+
+	Print(result)
+}
+
+func TestPrintELFWithSecurity(t *testing.T) {
+	result := &Result{
+		Format:   FormatELF,
+		FileName: "test.elf",
+		FileSize: 1024,
+		ELF: &elf.Result{
+			Class:   "ELF64",
+			Data:    "2's complement, little endian",
+			OSABI:   "UNIX - System V",
+			Type:    "EXEC (Executable file)",
+			Machine: "Advanced Micro Devices x86-64",
+			Security: &elf.Security{
+				NX:    true,
+				PIE:   true,
+				Relro: "Full",
+			},
+			Sections: []elf.Section{
+				{Name: ".text", Type: "PROGBITS", Flags: "AX", Size: 1024},
+			},
+			Segments: []elf.Segment{
+				{Type: "LOAD", Offset: 0, VAddr: 0x400000, FileSize: 1024, MemSize: 1024, Flags: "R E"},
+			},
+		},
+	}
+
+	Print(result)
+}
+
+func TestPrintMachOWithDetails(t *testing.T) {
+	result := &Result{
+		Format:   FormatMachO,
+		FileName: "test.macho",
+		FileSize: 1024,
+		MachO: &macho.Result{
+			Type: "MH_EXECUTE",
+			CPU:  "x86_64",
+			Bits: 64,
+			FatHeader: &macho.FatHeader{NFatArch: 2},
+			LoadCommands: []macho.LoadCommand{
+				{Type: "LC_SEGMENT_64"},
+				{Type: "LC_SYMTAB"},
+			},
+			Segments: []macho.Segment{
+				{Name: "__text", Size: 1024},
+			},
+			Dylibs: []macho.Dylib{
+				{Name: "/usr/lib/libSystem.B.dylib"},
+			},
+			CodeSignature: &macho.CodeSignature{Present: true},
+		},
+	}
+
+	Print(result)
+}
+
+func TestPrintWithNilSubResults(t *testing.T) {
+	// Test Print with nil PE/ELF/MachO results
+	result := &Result{
+		Format:   FormatPE,
+		FileName: "test.exe",
+		FileSize: 1024,
+		PE:       nil,
+	}
+	Print(result)
+
+	result.Format = FormatELF
+	result.ELF = nil
+	Print(result)
+
+	result.Format = FormatMachO
+	result.MachO = nil
+	Print(result)
+}

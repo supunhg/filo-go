@@ -494,3 +494,173 @@ func TestPrintEmpty(t *testing.T) {
 	// This should not panic
 	Print(result)
 }
+
+func TestRegisterModule(t *testing.T) {
+	scanner := NewScanner()
+
+	peInfo := &PEInfo{
+		NumberOfSections: 5,
+		EntryPoint:       0x1000,
+		Machine:          "x86_64",
+		Subsystem:        "Windows CUI",
+		Imports:          []string{"kernel32.dll", "user32.dll"},
+		IsEXE:            true,
+	}
+
+	scanner.RegisterModule("pe", peInfo)
+
+	if scanner.modules["pe"] == nil {
+		t.Error("expected PE module to be registered")
+	}
+}
+
+func TestSetVariable(t *testing.T) {
+	scanner := NewScanner()
+
+	scanner.SetVariable("filename", "test.exe")
+	scanner.SetVariable("filesize", 1024)
+
+	val, ok := scanner.GetVariable("filename")
+	if !ok || val != "test.exe" {
+		t.Errorf("expected filename 'test.exe', got %v", val)
+	}
+
+	val, ok = scanner.GetVariable("filesize")
+	if !ok || val != 1024 {
+		t.Errorf("expected filesize 1024, got %v", val)
+	}
+}
+
+func TestGetVariableNonexistent(t *testing.T) {
+	scanner := NewScanner()
+
+	_, ok := scanner.GetVariable("nonexistent")
+	if ok {
+		t.Error("expected false for nonexistent variable")
+	}
+}
+
+func TestRuleAddVariable(t *testing.T) {
+	rule := &Rule{
+		Name:      "test_rule",
+		Condition: "true",
+	}
+
+	rule.AddVariable("os", "windows")
+	rule.AddVariable("arch", "x86_64")
+
+	if rule.Variables["os"] != "windows" {
+		t.Errorf("expected os 'windows', got %v", rule.Variables["os"])
+	}
+
+	if rule.Variables["arch"] != "x86_64" {
+		t.Errorf("expected arch 'x86_64', got %v", rule.Variables["arch"])
+	}
+}
+
+func TestPEInfoStructure(t *testing.T) {
+	pe := &PEInfo{
+		NumberOfSections: 5,
+		EntryPoint:       0x1000,
+		Machine:          "x86_64",
+		Subsystem:        "Windows CUI",
+		Imports:          []string{"kernel32.dll"},
+		DLLs:             []string{"kernel32.dll", "user32.dll"},
+		IsDLL:            false,
+		IsEXE:            true,
+	}
+
+	if pe.NumberOfSections != 5 {
+		t.Errorf("expected 5 sections, got %d", pe.NumberOfSections)
+	}
+
+	if !pe.IsEXE {
+		t.Error("expected IsEXE to be true")
+	}
+}
+
+func TestELFInfoStructure(t *testing.T) {
+	elf := &ELFInfo{
+		Type:       "EXEC",
+		Machine:    "x86_64",
+		Bits:       64,
+		EntryPoint: 0x400000,
+		Sections:   10,
+		Is64bit:    true,
+	}
+
+	if elf.Bits != 64 {
+		t.Errorf("expected 64 bits, got %d", elf.Bits)
+	}
+
+	if !elf.Is64bit {
+		t.Error("expected Is64bit to be true")
+	}
+}
+
+func TestMachOInfoStructure(t *testing.T) {
+	macho := &MachOInfo{
+		Type:    "MH_EXECUTE",
+		CPU:     "x86_64",
+		Bits:    64,
+		IsFat:   false,
+		Is64bit: true,
+	}
+
+	if macho.Type != "MH_EXECUTE" {
+		t.Errorf("expected type MH_EXECUTE, got %s", macho.Type)
+	}
+}
+
+func TestScannerWithModules(t *testing.T) {
+	scanner := NewScanner()
+
+	// Register PE module
+	peInfo := &PEInfo{
+		NumberOfSections: 3,
+		IsEXE:            true,
+	}
+	scanner.RegisterModule("pe", peInfo)
+
+	// Add rule that uses module info
+	rule := &Rule{
+		Name:      "pe_exe_rule",
+		Condition: "true",
+		Strings: []YString{
+			{Name: "a", TextStr: "MZ"},
+		},
+	}
+	scanner.AddRule(rule)
+
+	data := []byte("MZ test data")
+	result := scanner.Scan(data, "test.exe")
+
+	if len(result.Matches) != 1 {
+		t.Errorf("expected 1 match, got %d", len(result.Matches))
+	}
+}
+
+func TestScannerWithVariables(t *testing.T) {
+	scanner := NewScanner()
+
+	// Set variables
+	scanner.SetVariable("min_size", 100)
+	scanner.SetVariable("max_size", 10000)
+
+	// Add rule
+	rule := &Rule{
+		Name:      "size_rule",
+		Condition: "true",
+		Strings: []YString{
+			{Name: "a", TextStr: "test"},
+		},
+	}
+	scanner.AddRule(rule)
+
+	data := []byte("test data")
+	result := scanner.Scan(data, "test.bin")
+
+	if len(result.Matches) != 1 {
+		t.Errorf("expected 1 match, got %d", len(result.Matches))
+	}
+}

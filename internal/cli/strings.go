@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/supunhg/filo-go/internal/strings"
+	filostrings "github.com/supunhg/filo-go/internal/strings"
 )
 
 var (
@@ -45,7 +45,7 @@ func runStrings(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("cannot read %s: %w", filePath, err)
 	}
 
-	result, err := strings.Extract(data, filePath, &strings.Options{
+	result, err := filostrings.Extract(data, filePath, &filostrings.Options{
 		MinLength:    stringsMinLen,
 		MinEntropy:   stringsEntropy,
 		MaxCount:     stringsCount,

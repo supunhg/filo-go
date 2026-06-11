@@ -2,6 +2,7 @@ package office
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -53,18 +54,68 @@ type CustomProperties struct {
 	Property []CustomProperty `xml:"property"`
 }
 
-// CustomProperty represents a single custom property
+// VTProperty holds the typed value of a custom property.
+// The vt: prefix in OOXML custom.xml can be one of lpwstr (string), i4 (int),
+// bool, filetime, r8 (double), or blob (base64 binary).
+type VTProperty struct {
+	LPWStr   string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes lpwstr"`
+	LPSTR    string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes lpstr"`
+	Blob     string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes blob"`
+	I4       string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes i4"`
+	I8       string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes i8"`
+	R4       string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes r4"`
+	R8       string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes r8"`
+	Bool     string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes bool"`
+	Filetime string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes filetime"`
+}
+
+// CustomProperty represents a single custom property. The OOXML spec allows
+// the value to be one of several vt: types (lpwstr, lpstr, i4, i8, r4, r8,
+// bool, filetime, blob). All variants are decoded into their respective
+// fields; VTValue() returns the first non-empty one in priority order.
 type CustomProperty struct {
 	Fmtid    string `xml:"fmtid,attr"`
 	Pid      int    `xml:"pid,attr"`
 	Name     string `xml:"name,attr"`
-	DataType int    `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsTypes dt:type,attr,omitempty"`
-	Value    string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsTypes vt:blob,omitempty"`
+	LPWStr   string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes lpwstr"`
+	LPSTR    string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes lpstr"`
+	I4       string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes i4"`
+	I8       string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes i8"`
+	R4       string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes r4"`
+	R8       string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes r8"`
+	Bool     string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes bool"`
+	Filetime string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes filetime"`
+	Blob     string `xml:"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes blob"`
+}
+
+// VTValue returns the best-effort string representation of the typed value.
+func (p CustomProperty) VTValue() string {
+	switch {
+	case p.LPWStr != "":
+		return p.LPWStr
+	case p.LPSTR != "":
+		return p.LPSTR
+	case p.Blob != "":
+		return p.Blob
+	case p.I4 != "":
+		return p.I4
+	case p.I8 != "":
+		return p.I8
+	case p.R4 != "":
+		return p.R4
+	case p.R8 != "":
+		return p.R8
+	case p.Bool != "":
+		return p.Bool
+	case p.Filetime != "":
+		return p.Filetime
+	}
+	return ""
 }
 
 // AppProperties represents application-specific properties
 type AppProperties struct {
-	XMLName              xml.Name `xml:"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties Application"`
+	XMLName              xml.Name `xml:"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties Properties"`
 	Template             string   `xml:"Template"`
 	TotalTime            string   `xml:"TotalTime"`
 	Pages                string   `xml:"Pages"`
@@ -80,6 +131,124 @@ type AppProperties struct {
 	AppVersion           string   `xml:"AppVersion"`
 	Company              string   `xml:"Company"`
 	DocSecurity          string   `xml:"DocSecurity"`
+}
+
+// DetectOOXMLBytes detects if an in-memory buffer is an OOXML document.
+// Returns "docx", "xlsx", "pptx" or "".
+func DetectOOXMLBytes(data []byte) string {
+	if len(data) < 4 {
+		return ""
+	}
+	// ZIP local file header magic: "PK\x03\x04"
+	if data[0] != 0x50 || data[1] != 0x4B || data[2] != 0x03 || data[3] != 0x04 {
+		return ""
+	}
+
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return ""
+	}
+
+	hasContentTypes := false
+	hasWord := false
+	hasXL := false
+	hasPowerPoint := false
+	for _, f := range zr.File {
+		name := f.Name
+		if name == "[Content_Types].xml" {
+			hasContentTypes = true
+		}
+		if strings.HasPrefix(name, "word/") {
+			hasWord = true
+		}
+		if strings.HasPrefix(name, "xl/") {
+			hasXL = true
+		}
+		if strings.HasPrefix(name, "ppt/") {
+			hasPowerPoint = true
+		}
+	}
+
+	if !hasContentTypes {
+		return ""
+	}
+	if hasWord {
+		return "docx"
+	}
+	if hasXL {
+		return "xlsx"
+	}
+	if hasPowerPoint {
+		return "pptx"
+	}
+	return ""
+}
+
+// ExtractVBAProjectBytes scans an in-memory OOXML document for an embedded
+// vbaProject.bin and returns its raw bytes. Returns nil if no VBA project is
+// present. The returned blob is itself an OLE2 (CFB) file that can be fed back
+// to Analyze for macro detection.
+func ExtractVBAProjectBytes(data []byte) []byte {
+	if DetectOOXMLBytes(data) == "" {
+		return nil
+	}
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil
+	}
+	for _, f := range zr.File {
+		switch f.Name {
+		case "word/vbaProject.bin", "xl/vbaProject.bin", "ppt/vbaProject.bin":
+			rc, err := f.Open()
+			if err != nil {
+				return nil
+			}
+			d, err := io.ReadAll(rc)
+			rc.Close()
+			if err != nil {
+				return nil
+			}
+			return d
+		}
+	}
+	return nil
+}
+
+// ExtractOOXMLFromBytes extracts metadata from an in-memory OOXML document.
+func ExtractOOXMLFromBytes(data []byte) (*OOXMLDocument, error) {
+	docType := DetectOOXMLBytes(data)
+	if docType == "" {
+		return nil, fmt.Errorf("not an OOXML document")
+	}
+
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to open ZIP: %w", err)
+	}
+
+	doc := &OOXMLDocument{
+		Type:        docType,
+		CustomProps: make(map[string]interface{}),
+	}
+
+	for _, f := range zr.File {
+		switch f.Name {
+		case "docProps/core.xml":
+			if d, err := readZipFile(f); err == nil {
+				doc.parseCoreProperties(d)
+			}
+		case "docProps/app.xml":
+			if d, err := readZipFile(f); err == nil {
+				doc.parseAppProperties(d)
+			}
+		case "docProps/custom.xml":
+			if d, err := readZipFile(f); err == nil {
+				doc.parseCustomProperties(d)
+			}
+		}
+	}
+
+	return doc, nil
 }
 
 // DetectOOXML detects if a file is an OOXML document
@@ -193,6 +362,21 @@ func ExtractOOXML(filePath string) (*OOXMLDocument, error) {
 	return doc, nil
 }
 
+// ExtractVBAProject scans an OOXML file for an embedded vbaProject.bin and
+// returns its raw bytes. Returns nil if no VBA project is present.
+func ExtractVBAProject(filePath string) []byte {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil
+	}
+	return ExtractVBAProjectBytes(data)
+}
+
 // parseCoreProperties parses the core.xml file
 func (d *OOXMLDocument) parseCoreProperties(data []byte) {
 	props := &DocumentProperties{}
@@ -250,7 +434,7 @@ func (d *OOXMLDocument) parseCustomProperties(data []byte) {
 	}
 
 	for _, prop := range props.Property {
-		d.CustomProps[prop.Name] = prop.Value
+		d.CustomProps[prop.Name] = prop.VTValue()
 	}
 }
 

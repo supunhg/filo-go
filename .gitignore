@@ -42,8 +42,12 @@ CLAUDE.md
 .cursorrules
 .github/copilot-instructions.md
 
+# AI session logs (local only)
+session-*.md
+
 # Build artifacts
 /tmp/
+dist/
 *.prof
 *.cpu
 *.mem

@@ -111,7 +111,7 @@ func ExtractJFFS2(srcPath, destDir string) (*ExtractionResult, error) {
 
 	// Add info file
 	infoPath := destDir + "/jffs2-info.txt"
-	info := fmt.Sprintf("JFFS2 Filesystem Info\n")
+	info := "JFFS2 Filesystem Info\n"
 	info += fmt.Sprintf("Magic: 0x%04X\n", sb.Magic)
 
 	if err := os.WriteFile(infoPath, []byte(info), 0644); err != nil {

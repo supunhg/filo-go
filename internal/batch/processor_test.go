@@ -77,7 +77,9 @@ func TestProcessWithSubdirs(t *testing.T) {
 
 	// Create subdirectory with files
 	subDir := filepath.Join(tmpDir, "subdir")
-	os.Mkdir(subDir, 0755)
+	if err := os.Mkdir(subDir, 0755); err != nil {
+		t.Fatalf("Mkdir error: %v", err)
+	}
 	os.WriteFile(filepath.Join(subDir, "file.txt"), []byte("test"), 0644)
 
 	// Create file in root
@@ -103,7 +105,9 @@ func TestProcessNonRecursive(t *testing.T) {
 
 	// Create subdirectory with files
 	subDir := filepath.Join(tmpDir, "subdir")
-	os.Mkdir(subDir, 0755)
+	if err := os.Mkdir(subDir, 0755); err != nil {
+		t.Fatalf("Mkdir error: %v", err)
+	}
 	os.WriteFile(filepath.Join(subDir, "file.txt"), []byte("test"), 0644)
 
 	// Create file in root
@@ -181,7 +185,9 @@ func TestProcessHiddenDir(t *testing.T) {
 
 	// Create hidden directory
 	hiddenDir := filepath.Join(tmpDir, ".hidden")
-	os.Mkdir(hiddenDir, 0755)
+	if err := os.Mkdir(hiddenDir, 0755); err != nil {
+		t.Fatalf("Mkdir error: %v", err)
+	}
 	os.WriteFile(filepath.Join(hiddenDir, "file.txt"), []byte("hidden"), 0644)
 
 	// Create normal file
@@ -225,7 +231,9 @@ func TestCollectFilesNonRecursive(t *testing.T) {
 
 	// Create subdirectory
 	subDir := filepath.Join(tmpDir, "sub")
-	os.Mkdir(subDir, 0755)
+	if err := os.Mkdir(subDir, 0755); err != nil {
+		t.Fatalf("Mkdir error: %v", err)
+	}
 	os.WriteFile(filepath.Join(subDir, "file.txt"), []byte("test"), 0644)
 
 	// Create root file

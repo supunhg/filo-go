@@ -137,3 +137,121 @@ func TestJFFS2NodeTypeString(t *testing.T) {
 		}
 	}
 }
+
+func TestDetectYAFFS(t *testing.T) {
+	// Test with non-existent file
+	if DetectYAFFS("/tmp/nonexistent") {
+		t.Error("Expected false for non-existent file")
+	}
+
+	// Test with empty file
+	tmpFile, err := os.CreateTemp("", "test-yaffs-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	tmpFile.Close()
+
+	if DetectYAFFS(tmpFile.Name()) {
+		t.Error("Expected false for empty file")
+	}
+}
+
+func TestFormatYAFFSSuperblock(t *testing.T) {
+	// Test with nil
+	info := FormatYAFFSSuperblock(nil)
+	if info != "No YAFFS superblock" {
+		t.Errorf("Expected 'No YAFFS superblock', got %s", info)
+	}
+
+	// Test with valid superblock
+	sb := &YAFFSSuperblock{
+		Magic:         YAFFS1Magic,
+		Version:       1,
+		ChunkSize:     512,
+		SpareSize:     16,
+		BlockSize:     32768,
+		ChunksPerBlock: 64,
+		TotalBlocks:   100,
+		ObjectCount:   50,
+	}
+	info = FormatYAFFSSuperblock(sb)
+	if info == "" {
+		t.Error("Expected non-empty info")
+	}
+
+	// Test with YAFFS2
+	sb2 := &YAFFSSuperblock{
+		Magic:         YAFFS2Magic,
+		Version:       2,
+		ChunkSize:     2048,
+		SpareSize:     64,
+		BlockSize:     131072,
+		ChunksPerBlock: 64,
+		TotalBlocks:   200,
+		ObjectCount:   100,
+	}
+	info = FormatYAFFSSuperblock(sb2)
+	if info == "" {
+		t.Error("Expected non-empty info")
+	}
+}
+
+func TestYAFFSDetectionWithFile(t *testing.T) {
+	// Create a test file with YAFFS-like patterns
+	tmpFile, err := os.CreateTemp("", "test-yaffs-pattern-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	// Write data that looks like YAFFS1 (512 bytes + 16 bytes spare)
+	data := make([]byte, 1024)
+	// First chunk: object header
+	data[0] = 0x01 // type = file
+	data[1] = 0x00
+	data[2] = 0x00
+	data[3] = 0x00
+	// Parent ID = 1
+	data[4] = 0x01
+	data[5] = 0x00
+	data[6] = 0x00
+	data[7] = 0x00
+	// Name "test.txt" at offset 8
+	copy(data[8:], "test.txt")
+
+	// Spare area at offset 512
+	data[512] = 0x01 // tag byte
+	data[513] = 0x00 // chunk ID low
+	data[514] = 0x00 // chunk ID high
+	data[515] = 0x01 // object ID low
+	data[516] = 0x00 // object ID high
+
+	tmpFile.Write(data)
+	tmpFile.Close()
+
+	// Test detection (may or may not detect depending on heuristics)
+	// This is a heuristic-based detection, so we just test it doesn't panic
+	DetectYAFFS(tmpFile.Name())
+}
+
+func TestExtractYAFFS(t *testing.T) {
+	// Test with non-existent file
+	_, err := ExtractYAFFS("/tmp/nonexistent", "/tmp/output")
+	if err == nil {
+		t.Error("Expected error for non-existent file")
+	}
+
+	// Test with empty file
+	tmpFile, err := os.CreateTemp("", "test-yaffs-extract-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpFile.Name())
+	tmpFile.Close()
+
+	_, err = ExtractYAFFS(tmpFile.Name(), "/tmp/yaffs-output")
+	if err == nil {
+		t.Error("Expected error for empty file")
+	}
+}

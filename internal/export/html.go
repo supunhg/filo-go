@@ -112,9 +112,10 @@ func GenerateHTMLReport(results *AnalysisResults, outputPath string) error {
 		var securityList []string
 		for _, issue := range results.SecurityIssues {
 			severityClass := "info"
-			if issue.Severity == "high" {
+			switch issue.Severity {
+			case "high":
 				severityClass = "danger"
-			} else if issue.Severity == "medium" {
+			case "medium":
 				severityClass = "warning"
 			}
 			securityList = append(securityList, fmt.Sprintf(`<tr>
