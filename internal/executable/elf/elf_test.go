@@ -100,7 +100,7 @@ func makeMinimalELF32LE() []byte {
 	binary.LittleEndian.PutUint32(buf[shdr0Off:shdr0Off+4], 11)         // name offset in strtab
 	binary.LittleEndian.PutUint32(buf[shdr0Off+4:shdr0Off+8], 1)        // SHT_PROGBITS
 	binary.LittleEndian.PutUint32(buf[shdr0Off+8:shdr0Off+12], 6)       // flags: WRITE|ALLOC|EXECINSTR
-	binary.LittleEndian.PutUint32(buf[shdr0Off+12:shdr0Off+16], 0x08048000+uint32(sectionDataOff))
+	binary.LittleEndian.PutUint32(buf[shdr0Off+12:shdr0Off+16], 0x08048000+sectionDataOff)
 	binary.LittleEndian.PutUint32(buf[shdr0Off+16:shdr0Off+20], sectionDataOff) // offset
 	binary.LittleEndian.PutUint32(buf[shdr0Off+20:shdr0Off+24], sectionDataSize) // size
 

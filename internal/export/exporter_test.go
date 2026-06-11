@@ -292,3 +292,122 @@ func TestJoinCSV(t *testing.T) {
 		t.Errorf("joinCSV() = %v, want a,b,c", result)
 	}
 }
+
+func TestGeneratePDFReport(t *testing.T) {
+	results := &AnalysisResults{
+		Timestamp: "2026-06-11T00:00:00Z",
+		FileInfo: &FileInfo{
+			Name:    "test.bin",
+			Size:    1024,
+			Type:    "binary",
+			MIME:    "application/octet-stream",
+			SHA256:  "abc123",
+			Entropy: 5.5,
+		},
+		Signatures: []SignatureMatch{
+			{
+				Name:        "PNG",
+				Description: "PNG image",
+				Offset:      0,
+				Confidence:  0.95,
+			},
+		},
+		Strings: []ExtractedString{
+			{
+				Offset: 0,
+				Type:   "ascii",
+				Value:  "Hello World",
+			},
+		},
+		Metadata: map[string]interface{}{
+			"key1": "value1",
+			"key2": 42,
+		},
+		SecurityIssues: []SecurityIssue{
+			{
+				Severity:    "high",
+				Type:        "encryption",
+				Description: "High entropy detected",
+			},
+		},
+	}
+
+	tmpFile := t.TempDir() + "/test.pdf"
+	err := GeneratePDFReport(results, tmpFile)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify file was created
+	data, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("failed to read output file: %v", err)
+	}
+
+	if len(data) == 0 {
+		t.Error("output file is empty")
+	}
+
+	// Verify PDF header
+	if len(data) < 5 || string(data[:5]) != "%PDF-" {
+		t.Error("output file does not start with PDF header")
+	}
+}
+
+func TestGeneratePDFReportMinimal(t *testing.T) {
+	results := &AnalysisResults{
+		Timestamp: "2026-06-11T00:00:00Z",
+	}
+
+	tmpFile := t.TempDir() + "/minimal.pdf"
+	err := GeneratePDFReport(results, tmpFile)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify file was created
+	data, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("failed to read output file: %v", err)
+	}
+
+	if len(data) == 0 {
+		t.Error("output file is empty")
+	}
+}
+
+func TestFormatPDFPath(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"test.bin", "./test.pdf"},
+		{"/path/to/file.bin", "/path/to/file.pdf"},
+		{"file.txt", "./file.pdf"},
+	}
+
+	for _, tt := range tests {
+		result := FormatPDFPath(tt.input)
+		if result != tt.expected {
+			t.Errorf("FormatPDFPath(%s) = %s, want %s", tt.input, result, tt.expected)
+		}
+	}
+}
+
+func TestEscapePDFString(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"hello", "hello"},
+		{"hello\\world", "hello\\\\world"},
+		{"hello(world)", "hello\\(world\\)"},
+	}
+
+	for _, tt := range tests {
+		result := escapePDFString(tt.input)
+		if result != tt.expected {
+			t.Errorf("escapePDFString(%s) = %s, want %s", tt.input, result, tt.expected)
+		}
+	}
+}

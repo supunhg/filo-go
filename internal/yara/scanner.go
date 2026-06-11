@@ -29,6 +29,15 @@ type Rule struct {
 	Meta      map[string]string
 	Condition string
 	Strings   []YString
+	Variables map[string]interface{}
+}
+
+// AddVariable adds an external variable to the rule.
+func (r *Rule) AddVariable(name string, value interface{}) {
+	if r.Variables == nil {
+		r.Variables = make(map[string]interface{})
+	}
+	r.Variables[name] = value
 }
 
 // YString represents a YARA string definition.
@@ -41,14 +50,65 @@ type YString struct {
 
 // Scanner performs YARA-like scanning.
 type Scanner struct {
-	rules []*Rule
+	rules      []*Rule
+	modules    map[string]interface{}
+	variables  map[string]interface{}
 }
 
 // NewScanner creates a new YARA scanner.
 func NewScanner() *Scanner {
 	return &Scanner{
-		rules: []*Rule{},
+		rules:     []*Rule{},
+		modules:   make(map[string]interface{}),
+		variables: make(map[string]interface{}),
 	}
+}
+
+// SetVariable sets an external variable for use in rules.
+func (s *Scanner) SetVariable(name string, value interface{}) {
+	s.variables[name] = value
+}
+
+// GetVariable gets an external variable value.
+func (s *Scanner) GetVariable(name string) (interface{}, bool) {
+	v, ok := s.variables[name]
+	return v, ok
+}
+
+// RegisterModule registers a module for use in rules.
+func (s *Scanner) RegisterModule(name string, data interface{}) {
+	s.modules[name] = data
+}
+
+// PEInfo holds PE module data for YARA rules.
+type PEInfo struct {
+	NumberOfSections int      `json:"number_of_sections"`
+	EntryPoint       uint64   `json:"entry_point"`
+	Machine          string   `json:"machine"`
+	Subsystem        string   `json:"subsystem"`
+	Imports          []string `json:"imports"`
+	DLLs             []string `json:"dlls"`
+	IsDLL            bool     `json:"is_dll"`
+	IsEXE            bool     `json:"is_exe"`
+}
+
+// ELFInfo holds ELF module data for YARA rules.
+type ELFInfo struct {
+	Type      string `json:"type"`
+	Machine   string `json:"machine"`
+	Bits      int    `json:"bits"`
+	EntryPoint uint64 `json:"entry_point"`
+	Sections  int    `json:"sections"`
+	Is64bit   bool   `json:"is_64bit"`
+}
+
+// MachOInfo holds Mach-O module data for YARA rules.
+type MachOInfo struct {
+	Type    string `json:"type"`
+	CPU     string `json:"cpu"`
+	Bits    int    `json:"bits"`
+	IsFat   bool   `json:"is_fat"`
+	Is64bit bool   `json:"is_64bit"`
 }
 
 // AddRule adds a rule to the scanner.

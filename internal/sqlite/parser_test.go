@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"os"
 	"testing"
 )
 
@@ -546,6 +547,433 @@ func TestPrintResultsWithDeletedRecords(t *testing.T) {
 		Pages: 10,
 		DeletedRecords: []DeletedRecord{
 			{Page: 5, Offset: 100, Size: 50, RawData: "test data"},
+		},
+	}
+
+	// Test that Print doesn't panic
+	Print(result)
+}
+
+func TestReadVarintMultiByte(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     []byte
+		offset   int
+		expected uint64
+		bytes    int
+	}{
+		{
+			name:     "2-byte varint",
+			data:     []byte{0x81, 0x01},
+			offset:   0,
+			expected: 257, // (0x81 & 0x3F) << 8 | 0x01 = 1 << 8 | 1 = 257
+			bytes:    2,
+		},
+		{
+			name:     "2-byte varint max",
+			data:     []byte{0xBF, 0xFF},
+			offset:   0,
+			expected: 16383, // (0xBF & 0x3F) << 8 | 0xFF = 0x3F << 8 | 0xFF = 16383
+			bytes:    2,
+		},
+		{
+			name:     "3-byte varint",
+			data:     []byte{0xC0, 0x40, 0x00},
+			offset:   0,
+			expected: 16384, // (0xC0 & 0x1F) << 16 | 0x40 << 8 | 0x00 = 0 << 16 | 16384 = 16384
+			bytes:    3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, n := readVarint(tt.data, tt.offset)
+			if result != tt.expected {
+				t.Errorf("expected %d, got %d", tt.expected, result)
+			}
+			if n != tt.bytes {
+				t.Errorf("expected %d bytes, got %d", tt.bytes, n)
+			}
+		})
+	}
+}
+
+func TestReadUint16BE(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     []byte
+		offset   int
+		expected uint16
+	}{
+		{
+			name:     "zero",
+			data:     []byte{0x00, 0x00},
+			offset:   0,
+			expected: 0,
+		},
+		{
+			name:     "one",
+			data:     []byte{0x00, 0x01},
+			offset:   0,
+			expected: 1,
+		},
+		{
+			name:     "256",
+			data:     []byte{0x01, 0x00},
+			offset:   0,
+			expected: 256,
+		},
+		{
+			name:     "65535",
+			data:     []byte{0xFF, 0xFF},
+			offset:   0,
+			expected: 65535,
+		},
+		{
+			name:     "with offset",
+			data:     []byte{0x00, 0x01, 0x02},
+			offset:   1,
+			expected: 258,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := readUint16BE(tt.data, tt.offset)
+			if result != tt.expected {
+				t.Errorf("expected %d, got %d", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestReadUint32BE(t *testing.T) {
+	tests := []struct {
+		name     string
+		data     []byte
+		offset   int
+		expected uint32
+	}{
+		{
+			name:     "zero",
+			data:     []byte{0x00, 0x00, 0x00, 0x00},
+			offset:   0,
+			expected: 0,
+		},
+		{
+			name:     "one",
+			data:     []byte{0x00, 0x00, 0x00, 0x01},
+			offset:   0,
+			expected: 1,
+		},
+		{
+			name:     "256",
+			data:     []byte{0x00, 0x00, 0x01, 0x00},
+			offset:   0,
+			expected: 256,
+		},
+		{
+			name:     "65536",
+			data:     []byte{0x00, 0x01, 0x00, 0x00},
+			offset:   0,
+			expected: 65536,
+		},
+		{
+			name:     "max",
+			data:     []byte{0xFF, 0xFF, 0xFF, 0xFF},
+			offset:   0,
+			expected: 4294967295,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := readUint32BE(tt.data, tt.offset)
+			if result != tt.expected {
+				t.Errorf("expected %d, got %d", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestParseRecordSerialTypes(t *testing.T) {
+	// Test various serial types
+	page := make([]byte, 1024)
+
+	// Set up a record with various serial types
+	// Header: size(1) + serial types
+	page[0] = 9 // header size (includes the size byte itself, so 8 serial types + 1 size byte = 9)
+	page[1] = 0 // serial type 0 = NULL
+	page[2] = 1 // serial type 1 = 1-byte integer
+	page[3] = 2 // serial type 2 = 2-byte integer
+	page[4] = 3 // serial type 3 = 3-byte integer
+	page[5] = 4 // serial type 4 = 4-byte integer
+	page[6] = 5 // serial type 5 = 6-byte integer
+	page[7] = 6 // serial type 6 = 8-byte integer
+	page[8] = 7 // serial type 7 = IEEE 754 float64
+
+	// Data area (after header)
+	offset := 9
+	// 1-byte integer (value: 42)
+	page[offset] = 42
+	offset += 1
+	// 2-byte integer (value: 1000)
+	page[offset] = 0x03
+	page[offset+1] = 0xE8
+	offset += 2
+	// 3-byte integer (value: 100000)
+	page[offset] = 0x01
+	page[offset+1] = 0x86
+	page[offset+2] = 0xA0
+	offset += 3
+	// 4-byte integer (value: 1000000)
+	page[offset] = 0x00
+	page[offset+1] = 0x0F
+	page[offset+2] = 0x42
+	page[offset+3] = 0x40
+	offset += 4
+	// 6-byte integer (value: 0)
+	offset += 6
+	// 8-byte integer (value: 0)
+	offset += 8
+	// Float64 (1.0)
+	page[offset] = 0x3F
+	page[offset+1] = 0xF0
+	page[offset+2] = 0x00
+	page[offset+3] = 0x00
+	page[offset+4] = 0x00
+	page[offset+5] = 0x00
+	page[offset+6] = 0x00
+	page[offset+7] = 0x00
+
+	result := parseRecord(page, 0)
+	if len(result) != 8 {
+		t.Errorf("expected 8 columns, got %d", len(result))
+	}
+}
+
+func TestParseRecordTextAndBlob(t *testing.T) {
+	// Test text and blob serial types
+	page := make([]byte, 1024)
+
+	// Header
+	page[0] = 4 // header size
+	page[1] = 13 // serial type 13 = text of length 0 (13-13)/2 = 0
+	page[2] = 15 // serial type 15 = text of length 1 (15-13)/2 = 1
+	page[3] = 25 // serial type 25 = blob of length 6 (25-12)/2 = 6
+
+	// Data
+	offset := 4
+	// Text of length 1: "A"
+	page[offset] = 'A'
+	offset += 1
+	// Blob of length 6
+	page[offset] = 0x01
+	page[offset+1] = 0x02
+	page[offset+2] = 0x03
+	page[offset+3] = 0x04
+	page[offset+4] = 0x05
+	page[offset+5] = 0x06
+
+	result := parseRecord(page, 0)
+	if len(result) != 3 {
+		t.Errorf("expected 3 columns, got %d", len(result))
+	}
+}
+
+func TestParseRecordInteger0And1(t *testing.T) {
+	// Test integer 0 and 1 serial types
+	page := make([]byte, 1024)
+
+	// Header
+	page[0] = 3 // header size
+	page[1] = 8 // serial type 8 = integer 0
+	page[2] = 9 // serial type 9 = integer 1
+
+	result := parseRecord(page, 0)
+	if len(result) != 2 {
+		t.Errorf("expected 2 columns, got %d", len(result))
+	}
+	if result[0] != "0" {
+		t.Errorf("expected '0', got %q", result[0])
+	}
+	if result[1] != "1" {
+		t.Errorf("expected '1', got %q", result[1])
+	}
+}
+
+func TestParseRecordEdgeCases2(t *testing.T) {
+	// Test with header size larger than page
+	page := make([]byte, 10)
+	page[0] = 20 // header size larger than page
+
+	result := parseRecord(page, 0)
+	// Should not panic, may return empty or partial results
+	_ = result
+}
+
+func TestCountTableRowsLeaf(t *testing.T) {
+	// Test counting rows in a leaf table page
+	page := make([]byte, 4096)
+
+	// Set page type to leaf table (0x0D)
+	page[0] = 0x0D
+	// Set number of cells
+	page[3] = 0x00
+	page[4] = 0x03 // 3 cells
+
+	header := &FileHeader{
+		PageSize:      4096,
+		DBSizeInPages: 1,
+	}
+
+	result := countTableRows(page, header, 1)
+	if result != 3 {
+		t.Errorf("expected 3 rows, got %d", result)
+	}
+}
+
+func TestCountTableRowsInterior(t *testing.T) {
+	// Test counting rows in an interior table page
+	page := make([]byte, 4096)
+
+	// Set page type to interior table (0x05)
+	page[0] = 0x05
+	// Set number of cells
+	page[3] = 0x00
+	page[4] = 0x00 // 0 cells (simplified)
+
+	header := &FileHeader{
+		PageSize:      4096,
+		DBSizeInPages: 1,
+	}
+
+	result := countTableRows(page, header, 1)
+	if result != 0 {
+		t.Errorf("expected 0 rows, got %d", result)
+	}
+}
+
+func TestDetectWALWithFile(t *testing.T) {
+	// Create a temporary WAL file
+	tmpDir := t.TempDir()
+	dbPath := tmpDir + "/test.db"
+	walPath := dbPath + "-wal"
+
+	// Create the WAL file
+	walData := make([]byte, 32)
+	// WAL magic (0x377f0682 or 0x377f0683)
+	walData[0] = 0x37
+	walData[1] = 0x7F
+	walData[2] = 0x06
+	walData[3] = 0x82
+	// Version (3007000)
+	walData[4] = 0x00
+	walData[5] = 0x2D
+	walData[6] = 0xE9
+	walData[7] = 0xB8
+	// Page size (4096)
+	walData[8] = 0x00
+	walData[9] = 0x00
+	walData[10] = 0x10
+	walData[11] = 0x00
+	// Checkpoint sequence
+	walData[12] = 0x00
+	walData[13] = 0x00
+	walData[14] = 0x00
+	walData[15] = 0x01
+
+	if err := os.WriteFile(walPath, walData, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	info := DetectWAL(dbPath)
+	if !info.Present {
+		t.Error("expected WAL to be present")
+	}
+	if info.PageSize != 4096 {
+		t.Errorf("expected page size 4096, got %d", info.PageSize)
+	}
+}
+
+func TestParseInvalidFile(t *testing.T) {
+	// Test Parse with various invalid files
+	tmpDir := t.TempDir()
+
+	// File too small
+	smallFile := tmpDir + "/small.db"
+	if err := os.WriteFile(smallFile, []byte("small"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Parse(smallFile)
+	if err == nil {
+		t.Error("expected error for small file")
+	}
+
+	// Invalid magic
+	invalidFile := tmpDir + "/invalid.db"
+	data := make([]byte, 100)
+	copy(data, "Not SQLite")
+	if err := os.WriteFile(invalidFile, data, 0644); err != nil {
+		t.Fatal(err)
+	}
+	_, err = Parse(invalidFile)
+	if err == nil {
+		t.Error("expected error for invalid magic")
+	}
+}
+
+func TestPrintWithEmptyTables(t *testing.T) {
+	result := &Result{
+		FileName: "test.db",
+		Header: &FileHeader{
+			Magic:        "SQLite format 3",
+			PageSize:     4096,
+			WriteVersion: 1,
+			TextEncoding: "UTF-8",
+		},
+		Pages:  10,
+		Tables: []Table{},
+	}
+
+	// Test that Print doesn't panic with empty tables
+	Print(result)
+}
+
+func TestPrintWithMultipleTables(t *testing.T) {
+	result := &Result{
+		FileName: "test.db",
+		Header: &FileHeader{
+			Magic:        "SQLite format 3",
+			PageSize:     4096,
+			WriteVersion: 1,
+			TextEncoding: "UTF-8",
+		},
+		Pages: 100,
+		Tables: []Table{
+			{Name: "users", RootPage: 2, RowCount: 100, SQL: "CREATE TABLE users (id INTEGER PRIMARY KEY)"},
+			{Name: "posts", RootPage: 5, RowCount: 500, SQL: "CREATE TABLE posts (id INTEGER PRIMARY KEY)"},
+			{Name: "comments", RootPage: 8, RowCount: 1000},
+		},
+	}
+
+	// Test that Print doesn't panic
+	Print(result)
+}
+
+func TestPrintWithDeletedRecords(t *testing.T) {
+	result := &Result{
+		FileName: "test.db",
+		Header: &FileHeader{
+			Magic:        "SQLite format 3",
+			PageSize:     4096,
+			WriteVersion: 1,
+			TextEncoding: "UTF-8",
+		},
+		Pages: 10,
+		DeletedRecords: []DeletedRecord{
+			{Page: 5, Offset: 100, Size: 50, RawData: "deleted data"},
+			{Page: 6, Offset: 200, Size: 30, RawData: "more deleted data"},
 		},
 	}
 

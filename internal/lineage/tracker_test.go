@@ -80,8 +80,8 @@ func TestGetByHash(t *testing.T) {
 	if err != nil {
 		t.Logf("GetByHash() error (expected): %v", err)
 	}
-	if records == nil {
-		// This is expected
+	if records != nil {
+		t.Logf("GetByHash() returned %d records", len(records))
 	}
 }
 

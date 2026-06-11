@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  filo:
+    build: .
+    container_name: filo-go
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+      - ./output:/output
+    command: ["api", "--addr", ":8080"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # MCP server (for AI integration)
+  filo-mcp:
+    build: .
+    container_name: filo-mcp
+    stdin_open: true
+    command: ["mcp"]
+    restart: unless-stopped

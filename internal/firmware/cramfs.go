@@ -100,7 +100,7 @@ func ExtractCramFS(srcPath, destDir string) (*ExtractionResult, error) {
 
 	// Add info file
 	infoPath := destDir + "/cramfs-info.txt"
-	info := fmt.Sprintf("CramFS Filesystem Info\n")
+	info := "CramFS Filesystem Info\n"
 	info += fmt.Sprintf("Magic: 0x%08X\n", sb.Magic)
 	info += fmt.Sprintf("Size: %d bytes\n", sb.Size)
 	info += fmt.Sprintf("Flags: 0x%08X\n", sb.Flags)

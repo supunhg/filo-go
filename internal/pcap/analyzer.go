@@ -203,8 +203,6 @@ func searchForFlags(r *Result) {
 	for _, p := range patterns {
 		re := regexp.MustCompile(p)
 		matches := re.FindAllString(allText, -1)
-		for _, m := range matches {
-			r.Flags = append(r.Flags, m)
-		}
+		r.Flags = append(r.Flags, matches...)
 	}
 }

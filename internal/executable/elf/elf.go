@@ -541,7 +541,7 @@ func sectionTypeString(t uint64) string {
 		1:          "SHT_PROGBITS",
 		2:          "SHT_SYMTAB",
 		3:          "SHT_STRTAB",
-		4:          "SHT_RELA",
+		4:          "SHT_RELA", //nolint:misspell
 		5:          "SHT_HASH",
 		6:          "SHT_DYNAMIC",
 		7:          "SHT_NOTE",

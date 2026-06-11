@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Build artifacts
+filo
+dist/
+*.exe
+
+# Test files
+coverage.out
+*.test
+
+# Documentation
+docs/
+*.md
+
+# CI/CD
+.github/
+
+# Benchmarks
+benchmarks/

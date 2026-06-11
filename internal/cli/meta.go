@@ -79,7 +79,7 @@ func runMeta(cmd *cobra.Command, args []string) error {
 	}
 
 	// If no metadata found
-	if exif == nil && xmp == nil && (iptc == nil || len(iptc) == 0) {
+	if exif == nil && xmp == nil && len(iptc) == 0 {
 		fmt.Println("  No metadata found")
 	}
 
