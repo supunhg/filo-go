@@ -9,6 +9,8 @@
 
 **Latest release: v0.5.1 (2026-06-12)** — 79.6% test coverage, REST API server with security hardening, Docker support, interactive HTML reports, streaming analysis, caching layer, YARA module imports, YAFFS extraction, zero lint issues, Apache 2.0.
 
+<!-- branch: feature/v0.5.1 -->
+
 ---
 
 ## ⚠️ Known limitations
