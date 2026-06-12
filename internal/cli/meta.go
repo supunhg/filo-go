@@ -36,9 +36,12 @@ func init() {
 func runMeta(cmd *cobra.Command, args []string) error {
 	filePath := args[0]
 
-	// Check file exists
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return fmt.Errorf("file not found: %s", filePath)
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return fmt.Errorf("cannot access %s: %w", filePath, err)
+	}
+	if info.IsDir() {
+		return fmt.Errorf("%s is a directory, not a file", filePath)
 	}
 
 	fmt.Printf("\n  Metadata Analysis: %s\n\n", filePath)

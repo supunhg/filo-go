@@ -4,8 +4,15 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+// expectedVersion is the version string that `filo version` must report.
+// Kept as a const so a missed bump at release time fails the build loudly
+// (TestVersionCommand asserts on this literal). Bump it in lockstep with
+// the `version` constant in root.go for every release.
+const expectedVersion = "0.5.1"
 
 func TestRootCommand(t *testing.T) {
 	// Test that root command exists
@@ -28,7 +35,16 @@ func TestVersionCommand(t *testing.T) {
 		t.Fatalf("version command failed: %v", err)
 	}
 
-	// Version command outputs to stdout, so check that it executed without error
+	// Regression guard: the version string reported by `filo version` must
+	// contain the literal expectedVersion from the top of this file. This is
+	// the assertion that would have caught the historical 0.4.0-vs-0.5.0
+	// drift between the hardcoded value in root.go and what was actually
+	// released. Bump expectedVersion in lockstep with the `version` constant
+	// in root.go for every release.
+	out := buf.String()
+	if !strings.Contains(out, expectedVersion) {
+		t.Errorf("expected version output to contain %q, got %q", expectedVersion, out)
+	}
 }
 
 func TestAnalyzeCommand(t *testing.T) {
@@ -170,6 +186,19 @@ func TestDDCommand(t *testing.T) {
 	if err := os.WriteFile(testFile, []byte("ABCDEFGHIJ"), 0644); err != nil {
 		t.Fatal(err)
 	}
+
+	// Save original flag values to restore after test
+	origBlockSize := ddBlockSize
+	origCount := ddCount
+	origSkip := ddSkip
+	origSeek := ddSeek
+
+	defer func() {
+		ddBlockSize = origBlockSize
+		ddCount = origCount
+		ddSkip = origSkip
+		ddSeek = origSeek
+	}()
 
 	// Test with simple arguments
 	buf := new(bytes.Buffer)
@@ -625,6 +654,19 @@ func TestHexWithOffsetAndLength(t *testing.T) {
 }
 
 func TestDDWithOffsetAndLength(t *testing.T) {
+	// Save original flag values to restore after test
+	origBlockSize := ddBlockSize
+	origCount := ddCount
+	origSkip := ddSkip
+	origSeek := ddSeek
+
+	defer func() {
+		ddBlockSize = origBlockSize
+		ddCount = origCount
+		ddSkip = origSkip
+		ddSeek = origSeek
+	}()
+
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.bin")
 	outputFile := filepath.Join(tmpDir, "output.bin")

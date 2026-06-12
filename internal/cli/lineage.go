@@ -18,7 +18,7 @@ var (
 var lineageCmd = &cobra.Command{
 	Use:   "lineage [hash]",
 	Short: "Show hash lineage chain-of-custody",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	RunE:  runLineage,
 }
 
@@ -51,6 +51,14 @@ func getLineageTracker() (*lineage.Tracker, error) {
 }
 
 func runLineage(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		fmt.Println()
+		fmt.Println("  No hash provided. Usage: filo lineage <hash>")
+		fmt.Println("  To track a file: filo analyze <file> (creates lineage entry)")
+		fmt.Println()
+		return nil
+	}
+
 	hash := args[0]
 
 	tracker, err := getLineageTracker()

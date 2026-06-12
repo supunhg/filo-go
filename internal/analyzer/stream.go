@@ -56,7 +56,7 @@ func AnalyzeStream(filePath string, opts *StreamOptions) (*StreamResult, error) 
 	if err != nil {
 		return nil, fmt.Errorf("cannot open file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }() // close quietly — best effort
 
 	result := &StreamResult{
 		FilePath: filePath,

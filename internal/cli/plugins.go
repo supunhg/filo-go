@@ -8,10 +8,6 @@ import (
 	"github.com/supunhg/filo-go/internal/plugins"
 )
 
-var (
-	pluginDir string
-)
-
 var pluginsCmd = &cobra.Command{
 	Use:   "plugins",
 	Short: "Manage filo-go plugins",
@@ -38,9 +34,17 @@ var pluginsInfoCmd = &cobra.Command{
 	RunE:  runPluginsInfo,
 }
 
+var pluginsInstallCmd = &cobra.Command{
+	Use:   "install [path]",
+	Short: "Install a plugin from a .so file (alias for load)",
+	Args:  cobra.ExactArgs(1),
+	RunE:  runPluginsLoad,
+}
+
 func init() {
 	pluginsCmd.AddCommand(pluginsListCmd)
 	pluginsCmd.AddCommand(pluginsLoadCmd)
+	pluginsCmd.AddCommand(pluginsInstallCmd)
 	pluginsCmd.AddCommand(pluginsInfoCmd)
 	rootCmd.AddCommand(pluginsCmd)
 }

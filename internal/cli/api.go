@@ -7,7 +7,10 @@ import (
 	"github.com/supunhg/filo-go/internal/api"
 )
 
-var apiAddr string
+var (
+	apiAddr string
+	apiPort int
+)
 
 var apiCmd = &cobra.Command{
 	Use:   "api",
@@ -16,11 +19,16 @@ var apiCmd = &cobra.Command{
 }
 
 func init() {
-	apiCmd.Flags().StringVarP(&apiAddr, "addr", "a", ":8080", "Address to listen on")
+	apiCmd.Flags().StringVarP(&apiAddr, "addr", "a", ":8080", "Address to listen on (e.g., :8080)")
+	apiCmd.Flags().IntVarP(&apiPort, "port", "p", 0, "Port to listen on (alternative to --addr)")
 	rootCmd.AddCommand(apiCmd)
 }
 
 func runAPI(cmd *cobra.Command, args []string) error {
+	if apiPort > 0 {
+		apiAddr = fmt.Sprintf(":%d", apiPort)
+	}
+
 	fmt.Fprintln(cmd.OutOrStdout(), "Starting filo-go REST API server...")
 	fmt.Fprintln(cmd.OutOrStdout())
 	fmt.Fprintln(cmd.OutOrStdout(), "Endpoints:")
@@ -38,6 +46,6 @@ func runAPI(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(cmd.OutOrStdout(), "Listening on %s\n", apiAddr)
 	fmt.Fprintln(cmd.OutOrStdout())
 
-	server := api.NewServer(apiAddr)
+	server := api.NewServer(apiAddr, version)
 	return server.Run()
 }

@@ -1,8 +1,6 @@
 package benchmarks
 
 import (
-	"bytes"
-	"compress/gzip"
 	"crypto/rand"
 	"fmt"
 	"os"
@@ -17,33 +15,6 @@ import (
 	"github.com/supunhg/filo-go/internal/hashing"
 	filostrings "github.com/supunhg/filo-go/internal/strings"
 )
-
-// createTestFile creates a test file of the specified size with random data
-func createTestFile(t *testing.T, size int) string {
-	t.Helper()
-	data := make([]byte, size)
-	rand.Read(data)
-
-	tmpFile := filepath.Join(t.TempDir(), "testfile.bin")
-	os.WriteFile(tmpFile, data, 0644)
-	return tmpFile
-}
-
-// createCompressedFile creates a gzip compressed file
-func createCompressedFile(t *testing.T, size int) string {
-	t.Helper()
-	data := make([]byte, size)
-	rand.Read(data)
-
-	var buf bytes.Buffer
-	w := gzip.NewWriter(&buf)
-	w.Write(data)
-	w.Close()
-
-	tmpFile := filepath.Join(t.TempDir(), "testfile.gz")
-	os.WriteFile(tmpFile, buf.Bytes(), 0644)
-	return tmpFile
-}
 
 // createMixedFile creates a file with embedded signatures
 func createMixedFile(t *testing.T) string {

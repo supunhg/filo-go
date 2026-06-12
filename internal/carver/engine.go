@@ -117,7 +117,7 @@ func Carve(data []byte, filePath string, opts *Options) (*Result, error) {
 
 				// Save to file if output directory specified
 				if outputDir != "" {
-					os.MkdirAll(outputDir, 0755)
+					_ = os.MkdirAll(outputDir, 0755) // best effort
 					outPath := filepath.Join(outputDir, fmt.Sprintf("%s_%d.%s", sig.Format, start, sig.Format))
 					if err := os.WriteFile(outPath, data[start:end], 0644); err == nil {
 						carved.FilePath = outPath

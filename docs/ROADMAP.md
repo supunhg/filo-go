@@ -1,8 +1,8 @@
 # filo-go Development Roadmap
 
-> **Last Updated:** 2026-06-11  
-> **Current Version:** 0.5.0  
-> **Status:** v0.5.0 shipped. Project is production-ready with REST API, Docker, caching, and comprehensive test coverage.
+> **Last Updated:** 2026-06-12  
+> **Current Version:** 0.5.1  
+> **Status:** v0.5.1 shipped. REST API security hardening, CLI UX improvements, all stubs implemented, zero lint issues.
 
 ---
 
@@ -44,6 +44,26 @@
 | EXIF/XMP/IPTC | ✅ Done | 2024-12 |
 | YARA conditions | ✅ Done | 2024-12 |
 | HTML reports | ✅ Done | 2024-12 |
+
+### Completed in v0.5.1 ✅
+
+| Feature | Status | Date |
+|---------|--------|------|
+| REST API version injection | ✅ Done | 2026-06-12 |
+| REST API HTTP timeouts | ✅ Done | 2026-06-12 |
+| REST API request body limits | ✅ Done | 2026-06-12 |
+| REST API path traversal protection | ✅ Done | 2026-06-12 |
+| REST API upload double I/O fix | ✅ Done | 2026-06-12 |
+| Flaky test fix (TestDDCommand) | ✅ Done | 2026-06-12 |
+| CLI `--port` flag for API | ✅ Done | 2026-06-12 |
+| CLI directory error handling | ✅ Done | 2026-06-12 |
+| CLI lineage helpful message | ✅ Done | 2026-06-12 |
+| CLI plugins install command | ✅ Done | 2026-06-12 |
+| CLI carve implementation | ✅ Done | 2026-06-12 |
+| CLI profile implementation | ✅ Done | 2026-06-12 |
+| CLI teach implementation | ✅ Done | 2026-06-12 |
+| MD5/SHA1 forensic justification | ✅ Done | 2026-06-12 |
+| Top 10 unhandled errors fixed | ✅ Done | 2026-06-12 |
 
 ### Completed in v0.5.0 ✅
 

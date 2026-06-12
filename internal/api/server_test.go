@@ -10,7 +10,7 @@ import (
 )
 
 func TestHealthEndpoint(t *testing.T) {
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 	req := httptest.NewRequest("GET", "/api/health", nil)
 	w := httptest.NewRecorder()
 
@@ -31,7 +31,7 @@ func TestHealthEndpoint(t *testing.T) {
 }
 
 func TestVersionEndpoint(t *testing.T) {
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 	req := httptest.NewRequest("GET", "/api/version", nil)
 	w := httptest.NewRecorder()
 
@@ -59,7 +59,7 @@ func TestAnalyzeEndpoint(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 
 	body, _ := json.Marshal(AnalyzeRequest{Path: testFile})
 	req := httptest.NewRequest("POST", "/api/analyze", bytes.NewReader(body))
@@ -82,7 +82,7 @@ func TestAnalyzeEndpoint(t *testing.T) {
 }
 
 func TestAnalyzeEndpointMissingPath(t *testing.T) {
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 
 	body, _ := json.Marshal(AnalyzeRequest{})
 	req := httptest.NewRequest("POST", "/api/analyze", bytes.NewReader(body))
@@ -103,7 +103,7 @@ func TestHashEndpoint(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 
 	body, _ := json.Marshal(HashRequest{Path: testFile})
 	req := httptest.NewRequest("POST", "/api/hash", bytes.NewReader(body))
@@ -133,7 +133,7 @@ func TestStringsEndpoint(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 
 	body, _ := json.Marshal(StringsRequest{Path: testFile, MinLength: 4})
 	req := httptest.NewRequest("POST", "/api/strings", bytes.NewReader(body))
@@ -163,7 +163,7 @@ func TestCryptoEndpoint(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 
 	body, _ := json.Marshal(map[string]string{"path": testFile})
 	req := httptest.NewRequest("POST", "/api/crypto", bytes.NewReader(body))
@@ -184,7 +184,7 @@ func TestMetadataEndpoint(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 
 	body, _ := json.Marshal(map[string]string{"path": testFile})
 	req := httptest.NewRequest("POST", "/api/metadata", bytes.NewReader(body))
@@ -207,7 +207,7 @@ func TestBatchEndpoint(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 
 	body, _ := json.Marshal(BatchRequest{Directory: tmpDir, Workers: 1})
 	req := httptest.NewRequest("POST", "/api/batch", bytes.NewReader(body))
@@ -230,7 +230,7 @@ func TestBatchEndpoint(t *testing.T) {
 }
 
 func TestBatchEndpointMissingDirectory(t *testing.T) {
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 
 	body, _ := json.Marshal(BatchRequest{})
 	req := httptest.NewRequest("POST", "/api/batch", bytes.NewReader(body))
@@ -244,7 +244,7 @@ func TestBatchEndpointMissingDirectory(t *testing.T) {
 }
 
 func TestJSONResponse(t *testing.T) {
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 	w := httptest.NewRecorder()
 
 	srv.jsonResponse(w, http.StatusOK, APIResponse{
@@ -262,7 +262,7 @@ func TestJSONResponse(t *testing.T) {
 }
 
 func TestJSONError(t *testing.T) {
-	srv := NewServer(":0")
+	srv := NewServer(":0", "test")
 	w := httptest.NewRecorder()
 
 	srv.jsonError(w, http.StatusBadRequest, "test error")
@@ -286,13 +286,13 @@ func TestJSONError(t *testing.T) {
 }
 
 func TestServerStruct(t *testing.T) {
-	srv := NewServer(":8080")
+	srv := NewServer(":8080", "test")
 
 	if srv.addr != ":8080" {
 		t.Errorf("expected addr :8080, got %s", srv.addr)
 	}
 
-	if srv.version != "0.4.0" {
-		t.Errorf("expected version 0.4.0, got %s", srv.version)
+	if srv.version != "test" {
+		t.Errorf("expected version test, got %s", srv.version)
 	}
 }
