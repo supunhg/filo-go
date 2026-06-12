@@ -1,8 +1,8 @@
 package nsrl
 
 import (
-	"crypto/md5"
-	"crypto/sha1"
+	"crypto/md5"     //nolint:gosec // MD5 used for forensic identification (NSRL), not security
+	"crypto/sha1"    //nolint:gosec // SHA1 used for forensic identification (NSRL), not security
 	"crypto/sha256"
 	"encoding/csv"
 	"fmt"

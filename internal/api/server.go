@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/supunhg/filo-go/internal/analyzer"
@@ -18,19 +19,35 @@ import (
 	filostrings "github.com/supunhg/filo-go/internal/strings"
 )
 
+const (
+	maxRequestBodySize = 32 << 20 // 32MB
+	maxHeaderBytes     = 1 << 20  // 1MB
+)
+
 // Server represents the REST API server.
 type Server struct {
-	addr    string
-	tmpDir  string
-	version string
+	addr        string
+	tmpDir      string
+	version     string
+	allowedRoot string
 }
 
 // NewServer creates a new API server.
-func NewServer(addr string) *Server {
+func NewServer(addr, version string) *Server {
 	return &Server{
 		addr:    addr,
 		tmpDir:  os.TempDir(),
-		version: "0.4.0",
+		version: version,
+	}
+}
+
+// NewServerWithRoot creates a new API server with a restricted root directory for file access.
+func NewServerWithRoot(addr, version, allowedRoot string) *Server {
+	return &Server{
+		addr:        addr,
+		tmpDir:      os.TempDir(),
+		version:     version,
+		allowedRoot: allowedRoot,
 	}
 }
 
@@ -84,16 +101,26 @@ func (s *Server) Run() error {
 	mux.HandleFunc("GET /api/version", s.handleVersion)
 
 	// Analysis endpoints
-	mux.HandleFunc("POST /api/analyze", s.handleAnalyze)
-	mux.HandleFunc("POST /api/hash", s.handleHash)
-	mux.HandleFunc("POST /api/strings", s.handleStrings)
-	mux.HandleFunc("POST /api/crypto", s.handleCrypto)
-	mux.HandleFunc("POST /api/stego", s.handleStego)
-	mux.HandleFunc("POST /api/metadata", s.handleMetadata)
-	mux.HandleFunc("POST /api/batch", s.handleBatch)
+	mux.HandleFunc("POST /api/analyze", s.withBodyLimit(s.handleAnalyze))
+	mux.HandleFunc("POST /api/hash", s.withBodyLimit(s.handleHash))
+	mux.HandleFunc("POST /api/strings", s.withBodyLimit(s.handleStrings))
+	mux.HandleFunc("POST /api/crypto", s.withBodyLimit(s.handleCrypto))
+	mux.HandleFunc("POST /api/stego", s.withBodyLimit(s.handleStego))
+	mux.HandleFunc("POST /api/metadata", s.withBodyLimit(s.handleMetadata))
+	mux.HandleFunc("POST /api/batch", s.withBodyLimit(s.handleBatch))
 
 	// File upload endpoint
 	mux.HandleFunc("POST /api/upload", s.handleUpload)
+
+	server := &http.Server{
+		Addr:              s.addr,
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
+		MaxHeaderBytes:    maxHeaderBytes,
+	}
 
 	fmt.Printf("filo-go API server v%s\n", s.version)
 	fmt.Printf("Listening on %s\n", s.addr)
@@ -108,8 +135,38 @@ func (s *Server) Run() error {
 	fmt.Printf("  POST /api/metadata  - Extract metadata\n")
 	fmt.Printf("  POST /api/batch     - Batch analysis\n")
 	fmt.Printf("  POST /api/upload    - Upload and analyze\n")
+	if s.allowedRoot != "" {
+		fmt.Printf("\nFile access restricted to: %s\n", s.allowedRoot)
+	}
 
-	return http.ListenAndServe(s.addr, mux)
+	return server.ListenAndServe()
+}
+
+// withBodyLimit wraps a handler with a request body size limit.
+func (s *Server) withBodyLimit(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodySize)
+		h(w, r)
+	}
+}
+
+// validatePath checks if the path is allowed (prevents path traversal).
+func (s *Server) validatePath(path string) (string, error) {
+	if s.allowedRoot == "" {
+		return path, nil
+	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	absRoot, err := filepath.Abs(s.allowedRoot)
+	if err != nil {
+		return "", err
+	}
+	if !strings.HasPrefix(absPath, absRoot) {
+		return "", fmt.Errorf("path %q is outside allowed root %q", path, s.allowedRoot)
+	}
+	return absPath, nil
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -153,7 +210,13 @@ func (s *Server) handleAnalyze(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := os.ReadFile(req.Path)
+	validPath, err := s.validatePath(req.Path)
+	if err != nil {
+		s.jsonError(w, http.StatusForbidden, "access denied: "+err.Error())
+		return
+	}
+
+	data, err := os.ReadFile(validPath)
 	if err != nil {
 		s.jsonError(w, http.StatusBadRequest, "cannot read file: "+err.Error())
 		return
@@ -192,6 +255,12 @@ func (s *Server) handleHash(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	validPath, err := s.validatePath(req.Path)
+	if err != nil {
+		s.jsonError(w, http.StatusForbidden, "access denied: "+err.Error())
+		return
+	}
+
 	if len(req.Algorithms) == 0 {
 		req.Algorithms = []string{"md5", "sha1", "sha256"}
 	}
@@ -201,7 +270,7 @@ func (s *Server) handleHash(w http.ResponseWriter, r *http.Request) {
 		algos = append(algos, hashing.Algorithm(a))
 	}
 
-	result, err := hashing.ComputeFile(req.Path, algos)
+	result, err := hashing.ComputeFile(validPath, algos)
 	if err != nil {
 		s.jsonError(w, http.StatusInternalServerError, "hashing failed: "+err.Error())
 		return
@@ -232,7 +301,13 @@ func (s *Server) handleStrings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := os.ReadFile(req.Path)
+	validPath, err := s.validatePath(req.Path)
+	if err != nil {
+		s.jsonError(w, http.StatusForbidden, "access denied: "+err.Error())
+		return
+	}
+
+	data, err := os.ReadFile(validPath)
 	if err != nil {
 		s.jsonError(w, http.StatusBadRequest, "cannot read file: "+err.Error())
 		return
@@ -279,7 +354,13 @@ func (s *Server) handleCrypto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := os.ReadFile(req.Path)
+	validPath, err := s.validatePath(req.Path)
+	if err != nil {
+		s.jsonError(w, http.StatusForbidden, "access denied: "+err.Error())
+		return
+	}
+
+	data, err := os.ReadFile(validPath)
 	if err != nil {
 		s.jsonError(w, http.StatusBadRequest, "cannot read file: "+err.Error())
 		return
@@ -314,7 +395,13 @@ func (s *Server) handleStego(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := os.ReadFile(req.Path)
+	validPath, err := s.validatePath(req.Path)
+	if err != nil {
+		s.jsonError(w, http.StatusForbidden, "access denied: "+err.Error())
+		return
+	}
+
+	data, err := os.ReadFile(validPath)
 	if err != nil {
 		s.jsonError(w, http.StatusBadRequest, "cannot read file: "+err.Error())
 		return
@@ -353,7 +440,13 @@ func (s *Server) handleMetadata(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := os.ReadFile(req.Path)
+	validPath, err := s.validatePath(req.Path)
+	if err != nil {
+		s.jsonError(w, http.StatusForbidden, "access denied: "+err.Error())
+		return
+	}
+
+	data, err := os.ReadFile(validPath)
 	if err != nil {
 		s.jsonError(w, http.StatusBadRequest, "cannot read file: "+err.Error())
 		return
@@ -428,30 +521,24 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		s.jsonError(w, http.StatusBadRequest, "failed to get file: "+err.Error())
 		return
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }() // close quietly — best effort
 
-	// Save to temp file
-	tmpPath := filepath.Join(s.tmpDir, fmt.Sprintf("filo-upload-%d%s", time.Now().UnixNano(), filepath.Ext(header.Filename)))
-	out, err := os.Create(tmpPath)
+	// Read file data directly (avoids double I/O from copy-then-read)
+	data, err := io.ReadAll(file)
 	if err != nil {
-		s.jsonError(w, http.StatusInternalServerError, "failed to create temp file: "+err.Error())
+		s.jsonError(w, http.StatusInternalServerError, "failed to read uploaded file: "+err.Error())
 		return
 	}
-	defer out.Close()
+
+	// Save to temp file for potential later use (e.g., carving)
+	tmpPath := filepath.Join(s.tmpDir, fmt.Sprintf("filo-upload-%d%s", time.Now().UnixNano(), filepath.Ext(header.Filename)))
+	if err := os.WriteFile(tmpPath, data, 0600); err != nil {
+		s.jsonError(w, http.StatusInternalServerError, "failed to save temp file: "+err.Error())
+		return
+	}
 	defer os.Remove(tmpPath)
 
-	if _, err := io.Copy(out, file); err != nil {
-		s.jsonError(w, http.StatusInternalServerError, "failed to save file: "+err.Error())
-		return
-	}
-
 	// Analyze the uploaded file
-	data, err := os.ReadFile(tmpPath)
-	if err != nil {
-		s.jsonError(w, http.StatusInternalServerError, "failed to read file: "+err.Error())
-		return
-	}
-
 	result, err := analyzer.Analyze(data, header.Filename, nil)
 	if err != nil {
 		s.jsonError(w, http.StatusInternalServerError, "analysis failed: "+err.Error())
@@ -476,7 +563,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 func (s *Server) jsonResponse(w http.ResponseWriter, status int, resp APIResponse) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp) // best effort
 }
 
 func (s *Server) jsonError(w http.ResponseWriter, status int, msg string) {

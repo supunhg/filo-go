@@ -243,7 +243,7 @@ func parseSchemaTable(data []byte, header *FileHeader, rootPage int) ([]Table, e
 
 			if typeVal == "table" && name == tblName {
 				rp := 0
-				fmt.Sscanf(rootpage, "%d", &rp)
+				_, _ = fmt.Sscanf(rootpage, "%d", &rp) // rootpage should be integer
 				tables = append(tables, Table{
 					Name:     name,
 					RootPage: rp,

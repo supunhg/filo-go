@@ -40,6 +40,14 @@ func init() {
 func runStrings(cmd *cobra.Command, args []string) error {
 	filePath := args[0]
 
+	info, err := os.Stat(filePath)
+	if err != nil {
+		return fmt.Errorf("cannot access %s: %w", filePath, err)
+	}
+	if info.IsDir() {
+		return fmt.Errorf("%s is a directory, not a file", filePath)
+	}
+
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("cannot read %s: %w", filePath, err)

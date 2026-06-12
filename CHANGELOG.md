@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-06-12
+
+### Fixed
+
+- **REST API**: Fixed hardcoded version (was 0.4.0, now uses dynamic version from CLI)
+- **REST API**: Added HTTP server timeouts (ReadHeaderTimeout, ReadTimeout, WriteTimeout, IdleTimeout) and MaxHeaderBytes to prevent slow-loris attacks
+- **REST API**: Fixed double I/O in upload endpoint (no longer reads file twice)
+- **REST API**: Added request body size limit (32MB) on all endpoints
+- **REST API**: Added path traversal protection with optional allowed root directory
+- **CLI**: Fixed flaky `TestDDCommand` by resetting flag values between test runs
+- **CLI**: Added `--port` flag alias for `filo api` command (alongside `--addr`)
+- **CLI**: Directory input now returns clear error for analyze, hash, strings, entropy, meta, executable commands
+- **CLI**: `filo lineage` without args now shows helpful usage message instead of silence
+- **CLI**: Added `filo plugins install` subcommand (alias for `load`)
+- **CLI**: Implemented `filo carve` (wires existing carver engine), `filo profile` (performance profiling), `filo teach` (ML training database)
+- **Security**: Added //nosec comments to justify MD5/SHA1 use for forensic identification (NSRL)
+- **Security**: Fixed top 10 unhandled errors (file.Close, os.Remove, os.MkdirAll, json.Encode, etc.)
+
+### Changed
+
+- **REST API**: NewServer now requires version parameter; added NewServerWithRoot for restricted file access
+- **Tests**: All API tests updated to pass version parameter
+
+### Security
+
+- Path traversal prevention in REST API file endpoints
+- Request body size limits on all REST API endpoints
+- HTTP server hardening with explicit timeouts
+
 ## [0.5.0] - 2026-06-11
 
 ### Highlights

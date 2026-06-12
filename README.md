@@ -5,9 +5,9 @@
 [![CI](https://github.com/supunhg/filo-go/actions/workflows/ci.yml/badge.svg)](https://github.com/supunhg/filo-go/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/supunhg/filo-go)](https://goreportcard.com/report/github.com/supunhg/filo-go)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Latest release](https://img.shields.io/badge/release-v0.5.0-blue)](https://github.com/supunhg/filo-go/releases/tag/v0.5.0)
+[![Latest release](https://img.shields.io/badge/release-v0.5.1-blue)](https://github.com/supunhg/filo-go/releases/tag/v0.5.1)
 
-**Latest release: v0.5.0 (2026-06-11)** — 79.6% test coverage, REST API server, Docker support, interactive HTML reports, streaming analysis, caching layer, YARA module imports, YAFFS extraction, zero lint issues, Apache 2.0.
+**Latest release: v0.5.1 (2026-06-12)** — 79.6% test coverage, REST API server with security hardening, Docker support, interactive HTML reports, streaming analysis, caching layer, YARA module imports, YAFFS extraction, zero lint issues, Apache 2.0.
 
 ---
 

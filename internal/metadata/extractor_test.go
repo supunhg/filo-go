@@ -7,21 +7,6 @@ import (
 	"testing"
 )
 
-// JPEG: SOI (FF D8) + APP0 (JFIF) + EOI
-func synthJPEGWithJFIF(t *testing.T, version string) []byte {
-	t.Helper()
-	buf := []byte{0xFF, 0xD8} // SOI
-	app := []byte{'J', 'F', 'I', 'F', 0x00}
-	app = append(app, version[0], version[2], 0x00, 0x00, 0x00, 0x00)
-	appLen := uint16(len(app) + 2)
-	appHeader := []byte{0xFF, 0xE0}
-	appHeader = append(appHeader, byte(appLen>>8), byte(appLen&0xFF))
-	buf = append(buf, appHeader...)
-	buf = append(buf, app...)
-	buf = append(buf, 0xFF, 0xD9) // EOI
-	return buf
-}
-
 func TestExtractTooSmall(t *testing.T) {
 	// <8 bytes short-circuits Extract entirely (format not set)
 	r, err := Extract([]byte{0x01, 0x02, 0x03, 0x04}, "tiny.bin")

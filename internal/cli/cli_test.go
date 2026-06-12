@@ -12,7 +12,7 @@ import (
 // Kept as a const so a missed bump at release time fails the build loudly
 // (TestVersionCommand asserts on this literal). Bump it in lockstep with
 // the `version` constant in root.go for every release.
-const expectedVersion = "0.5.0"
+const expectedVersion = "0.5.1"
 
 func TestRootCommand(t *testing.T) {
 	// Test that root command exists
@@ -186,6 +186,19 @@ func TestDDCommand(t *testing.T) {
 	if err := os.WriteFile(testFile, []byte("ABCDEFGHIJ"), 0644); err != nil {
 		t.Fatal(err)
 	}
+
+	// Save original flag values to restore after test
+	origBlockSize := ddBlockSize
+	origCount := ddCount
+	origSkip := ddSkip
+	origSeek := ddSeek
+
+	defer func() {
+		ddBlockSize = origBlockSize
+		ddCount = origCount
+		ddSkip = origSkip
+		ddSeek = origSeek
+	}()
 
 	// Test with simple arguments
 	buf := new(bytes.Buffer)
@@ -641,6 +654,19 @@ func TestHexWithOffsetAndLength(t *testing.T) {
 }
 
 func TestDDWithOffsetAndLength(t *testing.T) {
+	// Save original flag values to restore after test
+	origBlockSize := ddBlockSize
+	origCount := ddCount
+	origSkip := ddSkip
+	origSeek := ddSeek
+
+	defer func() {
+		ddBlockSize = origBlockSize
+		ddCount = origCount
+		ddSkip = origSkip
+		ddSeek = origSeek
+	}()
+
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.bin")
 	outputFile := filepath.Join(tmpDir, "output.bin")

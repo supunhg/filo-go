@@ -34,6 +34,14 @@ func init() {
 func runEntropy(cmd *cobra.Command, args []string) error {
 	path := args[0]
 
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("cannot access %s: %w", path, err)
+	}
+	if info.IsDir() {
+		return fmt.Errorf("%s is a directory, not a file", path)
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)

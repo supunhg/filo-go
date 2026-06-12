@@ -93,11 +93,12 @@ func detectContainerFormat(data []byte) string {
 	if bytes.HasPrefix(data, []byte{0x1F, 0x8B}) {
 		// Check if it's a tar.gz
 		if len(data) > 2 {
-			reader, _ := gzip.NewReader(bytes.NewReader(data))
-			if reader != nil {
+			reader, err := gzip.NewReader(bytes.NewReader(data))
+			if err == nil && reader != nil {
 				header := make([]byte, 262)
 				n, _ := io.ReadAtLeast(reader, header, 262)
 				if n >= 262 && bytes.HasPrefix(header[257:], []byte("ustar")) {
+					reader.Close()
 					return "tar.gz"
 				}
 				reader.Close()
