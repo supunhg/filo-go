@@ -399,7 +399,8 @@ func (s *Server) handleBatch(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
 	r.Body = http.MaxBytesReader(w, r.Body, s.cfg.MaxUpload+1<<20) // allow for multipart framing
-	if err := r.ParseMultipartForm(8 << 20); err != nil {
+	// The body is bounded by MaxBytesReader above; 8 MiB is the in-memory part.
+	if err := r.ParseMultipartForm(8 << 20); err != nil { //nolint:gosec // G120: body size limited above
 		var tooLarge *http.MaxBytesError
 		if errors.As(err, &tooLarge) {
 			s.jsonError(w, http.StatusRequestEntityTooLarge, fmt.Sprintf("upload exceeds %d bytes", s.cfg.MaxUpload))

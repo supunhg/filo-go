@@ -294,13 +294,8 @@ func detectNesting(data []byte, depth int) int {
 		checkSize = len(data)
 	}
 
-	nestedCount := 0
-	for i := 0; i < checkSize-4; i++ {
-		// Check for ZIP signature
-		if data[i] == 0x50 && data[i+1] == 0x4B && data[i+2] == 0x03 && data[i+3] == 0x04 {
-			nestedCount++
-		}
-	}
+	// Count ZIP local file headers
+	nestedCount := bytes.Count(data[:checkSize], []byte{0x50, 0x4B, 0x03, 0x04})
 
 	if nestedCount > 1 {
 		return depth + nestedCount

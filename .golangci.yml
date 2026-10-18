@@ -28,6 +28,7 @@ linters:
       excludes:
         - G115 # integer conversions: binary format parsers bounds-check before converting
         - G304 # file path from variable: reading user-supplied files is the tool's purpose
+        - G703 # path from CLI flags/args: writing where the user asked is the tool's purpose
         - G401 # MD5/SHA-1: used for forensic identification (NSRL, VirusTotal), not security
         - G501
         - G505
