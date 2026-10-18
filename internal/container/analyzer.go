@@ -316,6 +316,11 @@ func extractZIP(data []byte, destDir string) error {
 	}
 
 	for _, file := range reader.File {
+		// safeio.Join also rejects these; the inline check keeps the guard
+		// visible to static analysis (CodeQL go/zipslip).
+		if strings.Contains(file.Name, "..") {
+			return fmt.Errorf("unsafe archive entry name %q", file.Name)
+		}
 		path, err := safeio.Join(destDir, file.Name)
 		if err != nil {
 			return err
@@ -378,6 +383,9 @@ func extractTarGz(data []byte, destDir string) error {
 			return err
 		}
 
+		if strings.Contains(header.Name, "..") {
+			return fmt.Errorf("unsafe archive entry name %q", header.Name)
+		}
 		path, err := safeio.Join(destDir, header.Name)
 		if err != nil {
 			return err
