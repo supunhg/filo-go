@@ -419,7 +419,7 @@ func DetectWAL(dbPath string) *WALInfo {
 	if err != nil {
 		return info
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	stat, err := f.Stat()
 	if err != nil || stat.Size() < 32 {

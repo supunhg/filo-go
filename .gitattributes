@@ -1,0 +1,23 @@
+# Normalise line endings to LF in the repository and working tree, so gofmt
+# and the test fixtures behave the same on every platform.
+* text=auto eol=lf
+
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# Binary fixtures
+*.png  binary
+*.jpg  binary
+*.gif  binary
+*.zip  binary
+*.gz   binary
+*.bin  binary
+*.exe  binary
+*.pcap binary
+*.evtx binary
+*.db   binary
+*.pdf  binary
+
+# Keep generated benchmark data out of language statistics
+benchmarks/results/** linguist-generated

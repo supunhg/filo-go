@@ -62,7 +62,7 @@ func ExtractIPTC(filePath string) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Read file content
 	content := make([]byte, 1024*1024) // Read up to 1MB

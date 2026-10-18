@@ -90,7 +90,7 @@ export:
 database:
   # formats_dir: ""     # custom format definitions directory
 `
-	if err := os.WriteFile(".filo.yaml", []byte(data), 0644); err != nil {
+	if err := os.WriteFile(".filo.yaml", []byte(data), 0o600); err != nil {
 		return fmt.Errorf("writing .filo.yaml: %w", err)
 	}
 	fmt.Println("Created .filo.yaml in the current directory")

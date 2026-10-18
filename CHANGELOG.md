@@ -27,6 +27,15 @@ analyst can trust.
   longer copied to a temporary file.
 - **MCP:** `filo mcp --root DIR` confines every tool to one directory, to
   limit what an agent steered by malicious content can read.
+- **Extraction:** archive entries named like `../../.bashrc` were written
+  outside the destination directory ("zip slip"), and symlinks in tar
+  archives were followed. Entry names are now validated, links and devices
+  are skipped, and files are created exclusively.
+- **Decompression:** gzip, bzip2, XZ, nested archives, OOXML parts and HTTP
+  bodies in PCAPs were decompressed without limits, so a small decompression
+  bomb could exhaust memory or disk. Output is capped (256 MiB in memory,
+  4 GiB on disk per file).
+- Extracted files and reports are created with owner-only permissions.
 
 ### Added
 
@@ -52,6 +61,14 @@ analyst can trust.
   instructions for the model.
 - REST API: `POST /api/scan`, graceful shutdown on SIGINT/SIGTERM, and
   security headers on every response.
+- Release pipeline: tagged releases publish archives for Linux, macOS,
+  Windows and FreeBSD (amd64/arm64), deb/rpm/apk packages, checksums, SBOMs,
+  GitHub build-provenance attestations, and a multi-arch image at
+  `ghcr.io/supunhg/filo`.
+- CI runs on Linux, macOS and Windows, with a release dry run, a Docker
+  build, CodeQL and Dependabot.
+- `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, and issue and pull
+  request templates.
 
 ### Changed
 
@@ -92,6 +109,12 @@ analyst can trust.
 - **MCP:** the server replied to notifications, stopped processing input
   after the first malformed message, and returned tool failures as JSON-RPC
   errors instead of `isError` results the model can read.
+- **CI:** the release job could never run, because the workflow only
+  triggered on branch pushes, not tags.
+- Linting now includes errcheck, errorlint, gosec and unused; the 90
+  findings were fixed or justified.
+- Very short files (1-3 bytes) failed streaming analysis with
+  "cannot read header".
 - **Docker:** the compose file ran the MCP server as a detached service
   (it needs an attached client) and published the API on all interfaces.
 

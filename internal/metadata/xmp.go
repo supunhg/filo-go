@@ -42,7 +42,7 @@ func ExtractXMP(filePath string) (*XMPData, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Read file content
 	content, err := io.ReadAll(f)

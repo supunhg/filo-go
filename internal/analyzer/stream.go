@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -68,7 +69,8 @@ func AnalyzeStream(filePath string, opts *StreamOptions) (*StreamResult, error) 
 	headerSize := 8192 // 8KB for format detection
 	header := make([]byte, headerSize)
 	n, err := io.ReadAtLeast(file, header, 4)
-	if err != nil && err != io.EOF {
+	// Files shorter than the minimum read are still analyzed.
+	if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
 		return nil, fmt.Errorf("cannot read header: %w", err)
 	}
 	header = header[:n]
@@ -80,7 +82,7 @@ func AnalyzeStream(filePath string, opts *StreamOptions) (*StreamResult, error) 
 	result.Confidence = confidence
 
 	// Calculate entropy in chunks
-	file.Seek(0, io.SeekStart)
+	_, _ = file.Seek(0, io.SeekStart)
 	chunkSize := opts.ChunkSize
 	if chunkSize <= 0 {
 		chunkSize = 1024 * 1024

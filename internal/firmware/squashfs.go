@@ -50,7 +50,7 @@ func ParseSquashFS(filePath string) (*SquashFSSuperblock, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Read superblock
 	sb := &SquashFSSuperblock{}
@@ -72,7 +72,7 @@ func DetectSquashFS(filePath string) bool {
 	if err != nil {
 		return false
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Read first 4 bytes
 	var magic uint32
@@ -97,7 +97,7 @@ func ExtractSquashFS(srcPath, destDir string) (*ExtractionResult, error) {
 	}
 
 	// Create destination directory
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0o750); err != nil {
 		return nil, err
 	}
 
@@ -133,7 +133,7 @@ func ExtractSquashFS(srcPath, destDir string) (*ExtractionResult, error) {
 	info += fmt.Sprintf("Major Version: %d\n", sb.MajorVersion)
 	info += fmt.Sprintf("Minor Version: %d\n", sb.MinorVersion)
 
-	if err := os.WriteFile(infoPath, []byte(info), 0644); err != nil {
+	if err := os.WriteFile(infoPath, []byte(info), 0o600); err != nil {
 		return nil, err
 	}
 

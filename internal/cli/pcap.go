@@ -147,7 +147,7 @@ func runPCAP(cmd *cobra.Command, args []string) error {
 		if outputDir == "" {
 			outputDir = "pcap_extracted"
 		}
-		if err := os.MkdirAll(outputDir, 0755); err != nil {
+		if err := os.MkdirAll(outputDir, 0o750); err != nil {
 			fmt.Printf("  Error creating output directory: %v", err)
 			fmt.Println()
 		} else {

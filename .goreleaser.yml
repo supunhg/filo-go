@@ -1,50 +1,103 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 version: 2
 
+project_name: filo
+
+before:
+  hooks:
+    - go mod tidy -diff
+
 builds:
   - id: filo
     binary: filo
     main: ./cmd/filo
-    goos:
-      - linux
-      - darwin
-      - windows
-    goarch:
-      - amd64
-      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    goos: [linux, darwin, windows, freebsd]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: freebsd
+        goarch: arm64
+    mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - -s -w
-      - -X github.com/supunhg/filo-go/internal/version.Version={{.Version}}
-      - -X github.com/supunhg/filo-go/internal/version.Commit={{.FullCommit}}
-      - -X github.com/supunhg/filo-go/internal/version.Date={{.Date}}
+      - -X github.com/supunhg/filo-go/internal/version.Version={{ .Version }}
+      - -X github.com/supunhg/filo-go/internal/version.Commit={{ .FullCommit }}
+      - -X github.com/supunhg/filo-go/internal/version.Date={{ .CommitDate }}
 
 archives:
   - id: filo
-    ids:
-      - filo
-    formats:
-      - tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    ids: [filo]
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
-        formats:
-          - zip
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+
+nfpms:
+  - id: packages
+    ids: [filo]
+    package_name: filo
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    homepage: https://github.com/supunhg/filo-go
+    maintainer: Supun Hewagamage <sanchithahewagamage@gmail.com>
+    description: "Fast, single-binary file forensics: identify, scan, carve and analyze files."
+    license: Apache-2.0
+    formats: [deb, rpm, apk]
+    section: utils
+    contents:
+      - src: ./formats/*.yaml
+        dst: /usr/share/filo/formats/
+      - src: ./LICENSE
+        dst: /usr/share/doc/filo/LICENSE
 
 checksum:
-  name_template: "checksums.txt"
+  name_template: checksums.txt
+
+sboms:
+  - artifacts: archive
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
+  use: github
+  groups:
+    - title: Security
+      regexp: '^.*?(security|sec)(\(.+\))??!?:.+$'
+      order: 0
+    - title: Features
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 1
+    - title: Bug fixes
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 2
+    - title: Other changes
+      order: 999
   filters:
     exclude:
       - "^docs:"
       - "^test:"
       - "^ci:"
       - "^chore:"
+      - "^style:"
+      - "^deps:"
 
 release:
   github:
     owner: supunhg
     name: filo-go
-  draft: false
+  draft: true
   prerelease: auto
+  footer: |
+    **Verify a download:** `sha256sum --ignore-missing -c checksums.txt`, or
+    `gh attestation verify <file> --repo supunhg/filo-go` for build provenance.
+
+    Container image: `docker pull ghcr.io/supunhg/filo:{{ .Version }}`

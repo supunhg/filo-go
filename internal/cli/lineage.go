@@ -46,7 +46,7 @@ func getLineageTracker() (*lineage.Tracker, error) {
 	if dbPath == "" {
 		home, _ := os.UserHomeDir()
 		dbPath = filepath.Join(home, ".filo", "lineage.db")
-		os.MkdirAll(filepath.Dir(dbPath), 0755)
+		_ = os.MkdirAll(filepath.Dir(dbPath), 0o750)
 	}
 	return lineage.NewTracker(dbPath)
 }
@@ -66,7 +66,7 @@ func runLineage(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open lineage database: %w", err)
 	}
-	defer tracker.Close()
+	defer func() { _ = tracker.Close() }()
 
 	records, err := tracker.GetFullChain(hash)
 	if err != nil {
@@ -90,7 +90,7 @@ func runLineageStats(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to open lineage database: %w", err)
 	}
-	defer tracker.Close()
+	defer func() { _ = tracker.Close() }()
 
 	stats, err := tracker.GetStats()
 	if err != nil {

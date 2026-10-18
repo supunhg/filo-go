@@ -23,7 +23,7 @@ var teachCmd = &cobra.Command{
 
 func init() {
 	teachCmd.Flags().StringVarP(&teachFormat, "format", "f", "", "Correct format name (required)")
-	teachCmd.MarkFlagRequired("format")
+	_ = teachCmd.MarkFlagRequired("format")
 }
 
 type teachEntry struct {
@@ -71,14 +71,14 @@ func runTeach(cmd *cobra.Command, args []string) error {
 
 	// Save to training database
 	dbDir := filepath.Join(os.Getenv("HOME"), ".filo", "training")
-	if err := os.MkdirAll(dbDir, 0755); err != nil {
+	if err := os.MkdirAll(dbDir, 0o750); err != nil {
 		return fmt.Errorf("failed to create training dir: %w", err)
 	}
 
 	dbFile := filepath.Join(dbDir, "training.json")
 	var entries []teachEntry
 	if existing, err := os.ReadFile(dbFile); err == nil {
-		json.Unmarshal(existing, &entries)
+		_ = json.Unmarshal(existing, &entries)
 	}
 	entries = append(entries, entry)
 
@@ -87,7 +87,7 @@ func runTeach(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to marshal training data: %w", err)
 	}
 
-	if err := os.WriteFile(dbFile, out, 0644); err != nil {
+	if err := os.WriteFile(dbFile, out, 0o600); err != nil {
 		return fmt.Errorf("failed to write training data: %w", err)
 	}
 

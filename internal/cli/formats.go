@@ -51,6 +51,8 @@ func getFormatsDir() string {
 		filepath.Join(dir, "formats"),
 		filepath.Join(dir, "..", "formats"),
 		filepath.Join(dir, "..", "..", "formats"),
+		"/usr/share/filo/formats", // deb/rpm/apk packages
+		"/etc/filo/formats",       // container image
 	}
 	for _, c := range candidates {
 		if info, err := os.Stat(c); err == nil && info.IsDir() {

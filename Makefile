@@ -1,29 +1,40 @@
-.PHONY: build test lint clean install
+.PHONY: build install test race cover lint fmt snapshot release clean help
 
-VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-LDFLAGS := -ldflags "-s -w -X github.com/supunhg/filo-go/internal/version.Version=$(VERSION)"
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+COMMIT  ?= $(shell git rev-parse HEAD 2>/dev/null)
+PKG     := github.com/supunhg/filo-go/internal/version
+LDFLAGS := -s -w -X $(PKG).Version=$(VERSION) -X $(PKG).Commit=$(COMMIT)
 
-build:
-	go build $(LDFLAGS) -o filo ./cmd/filo/
+build: ## Build ./filo
+	CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o filo ./cmd/filo
 
-test:
-	go test -v ./...
+install: ## Install filo into $GOBIN
+	CGO_ENABLED=0 go install -trimpath -ldflags "$(LDFLAGS)" ./cmd/filo
 
-lint:
+test: ## Run the test suite
+	go test ./...
+
+race: ## Run tests with the race detector
+	go test -race ./...
+
+cover: ## Write an HTML coverage report to coverage.html
+	go test -covermode=atomic -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
+lint: ## Run golangci-lint
 	golangci-lint run
 
-clean:
-	rm -f filo
-	rm -rf dist/
+fmt: ## Format code
+	golangci-lint fmt
 
-install:
-	go install $(LDFLAGS) ./cmd/filo/
+snapshot: ## Build all release artifacts locally into dist/
+	goreleaser release --snapshot --clean
 
-dev:
-	go run ./cmd/filo/
-
-release:
+release: ## Publish a release (CI does this on tag push)
 	goreleaser release --clean
 
-snapshot:
-	goreleaser release --snapshot --clean
+clean: ## Remove build output
+	rm -rf filo filo.exe dist/ coverage.out coverage.html
+
+help: ## Show this help
+	@grep -E '^[a-z]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'

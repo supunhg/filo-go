@@ -66,7 +66,7 @@ func GenerateInteractiveReport(results *AnalysisResults, outputPath string) erro
 	if err != nil {
 		return fmt.Errorf("failed to render HTML: %w", err)
 	}
-	return os.WriteFile(outputPath, []byte(html), 0644)
+	return os.WriteFile(outputPath, []byte(html), 0o600)
 }
 
 func buildInteractiveReport(results *AnalysisResults) *InteractiveReport {
@@ -487,7 +487,9 @@ document.addEventListener("DOMContentLoaded",init);
 		"Description": report.Description,
 		"GeneratedAt": report.GeneratedAt,
 		"ToolVersion": report.ToolVersion,
-		"JSON":        template.JS(reportJSON),
+		// reportJSON comes from json.Marshal, which escapes <, > and & as
+		// \u003c, \u003e and \u0026, so it cannot close the <script> element.
+		"JSON": template.JS(reportJSON), //nolint:gosec // see comment above
 	})
 	if err != nil {
 		return "", err

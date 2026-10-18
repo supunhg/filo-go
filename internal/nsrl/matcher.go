@@ -45,7 +45,7 @@ func (d *Database) LoadFromCSV(path string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	reader := csv.NewReader(file)
 

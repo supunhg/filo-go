@@ -21,6 +21,11 @@ coverage.out
 docs/
 *.md
 
+# Local tooling
+.claude/
+CLAUDE.md
+AGENTS.md
+
 # CI/CD
 .github/
 

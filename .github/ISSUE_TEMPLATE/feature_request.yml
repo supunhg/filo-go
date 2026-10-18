@@ -1,0 +1,23 @@
+name: Feature or format request
+description: Suggest a feature, or a file format filo should recognise
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the investigation or workflow, not just the feature.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would help?
+      description: For a new format, link to its specification and describe its header.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: How do you do this today?
+      description: Other tools you use (binwalk, file, ExifTool, ...) and their output, if relevant.
