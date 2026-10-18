@@ -142,10 +142,10 @@ func detectFormatStream(header []byte, formatsDir string) (string, string, float
 
 	// Common format signatures
 	signatures := []struct {
-		magic    []byte
-		format   string
-		mime     string
-		conf     float64
+		magic  []byte
+		format string
+		mime   string
+		conf   float64
 	}{
 		{[]byte{0x89, 0x50, 0x4E, 0x47}, "png", "image/png", 0.95},
 		{[]byte{0xFF, 0xD8, 0xFF}, "jpeg", "image/jpeg", 0.95},

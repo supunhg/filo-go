@@ -164,8 +164,8 @@ func TestExtractPNGIHDR(t *testing.T) {
 	ihdr := make([]byte, 13)
 	binary.BigEndian.PutUint32(ihdr[0:4], 100) // width
 	binary.BigEndian.PutUint32(ihdr[4:8], 50)  // height
-	ihdr[8] = 8                                  // bit depth
-	ihdr[9] = 2                                  // color type
+	ihdr[8] = 8                                // bit depth
+	ihdr[9] = 2                                // color type
 	ihdr[10] = 0
 	ihdr[11] = 0
 	ihdr[12] = 0

@@ -757,7 +757,7 @@ func TestParseRecordTextAndBlob(t *testing.T) {
 	page := make([]byte, 1024)
 
 	// Header
-	page[0] = 4 // header size
+	page[0] = 4  // header size
 	page[1] = 13 // serial type 13 = text of length 0 (13-13)/2 = 0
 	page[2] = 15 // serial type 15 = text of length 1 (15-13)/2 = 1
 	page[3] = 25 // serial type 25 = blob of length 6 (25-12)/2 = 6

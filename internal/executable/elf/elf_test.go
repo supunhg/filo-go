@@ -6,25 +6,26 @@ import (
 )
 
 // ELF32 header layout (52 bytes):
-//   [0..3]   magic \x7F E L F
-//   [4]      class (1=32bit, 2=64bit)
-//   [5]      data (1=LE, 2=BE)
-//   [6]      version
-//   [7]      OS/ABI
-//   [8..15]  padding
-//   [16..17] type
-//   [18..19] machine
-//   [20..23] version
-//   [24..27] entry
-//   [28..31] phoff
-//   [32..35] shoff
-//   [36..39] flags
-//   [40..41] ehdr size
-//   [42..43] phdr entry size
-//   [44..45] phdr count
-//   [46..47] shdr entry size
-//   [48..49] shdr count
-//   [50..51] shstrndx
+//
+//	[0..3]   magic \x7F E L F
+//	[4]      class (1=32bit, 2=64bit)
+//	[5]      data (1=LE, 2=BE)
+//	[6]      version
+//	[7]      OS/ABI
+//	[8..15]  padding
+//	[16..17] type
+//	[18..19] machine
+//	[20..23] version
+//	[24..27] entry
+//	[28..31] phoff
+//	[32..35] shoff
+//	[36..39] flags
+//	[40..41] ehdr size
+//	[42..43] phdr entry size
+//	[44..45] phdr count
+//	[46..47] shdr entry size
+//	[48..49] shdr count
+//	[50..51] shstrndx
 const (
 	elf32EhdrSize = 52
 	elf32PhdrSize = 32
@@ -36,12 +37,13 @@ const (
 // .shstrtab), plus a small string table.
 //
 // Layout (shstrndx=1, the second section is .shstrtab):
-//   [0..51]      ELF header
-//   [52..83]     1 program header (PT_LOAD, flags=5 R|X)
-//   [84..123]    Section 0: .text
-//   [124..163]   Section 1: .shstrtab
-//   [164..200]   String table: "\x00.shstrtab\x00.text\x00"  (37 bytes)
-//   [201..232]   .text raw data (32 bytes)
+//
+//	[0..51]      ELF header
+//	[52..83]     1 program header (PT_LOAD, flags=5 R|X)
+//	[84..123]    Section 0: .text
+//	[124..163]   Section 1: .shstrtab
+//	[164..200]   String table: "\x00.shstrtab\x00.text\x00"  (37 bytes)
+//	[201..232]   .text raw data (32 bytes)
 func makeMinimalELF32LE() []byte {
 	const shstrtabSize = 37
 	const sectionDataSize = 32
@@ -62,33 +64,33 @@ func makeMinimalELF32LE() []byte {
 	buf[6] = 1 // EV_CURRENT
 
 	// Type, machine, version
-	binary.LittleEndian.PutUint16(buf[16:18], 2)   // ET_EXEC
-	binary.LittleEndian.PutUint16(buf[18:20], 3)   // EM_386
-	binary.LittleEndian.PutUint32(buf[20:24], 1)   // version
+	binary.LittleEndian.PutUint16(buf[16:18], 2) // ET_EXEC
+	binary.LittleEndian.PutUint16(buf[18:20], 3) // EM_386
+	binary.LittleEndian.PutUint32(buf[20:24], 1) // version
 
 	// Entry point
 	binary.LittleEndian.PutUint32(buf[24:28], 0x08048000)
 
 	// Program header offset and count
-	binary.LittleEndian.PutUint32(buf[28:32], uint32(elf32EhdrSize))     // phoff=52
+	binary.LittleEndian.PutUint32(buf[28:32], uint32(elf32EhdrSize))               // phoff=52
 	binary.LittleEndian.PutUint32(buf[32:36], uint32(elf32EhdrSize+elf32PhdrSize)) // shoff=84
-	binary.LittleEndian.PutUint16(buf[40:42], elf32EhdrSize)             // ehdr size
-	binary.LittleEndian.PutUint16(buf[42:44], elf32PhdrSize)             // phdr entry size
-	binary.LittleEndian.PutUint16(buf[44:46], 1)                         // phdr count
-	binary.LittleEndian.PutUint16(buf[46:48], elf32ShdrSize)             // shdr entry size
-	binary.LittleEndian.PutUint16(buf[48:50], 2)                         // shdr count (.text + .shstrtab)
-	binary.LittleEndian.PutUint16(buf[50:52], 1)                         // shstrndx = 1 (second section)
+	binary.LittleEndian.PutUint16(buf[40:42], elf32EhdrSize)                       // ehdr size
+	binary.LittleEndian.PutUint16(buf[42:44], elf32PhdrSize)                       // phdr entry size
+	binary.LittleEndian.PutUint16(buf[44:46], 1)                                   // phdr count
+	binary.LittleEndian.PutUint16(buf[46:48], elf32ShdrSize)                       // shdr entry size
+	binary.LittleEndian.PutUint16(buf[48:50], 2)                                   // shdr count (.text + .shstrtab)
+	binary.LittleEndian.PutUint16(buf[50:52], 1)                                   // shstrndx = 1 (second section)
 
 	// Program header: PT_LOAD (1)
 	phdrOff := uint32(elf32EhdrSize)
-	binary.LittleEndian.PutUint32(buf[phdrOff:phdrOff+4], 1)               // PT_LOAD
-	binary.LittleEndian.PutUint32(buf[phdrOff+4:phdrOff+8], 0)             // offset
-	binary.LittleEndian.PutUint32(buf[phdrOff+8:phdrOff+12], 0x08048000)   // vaddr
-	binary.LittleEndian.PutUint32(buf[phdrOff+12:phdrOff+16], 0x08048000)  // paddr
+	binary.LittleEndian.PutUint32(buf[phdrOff:phdrOff+4], 1)                     // PT_LOAD
+	binary.LittleEndian.PutUint32(buf[phdrOff+4:phdrOff+8], 0)                   // offset
+	binary.LittleEndian.PutUint32(buf[phdrOff+8:phdrOff+12], 0x08048000)         // vaddr
+	binary.LittleEndian.PutUint32(buf[phdrOff+12:phdrOff+16], 0x08048000)        // paddr
 	binary.LittleEndian.PutUint32(buf[phdrOff+16:phdrOff+20], uint32(totalSize)) // filesz
 	binary.LittleEndian.PutUint32(buf[phdrOff+20:phdrOff+24], uint32(totalSize)) // memsz
-	binary.LittleEndian.PutUint32(buf[phdrOff+24:phdrOff+28], 5)           // flags: R|X
-	binary.LittleEndian.PutUint32(buf[phdrOff+28:phdrOff+32], 0x1000)      // align
+	binary.LittleEndian.PutUint32(buf[phdrOff+24:phdrOff+28], 5)                 // flags: R|X
+	binary.LittleEndian.PutUint32(buf[phdrOff+28:phdrOff+32], 0x1000)            // align
 
 	// String table: "\x00.shstrtab\x00.text\x00"
 	copy(buf[shstrtabOff:], []byte{0})
@@ -97,19 +99,19 @@ func makeMinimalELF32LE() []byte {
 
 	// Section 0: .text
 	shdr0Off := uint32(elf32EhdrSize + elf32PhdrSize)
-	binary.LittleEndian.PutUint32(buf[shdr0Off:shdr0Off+4], 11)         // name offset in strtab
-	binary.LittleEndian.PutUint32(buf[shdr0Off+4:shdr0Off+8], 1)        // SHT_PROGBITS
-	binary.LittleEndian.PutUint32(buf[shdr0Off+8:shdr0Off+12], 6)       // flags: WRITE|ALLOC|EXECINSTR
+	binary.LittleEndian.PutUint32(buf[shdr0Off:shdr0Off+4], 11)   // name offset in strtab
+	binary.LittleEndian.PutUint32(buf[shdr0Off+4:shdr0Off+8], 1)  // SHT_PROGBITS
+	binary.LittleEndian.PutUint32(buf[shdr0Off+8:shdr0Off+12], 6) // flags: WRITE|ALLOC|EXECINSTR
 	binary.LittleEndian.PutUint32(buf[shdr0Off+12:shdr0Off+16], 0x08048000+sectionDataOff)
-	binary.LittleEndian.PutUint32(buf[shdr0Off+16:shdr0Off+20], sectionDataOff) // offset
+	binary.LittleEndian.PutUint32(buf[shdr0Off+16:shdr0Off+20], sectionDataOff)  // offset
 	binary.LittleEndian.PutUint32(buf[shdr0Off+20:shdr0Off+24], sectionDataSize) // size
 
 	// Section 1: .shstrtab
 	shdr1Off := shdr0Off + elf32ShdrSize
-	binary.LittleEndian.PutUint32(buf[shdr1Off:shdr1Off+4], 1)          // name offset in strtab
-	binary.LittleEndian.PutUint32(buf[shdr1Off+4:shdr1Off+8], 3)        // SHT_STRTAB
-	binary.LittleEndian.PutUint32(buf[shdr1Off+12:shdr1Off+16], 0)      // addr
-	binary.LittleEndian.PutUint32(buf[shdr1Off+16:shdr1Off+20], shstrtabOff) // offset
+	binary.LittleEndian.PutUint32(buf[shdr1Off:shdr1Off+4], 1)                // name offset in strtab
+	binary.LittleEndian.PutUint32(buf[shdr1Off+4:shdr1Off+8], 3)              // SHT_STRTAB
+	binary.LittleEndian.PutUint32(buf[shdr1Off+12:shdr1Off+16], 0)            // addr
+	binary.LittleEndian.PutUint32(buf[shdr1Off+16:shdr1Off+20], shstrtabOff)  // offset
 	binary.LittleEndian.PutUint32(buf[shdr1Off+20:shdr1Off+24], shstrtabSize) // size
 
 	// Section data

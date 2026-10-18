@@ -219,7 +219,7 @@ func TestDetectSquashFSNonexistent(t *testing.T) {
 func TestParseSquashFS(t *testing.T) {
 	data := make([]byte, 96)
 	binary.LittleEndian.PutUint32(data[0:4], SquashFSMagic)
-	binary.LittleEndian.PutUint32(data[4:8], 100)   // Inodes
+	binary.LittleEndian.PutUint32(data[4:8], 100)    // Inodes
 	binary.LittleEndian.PutUint32(data[12:16], 4096) // BlockSize
 	binary.LittleEndian.PutUint16(data[20:22], 0)    // Compressor (gzip)
 	binary.LittleEndian.PutUint16(data[32:34], 4)    // MajorVersion

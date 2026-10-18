@@ -332,9 +332,9 @@ func TestELFEvidence(t *testing.T) {
 
 func TestMachOEvidence(t *testing.T) {
 	tests := []struct {
-		name   string
-		macho  *macho.Result
-		min    int
+		name  string
+		macho *macho.Result
+		min   int
 	}{
 		{
 			name: "fat header",
@@ -392,9 +392,9 @@ func TestPrintWithAllFields(t *testing.T) {
 				{Name: ".text", VirtualAddress: 0x1000, VirtualSize: 0x100, RawSize: 0x100, Entropy: 6.5},
 				{Name: ".data", VirtualAddress: 0x2000, VirtualSize: 0x50, RawSize: 0x50, Entropy: 3.0, Suspicious: true, Reason: "writable+executable"},
 			},
-			Imports: []string{"kernel32.dll", "user32.dll", "VirtualAlloc"},
-			DLLs:    []string{"kernel32.dll", "user32.dll"},
-			TLS:     &pe.TLSInfo{HasCallbacks: true},
+			Imports:   []string{"kernel32.dll", "user32.dll", "VirtualAlloc"},
+			DLLs:      []string{"kernel32.dll", "user32.dll"},
+			TLS:       &pe.TLSInfo{HasCallbacks: true},
 			DebugInfo: &pe.DebugInfo{HasDebug: true},
 		},
 		Suspicious: []string{"Packing detected: UPX"},
@@ -440,9 +440,9 @@ func TestPrintMachOWithDetails(t *testing.T) {
 		FileName: "test.macho",
 		FileSize: 1024,
 		MachO: &macho.Result{
-			Type: "MH_EXECUTE",
-			CPU:  "x86_64",
-			Bits: 64,
+			Type:      "MH_EXECUTE",
+			CPU:       "x86_64",
+			Bits:      64,
 			FatHeader: &macho.FatHeader{NFatArch: 2},
 			LoadCommands: []macho.LoadCommand{
 				{Type: "LC_SEGMENT_64"},

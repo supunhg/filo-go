@@ -5,12 +5,13 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
 	"github.com/supunhg/filo-go/internal/office"
 )
 
 var (
-	officeJSON    bool
-	officeMeta    bool
+	officeJSON bool
+	officeMeta bool
 )
 
 var officeCmd = &cobra.Command{

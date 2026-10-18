@@ -155,9 +155,9 @@ func TestRepairWritesOutput(t *testing.T) {
 	data := []byte{0xFF, 0xE0, 0x00, 0x10}
 
 	result, err := Repair(data, "ignored.jpg", &Options{
-		OutputPath:  out,
-		DryRun:      false,
-		NoBackup:    true,
+		OutputPath:   out,
+		DryRun:       false,
+		NoBackup:     true,
 		TargetFormat: "jpeg",
 	})
 	if err != nil {
@@ -185,9 +185,9 @@ func TestRepairWritesOutputWriteError(t *testing.T) {
 		[]byte{0xFF, 0xE0, 0x00, 0x10},
 		"src.jpg",
 		&Options{
-			OutputPath:  "/dev/null/cannot/write/here.jpg",
-			DryRun:      false,
-			NoBackup:    true,
+			OutputPath:   "/dev/null/cannot/write/here.jpg",
+			DryRun:       false,
+			NoBackup:     true,
 			TargetFormat: "jpeg",
 		},
 	)

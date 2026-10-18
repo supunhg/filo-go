@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+
 	"github.com/supunhg/filo-go/internal/analyzer"
 )
 
@@ -26,12 +27,12 @@ func init() {
 }
 
 type teachEntry struct {
-	FilePath    string            `json:"file_path"`
-	FileName    string            `json:"file_name"`
-	Format      string            `json:"format"`
-	Size        int64             `json:"size"`
-	Features    map[string]string `json:"features"`
-	Timestamp   string            `json:"timestamp"`
+	FilePath  string            `json:"file_path"`
+	FileName  string            `json:"file_name"`
+	Format    string            `json:"format"`
+	Size      int64             `json:"size"`
+	Features  map[string]string `json:"features"`
+	Timestamp string            `json:"timestamp"`
 }
 
 func runTeach(cmd *cobra.Command, args []string) error {

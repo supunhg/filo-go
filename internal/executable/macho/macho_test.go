@@ -134,8 +134,8 @@ func TestAnalyzeBE64(t *testing.T) {
 func TestAnalyzeLE32WithLoadCommands(t *testing.T) {
 	// Header (28 bytes) + 1 LC_SEGMENT (48 bytes minimum for 32-bit)
 	segCmd := make([]byte, 48)
-	binary.LittleEndian.PutUint32(segCmd[0:4], 0x01)   // LC_SEGMENT
-	binary.LittleEndian.PutUint32(segCmd[4:8], 48)     // cmdsize
+	binary.LittleEndian.PutUint32(segCmd[0:4], 0x01) // LC_SEGMENT
+	binary.LittleEndian.PutUint32(segCmd[4:8], 48)   // cmdsize
 	copy(segCmd[8:24], "__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00")
 	binary.LittleEndian.PutUint32(segCmd[24:28], 0x1000) // vmaddr
 	binary.LittleEndian.PutUint32(segCmd[28:32], 0x1000) // vmsize
@@ -168,8 +168,8 @@ func TestAnalyzeLE32WithLoadCommands(t *testing.T) {
 func TestAnalyzeLE64WithSegment64(t *testing.T) {
 	// 64-bit header (32 bytes) + LC_SEGMENT_64 (72 bytes minimum)
 	segCmd := make([]byte, 72)
-	binary.LittleEndian.PutUint32(segCmd[0:4], 0x19)   // LC_SEGMENT_64
-	binary.LittleEndian.PutUint32(segCmd[4:8], 72)     // cmdsize
+	binary.LittleEndian.PutUint32(segCmd[0:4], 0x19) // LC_SEGMENT_64
+	binary.LittleEndian.PutUint32(segCmd[4:8], 72)   // cmdsize
 	copy(segCmd[8:24], "__DATA\x00\x00\x00\x00\x00\x00\x00\x00\x00")
 	binary.LittleEndian.PutUint64(segCmd[24:32], 0x1000) // vmaddr
 	binary.LittleEndian.PutUint64(segCmd[32:40], 0x1000) // vmsize
@@ -209,12 +209,12 @@ func TestAnalyzeDylib(t *testing.T) {
 	// We put the name at offset 24 (8 dylib-header bytes + 4 version fields + 8 padding).
 	name := "/usr/lib/libSystem.B.dylib\x00"
 	dylibCmd := make([]byte, 24+len(name))
-	binary.LittleEndian.PutUint32(dylibCmd[0:4], 0x0C)   // LC_LOAD_DYLIB
+	binary.LittleEndian.PutUint32(dylibCmd[0:4], 0x0C)                  // LC_LOAD_DYLIB
 	binary.LittleEndian.PutUint32(dylibCmd[4:8], uint32(len(dylibCmd))) // cmdsize
-	binary.LittleEndian.PutUint32(dylibCmd[8:12], 24)    // dylib.name.offset (from start of LC)
-	binary.LittleEndian.PutUint32(dylibCmd[12:16], 1234) // dylib.timestamp
-	binary.LittleEndian.PutUint32(dylibCmd[16:20], 0)    // current_version
-	binary.LittleEndian.PutUint32(dylibCmd[20:24], 0)    // compat_version
+	binary.LittleEndian.PutUint32(dylibCmd[8:12], 24)                   // dylib.name.offset (from start of LC)
+	binary.LittleEndian.PutUint32(dylibCmd[12:16], 1234)                // dylib.timestamp
+	binary.LittleEndian.PutUint32(dylibCmd[16:20], 0)                   // current_version
+	binary.LittleEndian.PutUint32(dylibCmd[20:24], 0)                   // compat_version
 	copy(dylibCmd[24:], name)
 
 	data := buildLE32Header(0x07, 0x03, 0x02, 1, uint32(len(dylibCmd)), 0)
@@ -239,9 +239,9 @@ func TestAnalyzeCodeSignature(t *testing.T) {
 	// LC_CODE_SIGNATURE (0x1D), 16 bytes.
 	// The parser reads sig.Size from offset+8 and sig.Offset from offset+12.
 	sigCmd := make([]byte, 16)
-	binary.LittleEndian.PutUint32(sigCmd[0:4], 0x1D)   // LC_CODE_SIGNATURE
-	binary.LittleEndian.PutUint32(sigCmd[4:8], 16)     // cmdsize
-	binary.LittleEndian.PutUint32(sigCmd[8:12], 0x200) // parsed as sig.Size
+	binary.LittleEndian.PutUint32(sigCmd[0:4], 0x1D)     // LC_CODE_SIGNATURE
+	binary.LittleEndian.PutUint32(sigCmd[4:8], 16)       // cmdsize
+	binary.LittleEndian.PutUint32(sigCmd[8:12], 0x200)   // parsed as sig.Size
 	binary.LittleEndian.PutUint32(sigCmd[12:16], 0x1000) // parsed as sig.Offset
 
 	data := buildLE32Header(0x07, 0x03, 0x02, 1, 16, 0)
@@ -284,7 +284,7 @@ func TestAnalyzeFatBinary(t *testing.T) {
 	fat[1] = 0xFE
 	fat[2] = 0xBA
 	fat[3] = 0xBE
-	binary.BigEndian.PutUint32(fat[4:8], 1) // nfat_arch
+	binary.BigEndian.PutUint32(fat[4:8], 1)      // nfat_arch
 	binary.BigEndian.PutUint32(fat[8:12], 0x07)  // cputype x86
 	binary.BigEndian.PutUint32(fat[12:16], 3)    // cpusubtype
 	binary.BigEndian.PutUint32(fat[16:20], 4096) // offset

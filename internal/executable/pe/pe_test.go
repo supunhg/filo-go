@@ -42,17 +42,17 @@ func makeMinimalPE32(machine, subsystem, imageBase, entryPoint uint32) []byte {
 
 	// COFF header at 0x44
 	coffOff := peOff + peSignatureSize
-	binary.LittleEndian.PutUint16(buf[coffOff:coffOff+2], uint16(machine))        // Machine
-	binary.LittleEndian.PutUint16(buf[coffOff+2:coffOff+4], 0)                    // NumberOfSections
-	binary.LittleEndian.PutUint32(buf[coffOff+4:coffOff+8], 0)                    // TimeDateStamp
-	binary.LittleEndian.PutUint32(buf[coffOff+8:coffOff+12], 0)                   // PointerToSymbolTable
-	binary.LittleEndian.PutUint32(buf[coffOff+12:coffOff+16], 0)                  // NumberOfSymbols
-	binary.LittleEndian.PutUint16(buf[coffOff+16:coffOff+18], peOptHeader32Size)  // SizeOfOptionalHeader
+	binary.LittleEndian.PutUint16(buf[coffOff:coffOff+2], uint16(machine))       // Machine
+	binary.LittleEndian.PutUint16(buf[coffOff+2:coffOff+4], 0)                   // NumberOfSections
+	binary.LittleEndian.PutUint32(buf[coffOff+4:coffOff+8], 0)                   // TimeDateStamp
+	binary.LittleEndian.PutUint32(buf[coffOff+8:coffOff+12], 0)                  // PointerToSymbolTable
+	binary.LittleEndian.PutUint32(buf[coffOff+12:coffOff+16], 0)                 // NumberOfSymbols
+	binary.LittleEndian.PutUint16(buf[coffOff+16:coffOff+18], peOptHeader32Size) // SizeOfOptionalHeader
 	binary.LittleEndian.PutUint16(buf[coffOff+18:coffOff+20], 0x0102)            // Characteristics (EXECUTABLE_IMAGE | 32BIT_MACHINE)
 
 	// Optional header (PE32) at 0x58
 	optOff := coffOff + peCOFFHeaderSize
-	binary.LittleEndian.PutUint16(buf[optOff:optOff+2], 0x10B)             // Magic = PE32
+	binary.LittleEndian.PutUint16(buf[optOff:optOff+2], 0x10B) // Magic = PE32
 	binary.LittleEndian.PutUint16(buf[optOff+16:optOff+20], uint16(entryPoint))
 	binary.LittleEndian.PutUint32(buf[optOff+28:optOff+32], imageBase)
 	binary.LittleEndian.PutUint16(buf[optOff+68:optOff+70], uint16(subsystem))
@@ -237,10 +237,10 @@ func TestSubsystemName(t *testing.T) {
 
 func TestCheckSuspiciousSection(t *testing.T) {
 	tests := []struct {
-		name         string
-		section      Section
-		wantSusp     bool
-		reasonMatch  string
+		name        string
+		section     Section
+		wantSusp    bool
+		reasonMatch string
 	}{
 		{
 			name:        "UPX0",
@@ -273,23 +273,23 @@ func TestCheckSuspiciousSection(t *testing.T) {
 			reasonMatch: "Enigma",
 		},
 		{
-			name:    "W^X violation",
-			section: Section{Name: ".text", Characteristics: 0x80000000 | 0x20000000}, // WRITE | EXECUTE
+			name:     "W^X violation",
+			section:  Section{Name: ".text", Characteristics: 0x80000000 | 0x20000000}, // WRITE | EXECUTE
 			wantSusp: true,
 		},
 		{
-			name:    "High entropy (packed/encrypted)",
-			section: Section{Name: ".data", Entropy: 7.8, RawSize: 4096},
+			name:     "High entropy (packed/encrypted)",
+			section:  Section{Name: ".data", Entropy: 7.8, RawSize: 4096},
 			wantSusp: true,
 		},
 		{
-			name:    "Empty name",
-			section: Section{Name: ""},
+			name:     "Empty name",
+			section:  Section{Name: ""},
 			wantSusp: true,
 		},
 		{
-			name:    "Normal section",
-			section: Section{Name: ".text", Entropy: 5.5, RawSize: 1024, Characteristics: 0x60000020},
+			name:     "Normal section",
+			section:  Section{Name: ".text", Entropy: 5.5, RawSize: 1024, Characteristics: 0x60000020},
 			wantSusp: false,
 		},
 	}
@@ -358,7 +358,7 @@ func TestParseDataDirs(t *testing.T) {
 
 	// Set RVA + size of the first data directory (Export) to non-zero
 	dirStart := optOff + peOptHeader32Size
-	binary.LittleEndian.PutUint32(data[dirStart:dirStart+4], 0x1000) // RVA
+	binary.LittleEndian.PutUint32(data[dirStart:dirStart+4], 0x1000)  // RVA
 	binary.LittleEndian.PutUint32(data[dirStart+4:dirStart+8], 0x100) // Size
 
 	dirs := parseDataDirs(data, optOff, 0x10B)
@@ -476,7 +476,7 @@ func TestParseSectionsBasic(t *testing.T) {
 
 	// Section data will be placed near the end of the buffer.
 	const sectionDataOffset = 0x400 // 1024
-	const sectionDataSize = 0x80   // 128 bytes per section
+	const sectionDataSize = 0x80    // 128 bytes per section
 
 	totalSize := sectionDataOffset + sectionDataSize*2
 	buf := make([]byte, totalSize)
@@ -492,8 +492,8 @@ func TestParseSectionsBasic(t *testing.T) {
 
 	// COFF header
 	coffOff := peOff + peSignatureSize
-	binary.LittleEndian.PutUint16(buf[coffOff:coffOff+2], 0x014C)  // Machine x86
-	binary.LittleEndian.PutUint16(buf[coffOff+2:coffOff+4], 2)     // 2 sections
+	binary.LittleEndian.PutUint16(buf[coffOff:coffOff+2], 0x014C) // Machine x86
+	binary.LittleEndian.PutUint16(buf[coffOff+2:coffOff+4], 2)    // 2 sections
 	binary.LittleEndian.PutUint16(buf[coffOff+16:coffOff+18], peOptHeader32Size)
 
 	// Set the fields the code reads to compute sectionOffset.
@@ -509,11 +509,11 @@ func TestParseSectionsBasic(t *testing.T) {
 	// Section 1: .text with normal characteristics
 	sec1Off := sectionOff
 	copy(buf[sec1Off:sec1Off+8], []byte(".text\x00\x00\x00"))
-	binary.LittleEndian.PutUint32(buf[sec1Off+8:sec1Off+12], sectionDataSize)        // VirtualSize
-	binary.LittleEndian.PutUint32(buf[sec1Off+12:sec1Off+16], 0x1000)               // VirtualAddress
-	binary.LittleEndian.PutUint32(buf[sec1Off+16:sec1Off+20], sectionDataSize)       // RawSize
-	binary.LittleEndian.PutUint32(buf[sec1Off+20:sec1Off+24], sectionDataOffset)     // RawOffset
-	binary.LittleEndian.PutUint32(buf[sec1Off+36:sec1Off+40], 0x60000020)            // Characteristics: CODE|EXECUTE|READ
+	binary.LittleEndian.PutUint32(buf[sec1Off+8:sec1Off+12], sectionDataSize)    // VirtualSize
+	binary.LittleEndian.PutUint32(buf[sec1Off+12:sec1Off+16], 0x1000)            // VirtualAddress
+	binary.LittleEndian.PutUint32(buf[sec1Off+16:sec1Off+20], sectionDataSize)   // RawSize
+	binary.LittleEndian.PutUint32(buf[sec1Off+20:sec1Off+24], sectionDataOffset) // RawOffset
+	binary.LittleEndian.PutUint32(buf[sec1Off+36:sec1Off+40], 0x60000020)        // Characteristics: CODE|EXECUTE|READ
 
 	// Fill section 1's raw data with simple low-entropy content
 	for i := uint32(0); i < sectionDataSize; i++ {
@@ -527,7 +527,7 @@ func TestParseSectionsBasic(t *testing.T) {
 	binary.LittleEndian.PutUint32(buf[sec2Off+12:sec2Off+16], 0x2000)
 	binary.LittleEndian.PutUint32(buf[sec2Off+16:sec2Off+20], sectionDataSize)
 	binary.LittleEndian.PutUint32(buf[sec2Off+20:sec2Off+24], sectionDataOffset+sectionDataSize)
-	binary.LittleEndian.PutUint32(buf[sec2Off+36:sec2Off+40], 0xC0000040)            // INITIALIZED_DATA|READ|WRITE
+	binary.LittleEndian.PutUint32(buf[sec2Off+36:sec2Off+40], 0xC0000040) // INITIALIZED_DATA|READ|WRITE
 
 	// Fill section 2's raw data
 	for i := uint32(0); i < sectionDataSize; i++ {

@@ -166,14 +166,14 @@ func TestFormatYAFFSSuperblock(t *testing.T) {
 
 	// Test with valid superblock
 	sb := &YAFFSSuperblock{
-		Magic:         YAFFS1Magic,
-		Version:       1,
-		ChunkSize:     512,
-		SpareSize:     16,
-		BlockSize:     32768,
+		Magic:          YAFFS1Magic,
+		Version:        1,
+		ChunkSize:      512,
+		SpareSize:      16,
+		BlockSize:      32768,
 		ChunksPerBlock: 64,
-		TotalBlocks:   100,
-		ObjectCount:   50,
+		TotalBlocks:    100,
+		ObjectCount:    50,
 	}
 	info = FormatYAFFSSuperblock(sb)
 	if info == "" {
@@ -182,14 +182,14 @@ func TestFormatYAFFSSuperblock(t *testing.T) {
 
 	// Test with YAFFS2
 	sb2 := &YAFFSSuperblock{
-		Magic:         YAFFS2Magic,
-		Version:       2,
-		ChunkSize:     2048,
-		SpareSize:     64,
-		BlockSize:     131072,
+		Magic:          YAFFS2Magic,
+		Version:        2,
+		ChunkSize:      2048,
+		SpareSize:      64,
+		BlockSize:      131072,
 		ChunksPerBlock: 64,
-		TotalBlocks:   200,
-		ObjectCount:   100,
+		TotalBlocks:    200,
+		ObjectCount:    100,
 	}
 	info = FormatYAFFSSuperblock(sb2)
 	if info == "" {
