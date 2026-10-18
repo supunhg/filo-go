@@ -81,6 +81,13 @@ analyst can trust.
 - **Breaking:** removed the `analyze` flags `--deep`, `--no-ml`,
   `--all-evidence`, `--all-embedded` and `--yara`, which had no effect.
   `--nested` replaces `--all-embedded`.
+- README rewritten around what filo verifiably does: commands are grouped
+  into core, format analyzers and experimental, and claims that did not
+  hold are removed (binwalk speedups dominated by Python start-up,
+  "fastest", firmware extraction, YARA and ExifTool parity). New
+  `docs/API.md` and `docs/ARCHITECTURE.md`; `docs/PERFORMANCE.md` and
+  `docs/ROADMAP.md` rewritten with current measurements and plans; early
+  planning notes moved to `docs/archive/`.
 - `analyze` shows the full SHA-256 instead of the first 16 characters.
 - Entropy labels no longer describe ordinary text as "weak encryption".
 - The version is injected at build time from the git tag instead of being

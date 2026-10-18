@@ -1,233 +1,57 @@
-# Performance Benchmarks
+# Performance
 
-> **Last Updated:** 2026-06-09
-> **Test System:** Intel Xeon Platinum 8488C, Linux AMD64, Go 1.24
-> **Comparison:** filo-go vs binwalk v2.4.3 vs standard Unix tools
+Numbers below were measured on 2026-10-18 on an Intel Core i7-13700 under Windows 11, with
+filo built from `main` by Go 1.25. All timings include process start-up and reading the file
+from a warm OS cache. They will differ on your hardware, so please reproduce them before
+quoting them.
 
----
+## Signature scanning
 
-## Real-World Performance Comparison
+`filo scan` looks for 44 formats in a single pass. It finds candidates by their first two bytes,
+then validates each one structurally.
 
-### Head-to-Head Benchmarks (filo-go vs binwalk)
+| Measurement | Result |
+|---|---|
+| `BenchmarkScanRandom` (16 MiB of random bytes, in memory) | **1.15 GB/s** |
+| `filo scan` on a 512 MiB random file (end to end) | **0.61 s** |
 
-| Operation | filo-go | binwalk | Speedup |
-|-----------|---------|---------|---------|
-| **PNG analysis (5KB, with tEXt chunks)** | 3.9 ms | 757.5 ms | **193.86x faster** |
-| **ZIP archive analysis (82KB, 500 entries)** | 3.8 ms | 814.2 ms | **216.78x faster** |
-| **Random 10MB blob scan** | 243.8 ms | 3,397.4 ms | **13.94x faster** |
+Random data is close to the worst case: it produces the most candidate matches that then fail
+validation. Reproduce with:
 
-### filo-go vs Unix Tools
-
-> **2026-06-10 update:** this row is now compared against the **dedicated** `filo-go hash` and `filo-go strings` subcommands, not the general-purpose `filo-go analyze`. Both subcommands exist (see `filo-go hash --help` and `filo-go strings --help`).
-
-| Operation | filo-go | Unix Tool | Speedup |
-|-----------|---------|-----------|---------|
-| **Hash (sha256, 5KB PNG)** | 1.2 ms | 1.7 ms (sha256sum) | **1.47x** faster |
-| **Hash (sha256, 82KB ZIP)** | 2.3 ms | 1.4 ms (sha256sum) | **0.59x** (slower) |
-| **Hash (sha256, 10MB random)** | 30.4 ms | 26.2 ms (sha256sum) | **0.86x** (slower) |
-| **Strings (5KB PNG)** | 2.6 ms | 1.0 ms (strings) | **0.40x** (slower) |
-| **Strings (82KB ZIP)** | 2.8 ms | 1.0 ms (strings) | **0.37x** (slower) |
-| **Strings (10MB random)** | 246.4 ms | 90.1 ms (strings) | **0.37x** (slower) |
-
-> **Honest finding:** for hashing and string extraction, `filo-go` is **not faster** than the dedicated Unix tools — not even when using its own dedicated `hash` and `strings` subcommands. `sha256sum` and `strings` are tiny C programs with no overhead; they are the right tool for these primitive operations. filo-go's strength is **integrated analysis** (format detection + entropy + hashing + string extraction in one pass via `filo-go analyze`), where it wins 14x-217x against `binwalk`. Use `filo-go hash` / `filo-go strings` only when you want a single-binary alternative to the Unix tools with the same algorithm/output (not for raw speed). The earlier "10.2x" and "10,873x faster" claims in this row were either measured against a different subcommand or were synthesized; they have been removed.
-
----
-
-## Detailed Microbenchmarks
-
-### Entropy Calculation (Zero Allocations)
-
-| Size | Time/op | Allocs/op |
-|------|---------|-----------|
-| 1 KB | 2.91 µs | 0 |
-| 10 KB | 7.51 µs | 0 |
-| 100 KB | 43.8 µs | 0 |
-| 1 MB | 447 µs | 0 |
-
-**Key Insight**: Zero allocations make entropy calculation extremely efficient for large firmware files.
-
-### SHA-256 Hashing (Hardware Accelerated)
-
-| Size | Time/op | Allocs/op |
-|------|---------|-----------|
-| 1 KB | 1.10 µs | 7 |
-| 10 KB | 6.68 µs | 7 |
-| 100 KB | 60.5 µs | 7 |
-| 1 MB | 609 µs | 7 |
-
-**Key Insight**: SHA-256 benefits from SHA-NI hardware instructions on modern CPUs.
-
-### File Analysis
-
-| Size | Time/op | Allocs/op |
-|------|---------|-----------|
-| 1 KB | 9.69 µs | 21 |
-| 10 KB | 21.5 µs | 21 |
-| 100 KB | 112 µs | 21 |
-| 1 MB | 1.08 ms | 21 |
-
-**Key Insight**: Constant allocation count regardless of input size.
-
-### String Extraction
-
-| Size | Time/op | Allocs/op |
-|------|---------|-----------|
-| 1 KB | 33.8 ns | 1 |
-| 10 KB | 32.4 ns | 1 |
-| 100 KB | 33.2 ns | 1 |
-| 1 MB | 35.8 ns | 1 |
-
-**Key Insight**: Near-zero allocations and constant-time performance regardless of file size.
-
-### File Carving (10MB Mixed File)
-
-| Operation | Time/op | Allocs/op |
-|-----------|---------|-----------|
-| Carve | 163 ms | 247 |
-| Signature Scan | 350 ms | 74 |
-
----
-
-## binwalk Comparison Details
-
-### binwalk Performance (Measured)
-
-| Size | Scan | Entropy | Hash | Strings |
-|------|------|---------|------|---------|
-| 1 KB | 453 ms | 610 ms | 1.81 ms | 986 µs |
-| 10 KB | 456 ms | 594 ms | 1.83 ms | 1.10 ms |
-| 100 KB | 471 ms | 596 ms | 2.03 ms | 1.95 ms |
-| 1 MB | 623 ms | 615 ms | 4.23 ms | 11.2 ms |
-
-**Key Insight**: binwalk performance is dominated by Python interpreter overhead, not the actual analysis. Performance is roughly constant regardless of input size due to startup cost.
-
-### filo-go Performance (Measured)
-
-| Size | Analysis | Entropy | Hash | Strings |
-|------|----------|---------|------|---------|
-| 1 KB | 9.69 µs | 2.91 µs | 1.10 µs | 33.8 ns |
-| 10 KB | 21.5 µs | 7.51 µs | 6.68 µs | 32.4 ns |
-| 100 KB | 112 µs | 43.8 µs | 60.5 µs | 33.2 ns |
-| 1 MB | 1.08 ms | 447 µs | 609 µs | 35.8 ns |
-
-**Key Insight**: filo-go performance scales linearly with input size, making it predictable and efficient for large files.
-
----
-
-## Memory Efficiency
-
-### Allocation Patterns
-
-| Operation | Allocations | Bytes/op |
-|-----------|-------------|----------|
-| Entropy (1MB) | 0 | 0 |
-| SHA-256 (1MB) | 7 | 600 B |
-| File Analysis (1MB) | 21 | 624 B |
-| String Extraction (1MB) | 1 | 48 B |
-
-**Key Insight**: filo-go uses minimal memory allocations, making it suitable for memory-constrained environments.
-
----
-
-## Real-World Use Cases
-
-### Firmware Analysis (100MB)
-
-| Operation | filo-go | binwalk | Time Saved |
-|-----------|---------|---------|------------|
-| Full Analysis | 1.3 s | 2.1 s | 0.8 s |
-| Entropy Scan | 44.7 ms | 615 ms | 570 ms |
-| Extraction | 13 ms | 2.15 s | 2.14 s |
-
-### Batch Processing (1000 Files, 1MB each)
-
-| Operation | filo-go | binwalk | Time Saved |
-|-----------|---------|---------|------------|
-| Analysis | 1.3 s | 621 s | 620 s (10.3 min) |
-| Hashing | 609 ms | 4.23 s | 3.6 s |
-| Extraction | 13 s | 2,150 s | 2,137 s (35.6 min) |
-
----
-
-## Performance Characteristics
-
-### Strengths
-1. **Zero-allocation entropy**: Critical for analyzing large firmware files
-2. **Hardware-accelerated hashing**: SHA-256 benefits from SHA-NI instructions
-3. **Single binary**: No Python interpreter overhead
-4. **Linear scaling**: Performance scales predictably with input size
-5. **Minimal memory footprint**: Suitable for embedded systems
-
-### Areas for Optimization
-1. **String extraction**: Already optimized (near-zero allocations)
-2. **Large file processing**: Consider memory-mapped files for >100MB files
-3. **Batch operations**: Could benefit from worker pools
-
----
-
-## Recommendations
-
-### For Large Files (>100 MB)
 ```bash
-# Use streaming analysis
-filo analyze large_file.bin --stream
-
-# Use batch mode for multiple files
-filo batch ./large_directory/ --workers 4
+go test ./internal/signature -run '^$' -bench ScanRandom
 ```
 
-### For Memory-Constrained Systems
-```bash
-# Limit string extraction
-filo strings file.bin --max 1000
+## Hashing
 
-# Use entropy only mode
-filo entropy file.bin --no-strings
-```
+`filo hash` reads the file once in 1 MiB chunks and runs every requested algorithm in its own
+goroutine, so several digests cost about as much as the slowest one.
 
-### For Maximum Performance
-```bash
-# Use parallel processing
-filo batch ./files/ --workers $(nproc)
+512 MiB file:
 
-# Skip unnecessary analysis
-filo analyze file.bin --quick
-```
+| Command | Time |
+|---|---|
+| `filo hash -a sha256` | **0.28 s** |
+| `certutil -hashfile big.bin SHA256` | 0.45 s |
+| `sha256sum big.bin` (Git for Windows coreutils) | 1.23 s |
+| `filo hash -a md5` | 0.55 s |
+| `filo hash -a md5,sha1,sha256` | **0.55 s** (all three in the time of MD5 alone) |
 
----
+Go's SHA-256 uses the CPU's SHA extensions where available. MD5 can't be parallelised within a
+single stream, so it is the slowest digest.
 
-## Reproducing Benchmarks
+## Known gaps
 
-### Prerequisites
-```bash
-# Install dependencies
-sudo apt-get install -y binwalk bzip2 xz-utils
+- **Strings.** `filo strings` was 2-3× slower than GNU `strings` in the June 2026 measurements
+  below. It has not been re-measured since.
+- **Memory.** `analyze`, `scan` and `extract` read the whole file into memory. Streaming for
+  multi-gigabyte images is on the [roadmap](ROADMAP.md).
 
-# Build filo-go
-go build -o filo ./cmd/filo
-```
+## Historical comparison (June 2026)
 
-### Run Benchmarks
-```bash
-# Real-world comparison
-go test -v -run TestRealWorldComparison ./benchmarks/
-
-# Microbenchmarks
-go test -bench=. -benchmem ./benchmarks/
-
-# Specific benchmarks
-go test -bench=BenchmarkFilo -benchmem ./benchmarks/
-go test -bench=BenchmarkBinwalk -benchmem ./benchmarks/
-```
-
----
-
-## Conclusion
-
-filo-go delivers **14x to 217x faster performance** than binwalk on the measured corpus (see [`benchmarks/results/2026-06-10.md`](../benchmarks/results/2026-06-10.md), reproducible via `benchmarks/competitor_bench.sh`). The Go-native implementation eliminates Python interpreter overhead while providing hardware-accelerated cryptography and zero-allocation analysis paths.
-
-For security professionals analyzing firmware, malware, or forensic images, filo-go provides:
-- **Predictable performance** that scales linearly with file size
-- **Minimal memory usage** suitable for embedded systems
-- **Single binary deployment** with zero dependencies
-- **Cross-platform support** (Linux, macOS, Windows)
+[`benchmarks/results/2026-06-10.md`](../benchmarks/results/2026-06-10.md) compares filo v0.4
+with binwalk 2.4.3 (the Python version) on small files. Most of filo's lead there (3.9 ms against
+757 ms for a 5 KB PNG) is Python's start-up time, not scanning speed. binwalk has since been
+rewritten in Rust (v3), and filo's scanner has been replaced, so those numbers do not describe
+either tool today. [`benchmarks/competitor_bench.sh`](../benchmarks/competitor_bench.sh) can
+re-run the comparison.

@@ -1,437 +1,196 @@
-# filo-go
+# filo
 
-> **Forensic Intelligence & Learning Operator** - A modern, Go-native forensic analysis toolkit
+**Fast, single-binary file forensics.** Identify any file by its structure, find what is
+hidden inside it, and extract it, from the terminal, a script, an HTTP API or an AI agent.
 
 [![CI](https://github.com/supunhg/filo-go/actions/workflows/ci.yml/badge.svg)](https://github.com/supunhg/filo-go/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/supunhg/filo-go)](https://goreportcard.com/report/github.com/supunhg/filo-go)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Latest release](https://img.shields.io/badge/release-v0.5.1-blue)](https://github.com/supunhg/filo-go/releases/tag/v0.5.1)
+[![Release](https://img.shields.io/github/v/release/supunhg/filo-go?sort=semver)](https://github.com/supunhg/filo-go/releases)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
-**Latest release: v0.5.1 (2026-06-12)** — 79.6% test coverage, REST API server with security hardening, Docker support, interactive HTML reports, streaming analysis, caching layer, YARA module imports, YAFFS extraction, zero lint issues, Apache 2.0.
+```console
+$ filo scan cat.png
+DECIMAL      HEXADECIMAL  SIZE       DESCRIPTION
+------------------------------------------------------------------------------
+0            0x0          284 B      PNG image, 64 x 64, 8-bit RGB
+284          0x11C        140 B      ZIP archive, first entry "flag.txt" (deflate), 1 entry
 
-<!-- branch: feature/v0.5.1 -->
+$ filo analyze cat.png
+  Detected Format: png
+  Description: PNG image, 64 x 64, 8-bit RGB
+  ...
+  Structural issues:
+    ⚠  140 byte(s) appended after the end of the PNG data at offset 0x11C
 
----
+$ filo extract cat.png -o out
+  out/png_0.png    Format: png  Size: 284 bytes  Offset: 0x0
+  out/zip_284.zip  Format: zip  Size: 140 bytes  Offset: 0x11C
+```
 
-## ⚠️ Known limitations
+## Why filo
 
-- `filo-go strings` is **~2x slower** than GNU `strings(1)` on large binary inputs (the C binary is structurally faster at the printable-scan hot path; a streaming-writer optimization narrowed the gap but did not close it).
-- `filo-go hash` is **~0.8x the speed of `sha256sum`** for the same structural reason. Use `sha256sum` directly if raw speed matters.
-- These gaps only apply to the dedicated primitive commands. **Integrated analysis** (`filo-go analyze`, which does format detection + entropy + hashing + string extraction in one pass) is **14x–217x faster than binwalk** on the same inputs.
+- **Answers you can trust.** Every signature is checked against the format's real header
+  structure (and checksums, where the format has them) before it is reported, so random bytes
+  don't turn into phantom gzip streams. The test suite scans 8 MiB of random data and fails on
+  a single false positive. Encryption is reported as evidence (known containers, a chi-square
+  randomness test), never as a guessed cipher.
+- **One static binary.** No Python, no libmagic, no Perl. Linux, macOS, Windows and FreeBSD
+  on amd64 and arm64.
+- **Fast.** Signature scanning runs at about 1.1 GB/s in a single pass. Hashing streams the file
+  once and computes every digest in parallel. See [performance](docs/PERFORMANCE.md).
+- **Built for automation.** JSON output, a hardened REST API, and a
+  [Model Context Protocol](https://modelcontextprotocol.io) server so AI agents such as Claude
+  can investigate files directly.
+- **Safe on hostile input.** Archive extraction blocks path traversal and links, and every
+  decompressor is size-limited against decompression bombs.
 
-See [docs/PERFORMANCE.md](docs/PERFORMANCE.md) for the full measured numbers, and [benchmarks/results/2026-06-10.md](benchmarks/results/2026-06-10.md) for the source of truth.
-
----
-
-## 📚 Documentation
-
-- [Knowledge Graph](docs/KNOWLEDGE_GRAPH.md) - Architecture and codebase overview
-- [Competitive Analysis](docs/COMPETITIVE_ANALYSIS.md) - Gap analysis vs binwalk/file/ExifTool
-- [Roadmap](docs/ROADMAP.md) - Development roadmap and milestones
-
----
-
-## 🎯 What is filo-go?
-
-**filo-go** is a modern, Go-native forensic analysis toolkit that replaces **binwalk**, **file**, **ExifTool**, and **strings** with a single, fast, cross-platform binary.
-
-### Why filo-go?
-
-| Feature | binwalk | file | ExifTool | filo-go |
-|---------|---------|------|----------|---------|
-| Language | Python/C | C | Perl | **Go** |
-| Dependencies | Many | libmagic | Perl modules | **None** |
-| Cross-platform | ⚠️ Partial | ✅ | ✅ | **✅** |
-| Single binary | ❌ | ✅ | ❌ | **✅** |
-| JSON output | ❌ | ⚠️ | ✅ | **✅** |
-| MCP integration | ❌ | ❌ | ❌ | **✅** |
-| Plugin system | ❌ | ❌ | ✅ | **✅** |
-| Firmware extraction | ✅ | ❌ | ❌ | **✅** |
-| Metadata extraction | ❌ | ❌ | ✅ | **✅** |
-| YARA support | ❌ | ❌ | ❌ | **✅** |
-| **Performance** | Slow | Fast | Fast | **Fastest** |
-
-### 🚀 Performance
-
-filo-go is **14x to 217x faster** than binwalk on a measured corpus (see [benchmarks/results/2026-06-10.md](benchmarks/results/2026-06-10.md), reproducible via `benchmarks/competitor_bench.sh`):
-
-| Operation | filo-go | binwalk | Speedup |
-|-----------|---------|---------|----------|
-| PNG analysis (5KB, with tEXt chunks) | 3.9 ms | 757.5 ms | **193.86x** |
-| ZIP archive analysis (82KB, 500 entries) | 3.8 ms | 814.2 ms | **216.78x** |
-| Random 10MB blob scan | 243.8 ms | 3,397.4 ms | **13.94x** |
-
-See [Performance Benchmarks](docs/PERFORMANCE.md) for detailed analysis.
-
----
-
-## 🚀 Quick Start
-
-### Installation
+## Install
 
 ```bash
-# From source
-git clone https://github.com/supunhg/filo-go.git
-cd filo-go
-go build -o filo ./cmd/filo/
-
-# Or using go install
 go install github.com/supunhg/filo-go/cmd/filo@latest
 ```
 
-### Basic Usage
+Starting with v0.6.0, each [release](https://github.com/supunhg/filo-go/releases) ships:
+
+- archives for Linux, macOS, Windows and FreeBSD;
+- `.deb`, `.rpm` and `.apk` packages;
+- a container image: `docker run --rm -v "$PWD:/data:ro" ghcr.io/supunhg/filo scan /data/firmware.bin`.
+
+Every artifact has a checksum, an SBOM and a signed build-provenance attestation
+(`gh attestation verify <file> --repo supunhg/filo-go`).
+
+To build from source: `git clone https://github.com/supunhg/filo-go && cd filo-go && make build`.
+
+## Usage
 
 ```bash
-# Analyze a file
-filo analyze mystery.bin
-
-# Get entropy visualization
-filo entropy firmware.bin
-
-# Extract embedded files
-filo extract firmware.bin
-
-# View hex dump
-filo hex suspicious.exe
-
-# Scan for signatures
-filo scan document.pdf
-
-# Extract strings
-filo strings malware.bin
-
-# Get file hashes
-filo hash important.doc
-
-# Analyze metadata (EXIF, XMP, IPTC)
-filo meta photo.jpg
-
-# Extract firmware
-filo firmware -x rootfs.squashfs
+filo analyze sample.bin          # identify, hash, entropy, embedded files, structural issues
+filo scan firmware.bin           # every embedded file and filesystem, with offsets and sizes
+filo extract firmware.bin -o out # carve out everything scan finds (decompresses gzip/bzip2/xz)
+filo hash -a sha256 *.iso        # coreutils-compatible output; md5, sha1, sha2, sha3
+filo strings -n 8 malware.exe    # printable strings with offsets
+filo entropy packed.bin          # entropy graph: spot compressed or encrypted regions
+filo hex -o 0x1F85 -l 64 file    # colored hex dump
+filo meta photo.jpg              # EXIF, XMP, IPTC
 ```
 
----
+`analyze`, `scan`, `hash`, `strings`, `meta` and the format analyzers take `--json`. Colors switch off automatically when output is piped
+(`--color=always|never` and `NO_COLOR` also work).
 
-## 📚 Commands
+### Commands
 
-### Core Analysis
+**Core:** these are stable, tested and the focus of development.
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `analyze` | Full file analysis with format detection | `filo analyze file.bin` |
-| `entropy` | Visualize file entropy | `filo entropy file.bin` |
-| `hex` | Display hex dump with colors | `filo hex file.bin` |
-| `scan` | Scan for known signatures | `filo scan file.bin` |
-| `search` | Search for text or hex patterns | `filo search file.bin "pattern"` |
-| `hash` | Compute multiple hash algorithms | `filo hash file.bin` |
-| `strings` | Extract printable strings | `filo strings file.bin` |
+| Command | What it does |
+|---|---|
+| `analyze` | Identify a file from its contents and report hashes, entropy, embedded files, truncation, appended data, encryption containers, CPU architecture and metadata |
+| `scan` | Find embedded files anywhere in a binary, like binwalk |
+| `extract` | Write every embedded file to disk |
+| `hash` | MD5, SHA-1, SHA-256/512, SHA3-256/512 in one pass |
+| `strings` | ASCII and UTF-16 strings with offsets |
+| `entropy` | Entropy graph |
+| `hex`, `search`, `dd` | Hex dump, text/hex pattern search, raw byte extraction |
+| `meta` | Image metadata (EXIF, XMP, IPTC) |
+| `mcp` | MCP server for AI agents |
+| `api` | REST API server |
 
-### File Operations
+**Format-specific analyzers:** these work, but cover a subset of each format.
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `extract` | Extract embedded files | `filo extract firmware.bin` |
-| `dd` | Extract raw bytes (like dd) | `filo dd file.bin --offset 0 --length 1024` |
-| `carve` | Carve files from disk images | `filo carve disk.img` |
-| `repair` | Repair corrupted files | `filo repair image.jpg` |
-
-### Metadata & Security
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `meta` | Extract EXIF/XMP/IPTC metadata | `filo meta photo.jpg` |
-| `stego` | Detect steganography | `filo stego image.png` |
-| `crypto` | Detect encryption | `filo crypto file.bin` |
-| `executable` | Analyze PE/ELF/Mach-O | `filo executable program.exe` |
-
-### Forensic Analysis
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `firmware` | Analyze/extract firmware | `filo firmware -x rootfs.squashfs` |
-| `pcap` | Analyze network captures | `filo pcap --streams capture.pcap` |
-| `evtx` | Analyze Windows Event Logs | `filo evtx system.evtx` |
-| `sqlite` | Analyze SQLite databases | `filo sqlite browser.db` |
-| `registry` | Analyze Windows Registry | `filo registry SAM` |
-| `sigma` | Scan with Sigma rules | `filo sigma file.bin` |
-
-### Batch & Integration
-
-| Command | Description | Example |
-|---------|-------------|---------|
-| `batch` | Analyze directory of files | `filo batch /path/to/samples/` |
-| `mcp` | Start MCP server for AI | `filo mcp` |
-| `api` | Start REST API server | `filo api --addr :8080` |
-| `plugins` | Manage plugins | `filo plugins list` |
-| `formats` | List supported formats | `filo formats list` |
-
----
-
-## 🔌 REST API
-
-`filo api` serves the analyzers over HTTP. It is locked down by default:
-
-- it listens on `127.0.0.1:8080`;
-- listening on any other address requires a bearer token (`--token` or `FILO_API_TOKEN`);
-- endpoints that take a file path only work with `--root DIR`, and only for files inside it
-  (symlinks and `../` cannot escape); `/api/upload` always works.
-
-```bash
-filo api --root ./evidence
-
-curl -s localhost:8080/api/analyze -d '{"path": "sample.bin"}'
-curl -s localhost:8080/api/scan    -d '{"path": "firmware.bin", "formats": ["squashfs"]}'
-curl -s localhost:8080/api/hash    -d '{"path": "sample.bin", "algorithms": ["sha256"]}'
-curl -s localhost:8080/api/upload  -F file=@sample.bin
-
-# Remote access
-FILO_API_TOKEN=$(openssl rand -hex 32) filo api --addr 0.0.0.0:8080 --root /data
-curl -H "Authorization: Bearer $FILO_API_TOKEN" host:8080/api/analyze -d '{"path": "sample.bin"}'
-```
-
-| Method | Endpoint | Body |
-|--------|----------|------|
-| `GET` | `/api/health` | (no auth required) |
-| `GET` | `/api/version` | |
-| `POST` | `/api/analyze` | `{"path"}` |
-| `POST` | `/api/scan` | `{"path", "formats"?, "nested"?}` |
-| `POST` | `/api/hash` | `{"path", "algorithms"?}` |
-| `POST` | `/api/strings` | `{"path", "min_length"?, "max_count"?}` |
-| `POST` | `/api/crypto` | `{"path"}` |
-| `POST` | `/api/stego` | `{"path"}` |
-| `POST` | `/api/metadata` | `{"path"}` |
-| `POST` | `/api/batch` | `{"directory", "workers"?, "recursive"?}` |
-| `POST` | `/api/upload` | multipart form field `file` (limit: `--max-upload`, default 64 MiB) |
-
-Paths are relative to `--root` (absolute paths inside it also work).
-
----
-
-## 🐳 Docker
-
-```bash
-docker build -t filo .
-docker run --rm -v "$PWD:/data:ro" filo scan /data/firmware.bin
-
-# REST API for ./data, published on localhost only
-export FILO_API_TOKEN=$(openssl rand -hex 32)
-docker compose up -d
-```
-
----
-
-## 🔌 MCP Integration
-
-`filo mcp` runs a [Model Context Protocol](https://modelcontextprotocol.io) server on stdio, so
-AI agents such as Claude can analyze files directly. All tools are read-only.
-
-| Tool | Description |
-|------|-------------|
-| `analyze` | Identify the format and report hashes, entropy, embedded files, structural issues |
-| `scan` | Find embedded files and filesystems, with offsets and sizes |
-| `hash` | MD5, SHA-1, SHA-2 and SHA-3 digests |
-| `strings` | Printable strings with offsets |
-| `crypto` | Encryption containers and a randomness verdict |
-| `stego` | Steganography indicators in images |
-| `metadata` | EXIF, XMP and IPTC metadata |
-| `container` | List archive contents |
+| Command | What it does |
+|---|---|
+| `executable` | PE, ELF and Mach-O headers and sections, PE imports, packer hints |
+| `office` | OOXML metadata and VBA macro extraction; legacy OLE2 detection |
 | `sqlite` | Tables and schema of SQLite databases |
-| `batch` | Analyze every file in a directory |
+| `pcap` | Flows, protocols and HTTP objects from PCAP/PCAPNG captures |
+| `evtx`, `registry` | Windows event logs and registry hives |
+| `batch` | Analyze every file in a directory in parallel |
 
-Claude Code:
+**Experimental:** these are rough. Output and flags may change, and results need checking by hand.
+
+`carve`, `repair`, `stego`, `firmware` (identifies SquashFS, CramFS, JFFS2 and YAFFS images
+but does not yet unpack them; use `scan`/`extract` for embedded images), `sigma`, `timeline`,
+`lineage`, `teach`, `profile`, `plugins` (Go plugins, Linux and macOS only).
+
+## Supported formats
+
+`scan`, `extract` and `analyze` recognise **44 formats**, each validated beyond its magic bytes:
+
+| Category | Formats |
+|---|---|
+| Images | PNG, JPEG, GIF, BMP, TIFF, ICO, WebP |
+| Audio and video | WAV, AVI, FLAC, Ogg, MP3 (ID3), Matroska/WebM, MP4/MOV/HEIF (ISO-BMFF) |
+| Documents | PDF, OLE2 (Office 97-2003, MSI), RTF, PEM |
+| Archives and compression | ZIP, gzip, bzip2, XZ, Zstandard, LZ4, LZMA, 7-Zip, RAR 4/5, tar, cpio, CAB |
+| Executables and bytecode | ELF, PE, Mach-O (incl. universal), Java class, Android DEX, WebAssembly |
+| Firmware and filesystems | SquashFS, CramFS, JFFS2, UBI, UBIFS, U-Boot legacy images, device trees |
+| Databases | SQLite 3 |
+
+Run `filo scan --format <name>` to search for specific ones. Missing a format?
+[Request it](https://github.com/supunhg/filo-go/issues/new/choose), or see
+[CONTRIBUTING.md](CONTRIBUTING.md#adding-a-file-signature) to add it.
+
+## AI agents (MCP)
+
+`filo mcp` runs a Model Context Protocol server on stdio. Its ten tools are all read-only:
+`analyze`, `scan`, `hash`, `strings`, `crypto`, `stego`, `metadata`, `container`, `sqlite`
+and `batch`.
 
 ```bash
+# Claude Code
 claude mcp add filo -- filo mcp --root /path/to/case
 ```
-
-Claude Desktop (`claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
-    "filo": {
-      "command": "/path/to/filo",
-      "args": ["mcp", "--root", "/path/to/case"]
-    }
+    "filo": { "command": "filo", "args": ["mcp", "--root", "/path/to/case"] }
   }
 }
 ```
 
-`--root` limits the files the agent can read. Use it whenever the agent may process untrusted
+`--root` limits which files the agent can read. Use it whenever the agent may process untrusted
 content, which could try to steer it into reading other files.
 
----
-
-## 🔧 Plugin System
-
-filo-go supports dynamic plugins via Go's plugin system.
-
-### Installing Plugins
+## REST API
 
 ```bash
-# Build a plugin
-cd plugins/archive-bomb
-go build -buildmode=plugin -o archive-bomb.so
-
-# Install the plugin
-filo plugins load ./archive-bomb.so
-
-# List installed plugins
-filo plugins list
+filo api --root ./evidence                       # http://127.0.0.1:8080
+curl -s localhost:8080/api/scan -d '{"path": "firmware.bin"}'
+curl -s localhost:8080/api/upload -F file=@sample.bin
 ```
 
-### Writing Plugins
+The server is locked down by default:
 
-```go
-package main
+- it binds to localhost;
+- it refuses other addresses unless you set a bearer token (`--token` or `FILO_API_TOKEN`);
+- endpoints that take a file path only serve files inside `--root`.
 
-import "github.com/supunhg/filo-go/internal/plugins"
+See [docs/API.md](docs/API.md) for every endpoint and the Docker Compose setup.
 
-type ArchiveBombDetector struct{}
+## Accuracy and limitations
 
-func (d *ArchiveBombDetector) Name() string {
-    return "archive-bomb"
-}
+filo would rather say "unknown" than guess. Known limitations:
 
-func (d *ArchiveBombDetector) Analyze(data []byte) (*plugins.Result, error) {
-    // Your analysis logic here
-    return &plugins.Result{
-        Risk: plugins.RiskLow,
-        Findings: []string{"File appears safe"},
-    }, nil
-}
+- **Encryption.** Modern ciphertext is indistinguishable from random data, so no tool can name
+  the cipher. filo reports containers it can identify and whether the data is statistically
+  random.
+- **Unknown sizes.** Some formats don't record their own length (gzip, XZ, tar, raw MP3). For
+  these, `scan` shows the size as `-`, and `extract` decompresses the stream or takes data up to
+  a size cap.
+- **Memory.** Files are currently read into memory, so very large disk images need RAM to match.
+  Streaming is on the [roadmap](docs/ROADMAP.md).
+- **Format analyzers.** The format-specific commands parse the common structures, not every
+  edge case of each specification.
 
-func init() {
-    plugins.Register(&ArchiveBombDetector{})
-}
-```
+Found a wrong answer? Please [report it](https://github.com/supunhg/filo-go/issues/new/choose).
+Accuracy bugs are the top priority.
 
----
+## Contributing
 
-## 📊 Supported Formats
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md); adding a file signature
+is a good first change. Please report security issues privately as described in
+[SECURITY.md](SECURITY.md).
 
-### Archives
-- ZIP, 7z, RAR, TAR, GZIP, BZIP2, XZ
+## License
 
-### Executables
-- PE (Windows), ELF (Linux), Mach-O (macOS)
-
-### Documents
-- PDF, DOCX, XLSX, PPTX, OLE2
-
-### Images
-- JPEG, PNG, GIF, BMP, TIFF, WebP, ICO
-
-### Data
-- SQLite, Registry (REGF), EVTX
-
-### Network
-- PCAP, PCAPNG
-
-### Firmware
-- SquashFS, CramFS, JFFS2
-
----
-
-## 🏗️ Architecture
-
-```
-filo-go/
-├── cmd/filo/              # CLI entry point
-├── internal/
-│   ├── analyzer/          # Core analysis engine
-│   ├── carver/            # File carving & hex dump
-│   ├── cli/               # CLI commands (cobra)
-│   ├── container/         # Archive analysis
-│   ├── crypto/            # Encryption detection
-│   ├── entropy/           # Entropy calculation & visualization
-│   ├── executable/        # PE/ELF/Mach-O analysis
-│   ├── export/            # SARIF/HTML export
-│   ├── firmware/          # SquashFS/CramFS/JFFS2
-│   ├── formats/           # YAML format database
-│   ├── hashing/           # Multi-algorithm hashing
-│   ├── mcp/               # MCP server
-│   ├── metadata/          # EXIF/XMP/IPTC extraction
-│   ├── pcap/              # Network analysis
-│   ├── plugins/           # Plugin system
-│   ├── sqlite/            # SQLite analysis
-│   ├── stego/             # Steganography detection
-│   ├── strings/           # String extraction
-│   └── yara/              # YARA rule matching
-├── formats/               # YAML format definitions
-├── plugins/               # Example plugins
-├── KNOWLEDGE_GRAPH.md     # Codebase knowledge graph
-├── COMPETITIVE_ANALYSIS.md # Gap analysis vs competitors
-└── ROADMAP.md             # Development roadmap
-```
-
----
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-go test ./...
-
-# Run with coverage
-go test ./... -coverprofile=coverage.out
-go tool cover -html=coverage.out
-
-# Run specific package tests
-go test ./internal/entropy/ -v
-```
-
----
-
-## 📈 Performance
-
-filo-go is **14x to 217x faster** than binwalk on a measured corpus (see [benchmarks/results/2026-06-10.md](benchmarks/results/2026-06-10.md), reproducible via `benchmarks/competitor_bench.sh`):
-
-| Operation | filo-go | binwalk | Speedup |
-|-----------|---------|---------|----------|
-| PNG analysis (5KB, with tEXt chunks) | 3.9 ms | 757.5 ms | **193.86x** |
-| ZIP archive analysis (82KB, 500 entries) | 3.8 ms | 814.2 ms | **216.78x** |
-| Random 10MB blob scan | 243.8 ms | 3,397.4 ms | **13.94x** |
-
-*Benchmarks measured on Intel Xeon Platinum 8488C, Linux AMD64*
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **binwalk** - Inspired the firmware analysis features
-- **file/libmagic** - Inspired the format detection
-- **ExifTool** - Inspired the metadata extraction
-- **YARA** - Inspired the pattern matching
-- **Cobra** - CLI framework
-- **BoltDB** - Embedded database
-
----
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/supunhg/filo-go/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/supunhg/filo-go/discussions)
-- **Email**: sanchithahewagamage@gmail.com
-
----
-
-<div align="center">
-  <strong>Built with ❤️ in Go</strong>
-</div>
+[Apache License 2.0](LICENSE).
