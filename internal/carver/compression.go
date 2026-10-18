@@ -5,10 +5,11 @@ import (
 	"compress/bzip2"
 	"compress/gzip"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/supunhg/filo-go/internal/safeio"
 
 	"github.com/ulikunitz/xz"
 )
@@ -112,9 +113,9 @@ func decompressGzip(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
-	return io.ReadAll(reader)
+	return safeio.ReadAll(reader, 0)
 }
 
 // decompressXZ decompresses XZ/LZMA data
@@ -124,13 +125,13 @@ func decompressXZ(data []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to create xz reader: %w", err)
 	}
 
-	return io.ReadAll(reader)
+	return safeio.ReadAll(reader, 0)
 }
 
 // decompressBzip2 decompresses bzip2 data
 func decompressBzip2(data []byte) ([]byte, error) {
 	reader := bzip2.NewReader(bytes.NewReader(data))
-	return io.ReadAll(reader)
+	return safeio.ReadAll(reader, 0)
 }
 
 // DecompressFile decompresses a file and writes the output
@@ -157,12 +158,12 @@ func DecompressFile(srcPath, dstPath string, compType CompressionType) error {
 
 	// Create destination directory
 	dir := filepath.Dir(dstPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o750); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	// Write output
-	return os.WriteFile(dstPath, decompressed, 0644)
+	return os.WriteFile(dstPath, decompressed, 0o600)
 }
 
 // FindCompressedFiles finds compressed files in a directory

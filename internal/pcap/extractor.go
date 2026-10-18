@@ -6,10 +6,11 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/supunhg/filo-go/internal/safeio"
 )
 
 // ExtractedFile represents a file extracted from network traffic.
@@ -182,7 +183,7 @@ func (e *NetworkExtractor) extractHTTP(stream *TCPStream) {
 	// Save file if output dir specified
 	if e.OutputDir != "" {
 		savePath := filepath.Join(e.OutputDir, fileName)
-		if err := os.WriteFile(savePath, body, 0644); err == nil {
+		if err := os.WriteFile(savePath, body, 0o600); err == nil {
 			file.SavePath = savePath
 		}
 	}
@@ -208,7 +209,7 @@ func (e *NetworkExtractor) extractFTP(stream *TCPStream) {
 
 	if e.OutputDir != "" {
 		savePath := filepath.Join(e.OutputDir, fileName)
-		if err := os.WriteFile(savePath, data, 0644); err == nil {
+		if err := os.WriteFile(savePath, data, 0o600); err == nil {
 			file.SavePath = savePath
 		}
 	}
@@ -284,7 +285,7 @@ func (e *NetworkExtractor) carveFiles(data []byte, littleEndian bool) {
 
 					if e.OutputDir != "" {
 						savePath := filepath.Join(e.OutputDir, fileName)
-						if err := os.WriteFile(savePath, packet[idx:], 0644); err == nil {
+						if err := os.WriteFile(savePath, packet[idx:], 0o600); err == nil {
 							file.SavePath = savePath
 						}
 					}
@@ -313,7 +314,7 @@ func (e *NetworkExtractor) dechunkBody(data []byte) []byte {
 
 		// Parse hex chunk size
 		var chunkSize int
-		fmt.Sscanf(chunkSizeStr, "%x", &chunkSize)
+		_, _ = fmt.Sscanf(chunkSizeStr, "%x", &chunkSize)
 
 		if chunkSize == 0 {
 			break
@@ -337,9 +338,9 @@ func (e *NetworkExtractor) decompressGzip(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
-	return io.ReadAll(reader)
+	return safeio.ReadAll(reader, 0)
 }
 
 // guessFileName determines the filename from headers or content.
@@ -508,5 +509,5 @@ func ExportNetworkReport(files []ExtractedFile, outputPath string) error {
 		return err
 	}
 
-	return os.WriteFile(outputPath, data, 0644)
+	return os.WriteFile(outputPath, data, 0o600)
 }
