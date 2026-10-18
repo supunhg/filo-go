@@ -5,21 +5,30 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"math"
 	"path/filepath"
 	"strings"
+	"sync"
+
+	"github.com/supunhg/filo-go/internal/crypto"
+	"github.com/supunhg/filo-go/internal/signature"
 
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/h2non/filetype"
+
 	"github.com/supunhg/filo-go/internal/entropy"
 	"github.com/supunhg/filo-go/internal/formats"
+	"github.com/supunhg/filo-go/internal/term"
 )
 
 // Options controls analysis behavior.
 type Options struct {
-	DeepScan    bool
-	NoML        bool
+	// DeepScan, NoML and YaraRules are accepted for API compatibility but
+	// currently have no effect on Analyze.
+	DeepScan bool
+	NoML     bool
+	// AllEvidence is reserved for future use.
 	AllEvidence bool
+	// AllEmbedded also reports signatures found inside other embedded files.
 	AllEmbedded bool
 	ExplainMode bool
 	EntropyViz  bool
@@ -37,6 +46,7 @@ type Result struct {
 	EntropyLabel       string           `json:"entropy_label"`
 	PrimaryFormat      string           `json:"primary_format"`
 	PrimaryMIME        string           `json:"primary_mime"`
+	Description        string           `json:"description,omitempty"`
 	Confidence         float64          `json:"confidence"`
 	AlternativeFormats []Alternative    `json:"alternative_formats,omitempty"`
 	Evidence           []Evidence       `json:"evidence,omitempty"`
@@ -66,10 +76,12 @@ type Evidence struct {
 
 // EmbeddedObject is a file found inside another file.
 type EmbeddedObject struct {
-	Offset     int64   `json:"offset"`
-	Format     string  `json:"format"`
-	Confidence float64 `json:"confidence"`
-	Size       int64   `json:"size"`
+	Offset      int64   `json:"offset"`
+	Format      string  `json:"format"`
+	Description string  `json:"description,omitempty"`
+	Confidence  float64 `json:"confidence"`
+	// Size is 0 when the embedded format does not record its length.
+	Size int64 `json:"size,omitempty"`
 }
 
 // ArchInfo holds CPU architecture details.
@@ -80,13 +92,16 @@ type ArchInfo struct {
 	Format  string `json:"format"`
 }
 
-// CryptoInfo holds encryption detection results.
+// CryptoInfo holds encryption detection results. See the crypto package for
+// what each field means and why ciphers cannot be named from bytes alone.
 type CryptoInfo struct {
-	Detected    bool     `json:"detected"`
-	Confidence  float64  `json:"confidence"`
-	CipherHints []string `json:"cipher_hints,omitempty"`
-	BlockSize   int      `json:"block_size,omitempty"`
-	ECBDetected bool     `json:"ecb_detected"`
+	Detected     bool     `json:"detected"`
+	Confidence   float64  `json:"confidence"`
+	Verdict      string   `json:"verdict,omitempty"`
+	ChiSquare    float64  `json:"chi_square,omitempty"`
+	Container    string   `json:"container,omitempty"`
+	Details      []string `json:"details,omitempty"`
+	ECBSuspected bool     `json:"ecb_suspected,omitempty"`
 }
 
 // FingerprintInfo holds tool creation info.
@@ -139,7 +154,7 @@ func Analyze(data []byte, filePath string, opts *Options) (*Result, error) {
 	}
 
 	detectFileType(data, result, opts)
-	detectEmbeddedObjects(data, result)
+	detectEmbeddedObjects(data, result, opts)
 	detectContradictions(data, result)
 	detectArchitecture(data, result)
 	detectCrypto(data, result)
@@ -159,7 +174,21 @@ func Analyze(data []byte, filePath string, opts *Options) (*Result, error) {
 
 // detectFileType identifies the file format using multiple strategies.
 func detectFileType(data []byte, r *Result, opts *Options) {
-	// Strategy 1: h2non/filetype (magic bytes)
+	// Strategy 1: validated signatures (magic bytes plus a structural check)
+	if m, ok := signature.Identify(data); ok {
+		r.PrimaryFormat = m.Format
+		r.PrimaryMIME = m.MIME
+		r.Description = m.Description
+		r.Confidence = 0.95
+		r.Evidence = append(r.Evidence, Evidence{
+			Source:     "signature",
+			Confidence: 0.95,
+			Details:    "Validated header: " + m.Description,
+		})
+		return
+	}
+
+	// Strategy 2: h2non/filetype (magic bytes only)
 	kind, _ := filetype.Match(data)
 	if kind.MIME.Value != "" {
 		r.PrimaryFormat = kind.Extension
@@ -173,9 +202,9 @@ func detectFileType(data []byte, r *Result, opts *Options) {
 		return
 	}
 
-	// Strategy 2: YAML format database (signature matching)
+	// Strategy 3: YAML format database (signature matching)
 	if opts != nil && opts.FormatsDir != "" {
-		if db, err := formats.NewDatabase(opts.FormatsDir); err == nil {
+		if db, err := loadFormats(opts.FormatsDir); err == nil {
 			results := db.Match(data)
 			if len(results) > 0 {
 				best := results[0]
@@ -194,7 +223,7 @@ func detectFileType(data []byte, r *Result, opts *Options) {
 		}
 	}
 
-	// Strategy 3: mimetype (content-aware, good for text)
+	// Strategy 4: mimetype (content-aware, good for text)
 	mime := mimetype.Detect(data)
 	if mime != nil && mime.String() != "application/octet-stream" {
 		ext := mime.Extension()
@@ -212,96 +241,58 @@ func detectFileType(data []byte, r *Result, opts *Options) {
 		return
 	}
 
-	// Strategy 3: Fallback to unknown
+	// Fallback: unknown
 	r.PrimaryFormat = "unknown"
 	r.PrimaryMIME = "application/octet-stream"
 	r.Confidence = 0.0
 }
 
-// detectEmbeddedObjects finds files hidden inside the data.
-func detectEmbeddedObjects(data []byte, r *Result) {
-	signatures := []struct {
-		offset int64
-		magic  []byte
-		format string
-	}{
-		{0, []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}, "png"},
-		{0, []byte{0xFF, 0xD8, 0xFF}, "jpeg"},
-		{0, []byte{0x47, 0x49, 0x46, 0x38}, "gif"},
-		{0, []byte{0x25, 0x50, 0x44, 0x46}, "pdf"},
-		{0, []byte{0x50, 0x4B, 0x03, 0x04}, "zip"},
-		{0, []byte{0x1F, 0x8B}, "gzip"},
-		{0, []byte{0x7F, 0x45, 0x4C, 0x46}, "elf"},
-		{0, []byte{0x4D, 0x5A}, "pe"},
-	}
-
-	for _, sig := range signatures {
-		if len(data) > int(sig.offset)+len(sig.magic) {
-			matched := true
-			for i, b := range sig.magic {
-				if data[int(sig.offset)+i] != b {
-					matched = false
-					break
-				}
-			}
-			if matched && sig.offset > 0 {
-				r.EmbeddedObjects = append(r.EmbeddedObjects, EmbeddedObject{
-					Offset:     sig.offset,
-					Format:     sig.format,
-					Confidence: 0.8,
-					Size:       estimateSize(data, int(sig.offset), sig.format),
-				})
-			}
+// detectEmbeddedObjects finds files hidden inside the data, skipping the
+// file's own header at offset 0.
+func detectEmbeddedObjects(data []byte, r *Result, opts *Options) {
+	matches := signature.Scan(data, signature.Options{IncludeNested: opts.AllEmbedded, Limit: maxEmbedded + 1})
+	for _, m := range matches {
+		if m.Offset == 0 {
+			continue
 		}
+		if len(r.EmbeddedObjects) == maxEmbedded {
+			break
+		}
+		r.EmbeddedObjects = append(r.EmbeddedObjects, EmbeddedObject{
+			Offset:      m.Offset,
+			Format:      m.Format,
+			Description: m.Description,
+			Confidence:  0.9,
+			Size:        m.Size,
+		})
 	}
 }
 
-// detectContradictions identifies structural anomalies.
+// maxEmbedded caps how many embedded objects Analyze reports. The scan
+// command lists every match.
+const maxEmbedded = 256
+
+// detectContradictions reports structural problems with the file's own
+// format: truncation, missing trailers and data appended after the end.
 func detectContradictions(data []byte, r *Result) {
-	if len(data) < 8 {
+	m, ok := signature.Identify(data)
+	if !ok {
 		return
 	}
-
-	// PNG without IEND
-	if data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 {
-		hasIEND := false
-		for i := 0; i < len(data)-8; i++ {
-			if data[i] == 0x49 && data[i+1] == 0x45 && data[i+2] == 0x4E && data[i+3] == 0x44 {
-				hasIEND = true
-				break
-			}
-		}
-		if !hasIEND {
-			r.Contradictions = append(r.Contradictions, "PNG file missing IEND chunk (truncated?)")
-		}
+	d := m.Description
+	switch {
+	case strings.Contains(d, "truncated"):
+		r.Contradictions = append(r.Contradictions, fmt.Sprintf("%s is truncated: the end-of-file marker is missing", strings.ToUpper(m.Format)))
+	case strings.Contains(d, "missing %%EOF"):
+		r.Contradictions = append(r.Contradictions, "PDF is missing its %%EOF marker")
+	case strings.Contains(d, "no central directory"):
+		r.Contradictions = append(r.Contradictions, "ZIP has no End of Central Directory record (truncated or damaged)")
+	case strings.Contains(d, "bad IHDR CRC"):
+		r.Contradictions = append(r.Contradictions, "PNG header checksum does not match")
 	}
-
-	// ZIP without EOCD
-	if data[0] == 0x50 && data[1] == 0x4B && data[2] == 0x03 && data[3] == 0x04 {
-		hasEOCD := false
-		for i := len(data) - 22; i >= len(data)-65557 && i >= 0; i-- {
-			if i+4 <= len(data) && data[i] == 0x50 && data[i+1] == 0x4B && data[i+2] == 0x05 && data[i+3] == 0x06 {
-				hasEOCD = true
-				break
-			}
-		}
-		if !hasEOCD {
-			r.Contradictions = append(r.Contradictions, "ZIP file missing End of Central Directory record")
-		}
-	}
-
-	// PDF without %%EOF
-	if data[0] == 0x25 && data[1] == 0x50 && data[2] == 0x44 && data[3] == 0x46 {
-		hasEOF := false
-		for i := len(data) - 32; i >= 0 && i < len(data); i++ {
-			if i+5 <= len(data) && data[i] == 0x25 && data[i+1] == 0x25 && data[i+2] == 0x45 && data[i+3] == 0x4F && data[i+4] == 0x46 {
-				hasEOF = true
-				break
-			}
-		}
-		if !hasEOF {
-			r.Contradictions = append(r.Contradictions, "PDF file missing %%EOF marker")
-		}
+	if m.Size > 0 && m.Size < int64(len(data)) {
+		extra := int64(len(data)) - m.Size
+		r.Contradictions = append(r.Contradictions, fmt.Sprintf("%d byte(s) appended after the end of the %s data at offset 0x%X", extra, strings.ToUpper(m.Format), m.Size))
 	}
 }
 
@@ -373,67 +364,22 @@ func detectArchitecture(data []byte, r *Result) {
 	}
 }
 
-// detectCrypto detects encryption indicators.
+// detectCrypto reports encryption containers, and randomness for files whose
+// format could not be identified (a recognised format is not encrypted as a
+// whole, even when parts of it have high entropy).
 func detectCrypto(data []byte, r *Result) {
-	// Skip crypto detection for text files (entropy < 6.0 and contains printable chars)
-	isText := false
-	if len(data) > 0 {
-		printableCount := 0
-		for _, b := range data[:min(256, len(data))] {
-			if b >= 0x20 && b <= 0x7E || b == 0x09 || b == 0x0A || b == 0x0D {
-				printableCount++
-			}
-		}
-		printableRatio := float64(printableCount) / float64(min(256, len(data)))
-		if printableRatio > 0.8 && r.Entropy < 6.0 {
-			isText = true
-		}
-	}
-
-	if isText {
+	c := crypto.Analyze(data)
+	if c.Container == "" && (r.PrimaryFormat != "unknown" || !c.Detected) {
 		return
 	}
-
-	blockSizes := []struct {
-		size int
-		name string
-	}{
-		{16, "AES"},
-		{8, "DES/Blowfish"},
-	}
-
-	for _, bs := range blockSizes {
-		if int64(len(data))%int64(bs.size) == 0 && len(data) > bs.size*2 {
-			if r.CryptoIndicators == nil {
-				r.CryptoIndicators = &CryptoInfo{}
-			}
-			r.CryptoIndicators.Detected = true
-			r.CryptoIndicators.Confidence = math.Min(r.Entropy/8.0, 1.0)
-			r.CryptoIndicators.BlockSize = bs.size
-			r.CryptoIndicators.CipherHints = append(r.CryptoIndicators.CipherHints, bs.name)
-		}
-	}
-
-	// OpenSSL format
-	if len(data) >= 8 && string(data[:8]) == "Salted__" {
-		if r.CryptoIndicators == nil {
-			r.CryptoIndicators = &CryptoInfo{}
-		}
-		r.CryptoIndicators.Detected = true
-		r.CryptoIndicators.CipherHints = append(r.CryptoIndicators.CipherHints, "OpenSSL enc")
-		r.CryptoIndicators.Confidence = 0.95
-	}
-
-	// PGP format
-	if len(data) >= 2 && data[0] == 0x2D && data[1] == 0x2D {
-		if strings.HasPrefix(string(data), "-----BEGIN PGP") {
-			if r.CryptoIndicators == nil {
-				r.CryptoIndicators = &CryptoInfo{}
-			}
-			r.CryptoIndicators.Detected = true
-			r.CryptoIndicators.CipherHints = append(r.CryptoIndicators.CipherHints, "PGP/GPG")
-			r.CryptoIndicators.Confidence = 0.95
-		}
+	r.CryptoIndicators = &CryptoInfo{
+		Detected:     c.Detected,
+		Confidence:   c.Confidence,
+		Verdict:      string(c.Verdict),
+		ChiSquare:    c.ChiSquare,
+		Container:    c.Container,
+		Details:      c.Details,
+		ECBSuspected: c.ECBSuspected,
 	}
 }
 
@@ -533,12 +479,24 @@ func computeSHA256(data []byte) string {
 	return fmt.Sprintf("%x", h)
 }
 
-func estimateSize(data []byte, offset int, format string) int64 {
-	remaining := int64(len(data)) - int64(offset)
-	if remaining > 10*1024*1024 {
-		return 10 * 1024 * 1024
+var (
+	formatsMu    sync.Mutex
+	formatsCache = map[string]*formats.Database{}
+)
+
+// loadFormats parses a YAML format directory once per process.
+func loadFormats(dir string) (*formats.Database, error) {
+	formatsMu.Lock()
+	defer formatsMu.Unlock()
+	if db, ok := formatsCache[dir]; ok {
+		return db, nil
 	}
-	return remaining
+	db, err := formats.NewDatabase(dir)
+	if err != nil {
+		return nil, err
+	}
+	formatsCache[dir] = db
+	return db, nil
 }
 
 func findBytes(data, pattern []byte) int {
@@ -635,7 +593,7 @@ func elfMachineName(machine uint16) string {
 
 func peMachineName(machine uint16) string {
 	names := map[uint16]string{
-		0x014C: "x86 (32-bit)", 0x0200: "Intel Itanium (IA-64)", 0x8664: "x86-64 (64-bit)",
+		0x014C: "x86", 0x0200: "Intel Itanium (IA-64)", 0x8664: "x86-64",
 		0x01C0: "ARM (Thumb-2)", 0x01C4: "ARM Little-Endian", 0xAA64: "ARM64 (AArch64)",
 		0x0EBC: "EFI Byte Code", 0x9041: "Mitsubishi M32R Little-Endian", 0x0266: "MIPS16",
 		0x0366: "MIPS FPU", 0x0466: "MIPS16 FPU", 0x01F0: "PowerPC Little-Endian",
@@ -652,73 +610,76 @@ func peMachineName(machine uint16) string {
 
 // --- Print Methods ---
 
-const (
-	colorReset  = "\033[0m"
-	colorRed    = "\033[31m"
-	colorGreen  = "\033[32m"
-	colorYellow = "\033[33m"
-	colorBlue   = "\033[34m"
-	colorPurple = "\033[35m"
-	colorCyan   = "\033[36m"
-	colorWhite  = "\033[37m"
-	colorBold   = "\033[1m"
-)
-
 func (r *Result) Print() {
 	fmt.Println()
-	fmt.Printf("  %s%sFile Analysis:%s %s\n", colorBold, colorCyan, colorReset, r.FileName)
+	fmt.Printf("  %s%sFile Analysis:%s %s\n", term.C(term.Bold), term.C(term.Cyan), term.C(term.Reset), r.FileName)
 	fmt.Println()
-	fmt.Printf("  %sDetected Format:%s %s%s%s\n", colorBold, colorReset, colorGreen, r.PrimaryFormat, colorReset)
-	fmt.Printf("  %sMIME Type:%s %s\n", colorBold, colorReset, r.PrimaryMIME)
-	fmt.Printf("  %sConfidence:%s %.1f%%\n", colorBold, colorReset, r.Confidence*100)
+	fmt.Printf("  %sDetected Format:%s %s%s%s\n", term.C(term.Bold), term.C(term.Reset), term.C(term.Green), r.PrimaryFormat, term.C(term.Reset))
+	if r.Description != "" {
+		fmt.Printf("  %sDescription:%s %s\n", term.C(term.Bold), term.C(term.Reset), r.Description)
+	}
+	fmt.Printf("  %sMIME Type:%s %s\n", term.C(term.Bold), term.C(term.Reset), r.PrimaryMIME)
+	fmt.Printf("  %sConfidence:%s %.1f%%\n", term.C(term.Bold), term.C(term.Reset), r.Confidence*100)
 	fmt.Println()
-	fmt.Printf("  %sFile Size:%s %d bytes\n", colorBold, colorReset, r.FileSize)
-	fmt.Printf("  %sSHA256:%s %s\n", colorBold, colorReset, r.SHA256[:16])
-	fmt.Printf("  %sEntropy:%s %s\n", colorBold, colorReset, entropy.Bar(r.Entropy, 40))
+	fmt.Printf("  %sFile Size:%s %d bytes\n", term.C(term.Bold), term.C(term.Reset), r.FileSize)
+	fmt.Printf("  %sSHA256:%s %s\n", term.C(term.Bold), term.C(term.Reset), r.SHA256)
+	fmt.Printf("  %sEntropy:%s %s\n", term.C(term.Bold), term.C(term.Reset), entropy.Bar(r.Entropy, 40))
 	fmt.Println()
 
 	if len(r.Evidence) > 0 {
-		fmt.Printf("  %sDetection Evidence:%s\n", colorBold, colorReset)
+		fmt.Printf("  %sDetection Evidence:%s\n", term.C(term.Bold), term.C(term.Reset))
 		for _, e := range r.Evidence {
-			fmt.Printf("    %s%s%s (confidence: %.1f%%)%s\n", colorPurple, e.Source, colorReset, e.Confidence*100, colorReset)
+			fmt.Printf("    %s%s%s (confidence: %.1f%%)%s\n", term.C(term.Magenta), e.Source, term.C(term.Reset), e.Confidence*100, term.C(term.Reset))
 			fmt.Printf("      %s\n", e.Details)
 		}
 		fmt.Println()
 	}
 
 	if r.Architecture != nil {
-		fmt.Printf("  %sCPU Architecture:%s\n", colorBold, colorReset)
-		fmt.Printf("    %s%s%s (%d-bit, %s-endian)\n", colorBlue, r.Architecture.Machine, colorReset, r.Architecture.Bits, r.Architecture.Endian)
+		fmt.Printf("  %sCPU Architecture:%s\n", term.C(term.Bold), term.C(term.Reset))
+		fmt.Printf("    %s%s%s (%d-bit, %s-endian)\n", term.C(term.Blue), r.Architecture.Machine, term.C(term.Reset), r.Architecture.Bits, r.Architecture.Endian)
 		fmt.Printf("    Format: %s\n", r.Architecture.Format)
 		fmt.Println()
 	}
 
-	if r.CryptoIndicators != nil && r.CryptoIndicators.Detected {
-		fmt.Printf("  %sEncryption Detected:%s\n", colorBold, colorReset)
-		for _, h := range r.CryptoIndicators.CipherHints {
-			fmt.Printf("    %s%s%s\n", colorYellow, h, colorReset)
+	if c := r.CryptoIndicators; c != nil && c.Detected {
+		fmt.Printf("  %sEncryption:%s\n", term.C(term.Bold), term.C(term.Reset))
+		if c.Container != "" {
+			fmt.Printf("    %s%s%s\n", term.C(term.Yellow), c.Container, term.C(term.Reset))
+			for _, d := range c.Details {
+				fmt.Printf("      %s\n", d)
+			}
+		} else {
+			fmt.Printf("    %sContent is statistically random%s (chi-square %.1f): encrypted, random or strongly compressed\n", term.C(term.Yellow), term.C(term.Reset), c.ChiSquare)
+		}
+		if c.ECBSuspected {
+			fmt.Printf("    %sRepeated 16-byte blocks suggest ECB-mode encryption%s\n", term.C(term.Red), term.C(term.Reset))
 		}
 		fmt.Println()
 	}
 
 	if len(r.Contradictions) > 0 {
-		fmt.Printf("  %sContradictions:%s\n", colorBold, colorReset)
+		fmt.Printf("  %sStructural issues:%s\n", term.C(term.Bold), term.C(term.Reset))
 		for _, c := range r.Contradictions {
-			fmt.Printf("    %s⚠  %s%s\n", colorRed, c, colorReset)
+			fmt.Printf("    %s⚠  %s%s\n", term.C(term.Red), c, term.C(term.Reset))
 		}
 		fmt.Println()
 	}
 
 	if len(r.EmbeddedObjects) > 0 {
-		fmt.Printf("  %sEmbedded Objects:%s\n", colorBold, colorReset)
+		fmt.Printf("  %sEmbedded Objects:%s\n", term.C(term.Bold), term.C(term.Reset))
 		for _, e := range r.EmbeddedObjects {
-			fmt.Printf("    %s%s%s at offset %d (%.1f%%)%s\n", colorPurple, e.Format, colorReset, e.Offset, e.Confidence*100, colorReset)
+			size := "size unknown"
+			if e.Size > 0 {
+				size = fmt.Sprintf("%d bytes", e.Size)
+			}
+			fmt.Printf("    0x%08X  %s%s%s  %s (%s)\n", e.Offset, term.C(term.Magenta), e.Format, term.C(term.Reset), e.Description, size)
 		}
 		fmt.Println()
 	}
 
 	if r.ToolFingerprint != nil {
-		fmt.Printf("  %sTool Fingerprint:%s\n", colorBold, colorReset)
+		fmt.Printf("  %sTool Fingerprint:%s\n", term.C(term.Bold), term.C(term.Reset))
 		if r.ToolFingerprint.Producer != "" {
 			fmt.Printf("    Producer: %s\n", r.ToolFingerprint.Producer)
 		}

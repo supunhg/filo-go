@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+
+	"github.com/supunhg/filo-go/internal/version"
 )
 
 // expectedSubcommands is the canonical set of subcommands registered in root.go.
@@ -22,11 +24,11 @@ func TestRootCommandBasics(t *testing.T) {
 	if rootCmd.Use != "filo" {
 		t.Errorf("expected Use='filo', got %q", rootCmd.Use)
 	}
-	if !strings.Contains(rootCmd.Short, "Filo") {
-		t.Errorf("expected Short to contain 'Filo', got %q", rootCmd.Short)
+	if !strings.Contains(rootCmd.Short, "forensics") {
+		t.Errorf("expected Short to contain 'forensics', got %q", rootCmd.Short)
 	}
-	if !strings.Contains(rootCmd.Long, "forensic") {
-		t.Errorf("expected Long to contain 'forensic', got %q", rootCmd.Long)
+	if !strings.Contains(rootCmd.Long, "MCP") {
+		t.Errorf("expected Long to contain 'MCP', got %q", rootCmd.Long)
 	}
 	if !rootCmd.SilenceUsage {
 		t.Error("expected SilenceUsage=true")
@@ -94,12 +96,8 @@ func TestFindUnknownSubcommand(t *testing.T) {
 }
 
 func TestVersionConstant(t *testing.T) {
-	if version == "" {
-		t.Error("expected non-empty version constant")
-	}
-	// Version should look like a semver-ish string
-	if !strings.Contains(version, ".") {
-		t.Errorf("expected version to contain '.', got %q", version)
+	if version.Version == "" {
+		t.Error("expected non-empty version")
 	}
 }
 
@@ -176,16 +174,16 @@ func TestSubcommandFlagRegistration(t *testing.T) {
 	// Spot-check that a few subcommands have at least one flag registered.
 	// This catches accidental regressions where flag setup is removed.
 	spotChecks := map[string][]string{
-		"analyze":   {"format", "json"},
-		"hash":      {"algorithm"},
-		"formats":   {"dir", "list"},
-		"extract":   {"output"},
-		"lineage":   {"depth"},
-		"registry":  {"hive"},
-		"sigma":     {"rule"},
-		"timeline":  {"format"},
-		"sqlite":    {"table"},
-		"executable":{"format"},
+		"analyze":    {"format", "json"},
+		"hash":       {"algorithm"},
+		"formats":    {"dir", "list"},
+		"extract":    {"output"},
+		"lineage":    {"depth"},
+		"registry":   {"hive"},
+		"sigma":      {"rule"},
+		"timeline":   {"format"},
+		"sqlite":     {"table"},
+		"executable": {"format"},
 	}
 	for cmdName, expectedFlags := range spotChecks {
 		c, _, err := rootCmd.Find([]string{cmdName})

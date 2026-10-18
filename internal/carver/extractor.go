@@ -162,28 +162,11 @@ func (e *Extractor) extractByFormat(data []byte, sig SignatureScan, opts *Extrac
 
 	// Determine extraction boundaries
 	var end int64
-	switch sig.Format {
-	case "zip", "rar", "7z":
-		end = findArchiveEnd(data, offset, sig.Format)
-	case "gzip":
-		end = findGzipEnd(data, offset)
-	case "bzip2":
-		end = findBzip2End(data, offset)
-	case "xz":
-		end = findXZEnd(data, offset)
-	case "png":
-		end = findPNGEnd(data, offset)
-	case "jpeg":
-		end = findJPEGEnd(data, offset)
-	case "pdf":
-		end = findPDFEnd(data, offset)
-	case "elf", "pe", "macho":
-		end = findExecutableEnd(data, offset, sig.Format)
+	switch {
+	case sig.Size > 0:
+		end = offset + sig.Size
 	default:
-		end = offset + 1024*1024 // Default 1MB
-		if end > int64(len(data)) {
-			end = int64(len(data))
-		}
+		end = legacyEnd(data, sig)
 	}
 
 	if end <= offset {
@@ -210,6 +193,39 @@ func (e *Extractor) extractByFormat(data []byte, sig SignatureScan, opts *Extrac
 	default:
 		return e.extractRaw(chunk, sig.Format, offset, outputPath)
 	}
+}
+
+// legacyEnd estimates where an embedded file ends when its header does not
+// record a size.
+func legacyEnd(data []byte, sig SignatureScan) int64 {
+	offset := sig.Offset
+	var end int64
+	switch sig.Format {
+	case "zip", "rar", "7z":
+		end = findArchiveEnd(data, offset, sig.Format)
+	case "gzip":
+		end = findGzipEnd(data, offset)
+	case "bzip2":
+		end = findBzip2End(data, offset)
+	case "xz":
+		end = findXZEnd(data, offset)
+	case "png":
+		end = findPNGEnd(data, offset)
+	case "jpeg":
+		end = findJPEGEnd(data, offset)
+	case "pdf":
+		end = findPDFEnd(data, offset)
+	case "elf", "pe", "macho":
+		end = findExecutableEnd(data, offset, sig.Format)
+	default:
+		// Unknown length: take everything up to the end of the data, capped
+		// so a single match cannot produce an unbounded file.
+		end = offset + 64<<20
+		if end > int64(len(data)) {
+			end = int64(len(data))
+		}
+	}
+	return end
 }
 
 func (e *Extractor) extractGzip(data []byte, offset int64, outputPath string) (*ExtractedFile, error) {

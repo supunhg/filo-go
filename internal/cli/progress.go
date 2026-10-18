@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 	"strings"
+
+	"github.com/supunhg/filo-go/internal/term"
 )
 
 // ProgressBar displays a progress bar in the terminal.
@@ -246,18 +248,18 @@ func PrintEntropyBar(entropy float64, width int) {
 	var color string
 	switch {
 	case entropy < 2.0:
-		color = "\033[32m" // Green
+		color = term.C(term.Green) // Green
 	case entropy < 4.0:
-		color = "\033[36m" // Cyan
+		color = term.C(term.Cyan) // Cyan
 	case entropy < 6.0:
-		color = "\033[33m" // Yellow
+		color = term.C(term.Yellow) // Yellow
 	case entropy < 7.0:
-		color = "\033[35m" // Magenta
+		color = term.C(term.Magenta) // Magenta
 	default:
-		color = "\033[31m" // Red
+		color = term.C(term.Red) // Red
 	}
 
-	reset := "\033[0m"
+	reset := term.C(term.Reset)
 
 	// Build bar
 	bar := color + strings.Repeat("█", filled) + reset + strings.Repeat("░", width-filled)

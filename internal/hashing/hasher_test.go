@@ -1,8 +1,10 @@
 package hashing
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -143,11 +145,40 @@ func TestComputeFileLarge(t *testing.T) {
 	}
 }
 
-func TestNewHashDefault(t *testing.T) {
-	// Unknown algorithm should return SHA256
-	h := newHash("unknown")
-	if h == nil {
-		t.Error("expected non-nil hash")
+func TestParseAlgorithm(t *testing.T) {
+	for in, want := range map[string]Algorithm{"SHA-256": SHA256, "sha1": SHA1, "sha3_512": SHA3_512, " md5 ": MD5} {
+		got, err := ParseAlgorithm(in)
+		if err != nil || got != want {
+			t.Errorf("ParseAlgorithm(%q) = %q, %v; want %q", in, got, err, want)
+		}
+	}
+	// Unknown names used to be silently hashed as SHA-256 under the wrong label.
+	if _, err := ParseAlgorithm("blake3"); err == nil {
+		t.Error("ParseAlgorithm accepted an unsupported algorithm")
+	}
+}
+
+func TestResultOrderFollowsRequest(t *testing.T) {
+	r := Compute([]byte("x"), []Algorithm{SHA256, MD5, SHA1})
+	if got := strings.Join(r.Order, ","); got != "sha256,md5,sha1" {
+		t.Errorf("Order = %s", got)
+	}
+}
+
+func TestComputeReaderMatchesCompute(t *testing.T) {
+	data := bytes.Repeat([]byte("0123456789abcdef"), 300000) // spans several chunks
+	want := Compute(data, Supported)
+	got, err := ComputeReader(bytes.NewReader(data), -1, Supported)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.FileSize != int64(len(data)) {
+		t.Errorf("size = %d", got.FileSize)
+	}
+	for k, v := range want.Algorithms {
+		if got.Algorithms[k] != v {
+			t.Errorf("%s mismatch", k)
+		}
 	}
 }
 

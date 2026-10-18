@@ -3,6 +3,8 @@ package analyzer
 import (
 	"fmt"
 	"strings"
+
+	"github.com/supunhg/filo-go/internal/term"
 )
 
 // EntropyViz creates a visual entropy bar chart.
@@ -58,7 +60,7 @@ func EntropyViz(chunks []EntropyChunk, width int) string {
 		// Choose color based on entropy level
 		color := entropyColor(avg)
 		bar := strings.Repeat("█", barLen)
-		fmt.Fprintf(&sb, "  %s%s\033[0m\n", color, bar)
+		fmt.Fprintf(&sb, "  %s%s"+term.C(term.Reset)+"\n", color, bar)
 	}
 
 	sb.WriteString("\n  Scale: 0.0 ")
@@ -71,15 +73,15 @@ func EntropyViz(chunks []EntropyChunk, width int) string {
 func entropyColor(e float64) string {
 	switch {
 	case e < 2.0:
-		return "\033[32m" // Green - low entropy
+		return term.C(term.Green) // Green - low entropy
 	case e < 4.0:
-		return "\033[36m" // Cyan - medium-low
+		return term.C(term.Cyan) // Cyan - medium-low
 	case e < 6.0:
-		return "\033[33m" // Yellow - medium
+		return term.C(term.Yellow) // Yellow - medium
 	case e < 7.0:
-		return "\033[35m" // Magenta - high
+		return term.C(term.Magenta) // Magenta - high
 	default:
-		return "\033[31m" // Red - very high
+		return term.C(term.Red) // Red - very high
 	}
 }
 
@@ -99,5 +101,5 @@ func EntropyBar(entropy float64, width int) string {
 	bar := strings.Repeat("█", barLen)
 	empty := strings.Repeat("░", width-barLen)
 
-	return fmt.Sprintf("%s%s\033[0m%s %.2f", color, bar, empty, entropy)
+	return fmt.Sprintf("%s%s"+term.C(term.Reset)+"%s %.2f", color, bar, empty, entropy)
 }

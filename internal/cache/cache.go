@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/supunhg/filo-go/internal/version"
+
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -103,7 +105,7 @@ func (c *Cache) Set(filePath string, result interface{}) error {
 		SHA256:    hash,
 		Result:    result,
 		Timestamp: time.Now(),
-		Version:   "0.4.0",
+		Version:   version.Version,
 	}
 
 	data, err := json.Marshal(entry)

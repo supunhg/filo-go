@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/supunhg/filo-go/internal/version"
+
 	"github.com/supunhg/filo-go/internal/analyzer"
 	"github.com/supunhg/filo-go/internal/batch"
 	"github.com/supunhg/filo-go/internal/container"
@@ -96,7 +98,7 @@ func (s *Server) handleRequest(req Request) *Response {
 				},
 				"serverInfo": map[string]interface{}{
 					"name":        "filo-go",
-					"version":     "0.5.0",
+					"version":     version.Version,
 					"description": "AI-powered forensic analysis toolkit",
 				},
 			},
@@ -412,17 +414,19 @@ func (s *Server) toolAnalyze(path string) (interface{}, error) {
 }
 
 func (s *Server) toolHash(path string, algorithms []string) (interface{}, error) {
-	data, err := os.ReadFile(path)
+	var algos []hashing.Algorithm
+	for _, a := range algorithms {
+		alg, err := hashing.ParseAlgorithm(a)
+		if err != nil {
+			return nil, err
+		}
+		algos = append(algos, alg)
+	}
+
+	result, err := hashing.ComputeFile(path, algos)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
-
-	var algos []hashing.Algorithm
-	for _, a := range algorithms {
-		algos = append(algos, hashing.Algorithm(a))
-	}
-
-	result := hashing.Compute(data, algos)
 
 	return map[string]interface{}{
 		"path":   path,
@@ -473,16 +477,10 @@ func (s *Server) toolCrypto(path string) (interface{}, error) {
 
 	result := crypto.Analyze(data)
 
-	return map[string]interface{}{
-		"path":       path,
-		"detected":   result.Detected,
-		"confidence": fmt.Sprintf("%.1f%%", result.Confidence*100),
-		"entropy":    fmt.Sprintf("%.2f", result.Entropy),
-		"block_size": result.BlockSize,
-		"ecb":        result.ECBDetected,
-		"hints":      result.CipherHints,
-		"padding":    result.Padding,
-	}, nil
+	return struct {
+		Path string `json:"path"`
+		*crypto.Result
+	}{path, result}, nil
 }
 
 func (s *Server) toolStego(path string) (interface{}, error) {

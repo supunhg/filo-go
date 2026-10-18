@@ -61,9 +61,9 @@ type APIResponse struct {
 
 // Meta contains response metadata.
 type Meta struct {
-	Version   string  `json:"version"`
-	Timestamp string  `json:"timestamp"`
-	Duration  string  `json:"duration,omitempty"`
+	Version   string `json:"version"`
+	Timestamp string `json:"timestamp"`
+	Duration  string `json:"duration,omitempty"`
 }
 
 // AnalyzeRequest represents an analysis request.
@@ -267,7 +267,12 @@ func (s *Server) handleHash(w http.ResponseWriter, r *http.Request) {
 
 	var algos []hashing.Algorithm
 	for _, a := range req.Algorithms {
-		algos = append(algos, hashing.Algorithm(a))
+		alg, err := hashing.ParseAlgorithm(a)
+		if err != nil {
+			s.jsonError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+		algos = append(algos, alg)
 	}
 
 	result, err := hashing.ComputeFile(validPath, algos)

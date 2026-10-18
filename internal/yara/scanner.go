@@ -50,9 +50,9 @@ type YString struct {
 
 // Scanner performs YARA-like scanning.
 type Scanner struct {
-	rules      []*Rule
-	modules    map[string]interface{}
-	variables  map[string]interface{}
+	rules     []*Rule
+	modules   map[string]interface{}
+	variables map[string]interface{}
 }
 
 // NewScanner creates a new YARA scanner.
@@ -94,12 +94,12 @@ type PEInfo struct {
 
 // ELFInfo holds ELF module data for YARA rules.
 type ELFInfo struct {
-	Type      string `json:"type"`
-	Machine   string `json:"machine"`
-	Bits      int    `json:"bits"`
+	Type       string `json:"type"`
+	Machine    string `json:"machine"`
+	Bits       int    `json:"bits"`
 	EntryPoint uint64 `json:"entry_point"`
-	Sections  int    `json:"sections"`
-	Is64bit   bool   `json:"is_64bit"`
+	Sections   int    `json:"sections"`
+	Is64bit    bool   `json:"is_64bit"`
 }
 
 // MachOInfo holds Mach-O module data for YARA rules.

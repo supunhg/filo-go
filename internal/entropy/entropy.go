@@ -3,6 +3,8 @@ package entropy
 import (
 	"fmt"
 	"math"
+
+	"github.com/supunhg/filo-go/internal/term"
 )
 
 // Calculate computes Shannon entropy of data (0.0 - 8.0 bits/byte).
@@ -31,15 +33,17 @@ func Calculate(data []byte) float64 {
 func Interpret(e float64) string {
 	switch {
 	case e < 1.0:
-		return "Very low - likely structured/predictable data"
+		return "Very low - sparse or highly repetitive data"
 	case e < 3.0:
-		return "Low - simple text or basic compression"
+		return "Low - simple or repetitive structured data"
 	case e < 5.0:
-		return "Medium - compressed data or weak encryption"
+		return "Medium - text, source code or structured data"
 	case e < 7.0:
-		return "High - compressed or encrypted data"
+		return "High - machine code or mixed binary data"
+	case e < 7.5:
+		return "Very high - compressed or packed data"
 	default:
-		return "Very high - strong encryption or random data"
+		return "Near maximum - compressed, encrypted or random data"
 	}
 }
 
@@ -85,7 +89,7 @@ func Bar(entropy float64, width int) string {
 	for i := 0; i < barLen; i++ {
 		result += "\xe2\x96\x88" // █
 	}
-	result += "\033[0m"
+	result += term.C(term.Reset)
 	for i := 0; i < empty; i++ {
 		result += "\xe2\x96\x91" // ░
 	}
@@ -97,14 +101,14 @@ func Bar(entropy float64, width int) string {
 func Color(e float64) string {
 	switch {
 	case e < 2.0:
-		return "\033[32m" // Green - low entropy
+		return term.C(term.Green) // Green - low entropy
 	case e < 4.0:
-		return "\033[36m" // Cyan - medium-low
+		return term.C(term.Cyan) // Cyan - medium-low
 	case e < 6.0:
-		return "\033[33m" // Yellow - medium
+		return term.C(term.Yellow) // Yellow - medium
 	case e < 7.0:
-		return "\033[35m" // Magenta - high
+		return term.C(term.Magenta) // Magenta - high
 	default:
-		return "\033[31m" // Red - very high
+		return term.C(term.Red) // Red - very high
 	}
 }

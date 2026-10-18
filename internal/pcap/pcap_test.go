@@ -14,12 +14,12 @@ import (
 func pcapGlobalHeader() []byte {
 	buf := make([]byte, 24)
 	binary.LittleEndian.PutUint32(buf[0:4], 0xa1b2c3d4) // magic
-	binary.LittleEndian.PutUint16(buf[4:6], 2)           // major version
-	binary.LittleEndian.PutUint16(buf[6:8], 4)           // minor version
-	binary.LittleEndian.PutUint32(buf[8:12], 0)          // thiszone
-	binary.LittleEndian.PutUint32(buf[12:16], 0)         // sigfigs
-	binary.LittleEndian.PutUint32(buf[16:20], 65535)     // snaplen
-	binary.LittleEndian.PutUint32(buf[20:24], 1)         // linktype LINKTYPE_ETHERNET
+	binary.LittleEndian.PutUint16(buf[4:6], 2)          // major version
+	binary.LittleEndian.PutUint16(buf[6:8], 4)          // minor version
+	binary.LittleEndian.PutUint32(buf[8:12], 0)         // thiszone
+	binary.LittleEndian.PutUint32(buf[12:16], 0)        // sigfigs
+	binary.LittleEndian.PutUint32(buf[16:20], 65535)    // snaplen
+	binary.LittleEndian.PutUint32(buf[20:24], 1)        // linktype LINKTYPE_ETHERNET
 	return buf
 }
 
@@ -37,8 +37,8 @@ func pcapGlobalHeaderBE() []byte {
 func pcapPacketRecord(t *testing.T, packet []byte) []byte {
 	t.Helper()
 	hdr := make([]byte, 16)
-	binary.LittleEndian.PutUint32(hdr[0:4], 0)             // ts_sec
-	binary.LittleEndian.PutUint32(hdr[4:8], 0)             // ts_usec
+	binary.LittleEndian.PutUint32(hdr[0:4], 0)                     // ts_sec
+	binary.LittleEndian.PutUint32(hdr[4:8], 0)                     // ts_usec
 	binary.LittleEndian.PutUint32(hdr[8:12], uint32(len(packet)))  // incl_len
 	binary.LittleEndian.PutUint32(hdr[12:16], uint32(len(packet))) // orig_len
 	return append(hdr, packet...)
@@ -58,7 +58,7 @@ func buildIPv4Packet(t *testing.T, srcIP, dstIP [4]byte, srcPort, dstPort uint16
 	ip[1] = 0x00 // DSCP/ECN
 	totalLen := 20 + len(payload)
 	binary.BigEndian.PutUint16(ip[2:4], uint16(totalLen))
-	ip[8] = 64  // TTL
+	ip[8] = 64 // TTL
 	ip[9] = protocol
 	copy(ip[12:16], srcIP[:])
 	copy(ip[16:20], dstIP[:])
@@ -70,9 +70,9 @@ func buildIPv4Packet(t *testing.T, srcIP, dstIP [4]byte, srcPort, dstPort uint16
 		l4 = make([]byte, 20)
 		binary.BigEndian.PutUint16(l4[0:2], srcPort)
 		binary.BigEndian.PutUint16(l4[2:4], dstPort)
-		binary.BigEndian.PutUint32(l4[4:8], 1) // seq
+		binary.BigEndian.PutUint32(l4[4:8], 1)  // seq
 		binary.BigEndian.PutUint32(l4[8:12], 0) // ack
-		l4[12] = 0x50 // data offset = 5 (20 bytes)
+		l4[12] = 0x50                           // data offset = 5 (20 bytes)
 		l4[13] = TCPACK | TCPSYN
 	case 17: // UDP
 		l4 = make([]byte, 8)

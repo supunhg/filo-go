@@ -9,8 +9,8 @@ import (
 // Result holds office macro analysis results.
 type Result struct {
 	FileName   string         `json:"file_name"`
-	Format     string         `json:"format,omitempty"`     // "ooxml" or "ole2"
-	Type       string         `json:"type,omitempty"`       // "docx"/"xlsx"/"pptx" for OOXML
+	Format     string         `json:"format,omitempty"` // "ooxml" or "ole2"
+	Type       string         `json:"type,omitempty"`   // "docx"/"xlsx"/"pptx" for OOXML
 	HasMacros  bool           `json:"has_macros"`
 	MacroCount int            `json:"macro_count"`
 	AutoExec   []string       `json:"auto_exec,omitempty"`

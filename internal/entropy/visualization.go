@@ -3,6 +3,8 @@ package entropy
 import (
 	"fmt"
 	"strings"
+
+	"github.com/supunhg/filo-go/internal/term"
 )
 
 // VizOptions controls visualization output.
@@ -73,10 +75,10 @@ func Visualize(data []byte, opts *VizOptions) string {
 	// Legend
 	if opts.Color {
 		sb.WriteString("\n  Legend: ")
-		sb.WriteString("\033[32m██\033[0m Low  ")
-		sb.WriteString("\033[33m██\033[0m Med  ")
-		sb.WriteString("\033[31m██\033[0m High ")
-		sb.WriteString("\033[35m██\033[0m Random\n")
+		sb.WriteString(term.C(term.Green) + "██" + term.C(term.Reset) + " Low  ")
+		sb.WriteString(term.C(term.Yellow) + "██" + term.C(term.Reset) + " Med  ")
+		sb.WriteString(term.C(term.Red) + "██" + term.C(term.Reset) + " High ")
+		sb.WriteString(term.C(term.Magenta) + "██" + term.C(term.Reset) + " Random\n")
 	}
 
 	return sb.String()
@@ -97,13 +99,13 @@ func entropyBarChar(ent float64, color bool) string {
 
 	// ANSI color codes
 	if ent < 2.0 {
-		return "\033[32m█\033[0m" // Green - low entropy
+		return term.C(term.Green) + "█" + term.C(term.Reset) // Green - low entropy
 	} else if ent < 4.0 {
-		return "\033[33m█\033[0m" // Yellow - medium entropy
+		return term.C(term.Yellow) + "█" + term.C(term.Reset) // Yellow - medium entropy
 	} else if ent < 6.0 {
-		return "\033[31m█\033[0m" // Red - high entropy
+		return term.C(term.Red) + "█" + term.C(term.Reset) // Red - high entropy
 	}
-	return "\033[35m█\033[0m" // Magenta - random/encrypted
+	return term.C(term.Magenta) + "█" + term.C(term.Reset) // Magenta - random/encrypted
 }
 
 // MiniViz creates a compact single-line entropy indicator.

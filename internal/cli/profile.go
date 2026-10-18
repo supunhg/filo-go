@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+
 	"github.com/supunhg/filo-go/internal/analyzer"
 )
 
@@ -49,8 +50,8 @@ func runProfile(cmd *cobra.Command, args []string) error {
 	fmt.Printf("  Iterations: %d\n\n", profileIterations)
 
 	opts := &analyzer.Options{
-		DeepScan: profileDeepScan,
-		NoML:     profileNoML,
+		DeepScan:   profileDeepScan,
+		NoML:       profileNoML,
 		FormatsDir: getFormatsDir(),
 	}
 

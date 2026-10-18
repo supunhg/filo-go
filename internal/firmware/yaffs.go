@@ -25,14 +25,14 @@ const (
 
 // YAFFSSuperblock represents YAFFS filesystem information
 type YAFFSSuperblock struct {
-	Magic         uint32
-	Version       int
-	ChunkSize     int
-	SpareSize     int
-	BlockSize     int
+	Magic          uint32
+	Version        int
+	ChunkSize      int
+	SpareSize      int
+	BlockSize      int
 	ChunksPerBlock int
-	TotalBlocks   int
-	ObjectCount   int
+	TotalBlocks    int
+	ObjectCount    int
 }
 
 // YAFFSObject represents a YAFFS object (file, directory, etc.)

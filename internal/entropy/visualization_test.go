@@ -3,6 +3,8 @@ package entropy
 import (
 	"strings"
 	"testing"
+
+	"github.com/supunhg/filo-go/internal/term"
 )
 
 func TestVisualize(t *testing.T) {
@@ -143,6 +145,8 @@ func TestInterpretEntropy(t *testing.T) {
 }
 
 func TestEntropyBarChar(t *testing.T) {
+	term.SetMode(term.Always)
+	t.Cleanup(func() { term.SetMode(term.Auto) })
 	tests := []struct {
 		entropy float64
 		color   bool

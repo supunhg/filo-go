@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+
 	"github.com/supunhg/filo-go/internal/evtx"
 	"github.com/supunhg/filo-go/internal/timeline"
 )

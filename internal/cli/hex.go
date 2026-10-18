@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
 	"github.com/supunhg/filo-go/internal/carver"
 )
 
@@ -26,18 +27,6 @@ Examples:
   filo hex firmware.bin --no-color   # Disable colors`,
 	Args: cobra.ExactArgs(1),
 	RunE: runHex,
-}
-
-var scanCmd = &cobra.Command{
-	Use:   "scan [file]",
-	Short: "Scan file for embedded signatures",
-	Long: `Scan a file for known file signatures (magic bytes).
-
-Examples:
-  filo scan firmware.bin             # Scan for all signatures
-  filo scan firmware.bin --format    # Filter by format`,
-	Args: cobra.ExactArgs(1),
-	RunE: runScan,
 }
 
 var searchCmd = &cobra.Command{
@@ -92,46 +81,6 @@ func runHex(cmd *cobra.Command, args []string) error {
 	output := carver.HexDump(data, opts)
 	fmt.Print(output)
 	fmt.Println()
-
-	return nil
-}
-
-func runScan(cmd *cobra.Command, args []string) error {
-	filePath := args[0]
-
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return fmt.Errorf("cannot read %s: %w", filePath, err)
-	}
-
-	fmt.Println()
-	fmt.Printf("  Signature Scan: %s", filePath)
-	fmt.Println()
-	fmt.Printf("  Size: %d bytes", len(data))
-	fmt.Println()
-	fmt.Println()
-
-	results := carver.ScanSignatures(data)
-
-	if len(results) == 0 {
-		fmt.Println("  No signatures found")
-	} else {
-		fmt.Printf("  Found %d signature(s):", len(results))
-		fmt.Println()
-		fmt.Println()
-
-		for _, r := range results {
-			fmt.Printf("  Offset: 0x%08X", r.Offset)
-			fmt.Println()
-			fmt.Printf("  Format: %s", r.Format)
-			fmt.Println()
-			if r.MIME != "" {
-				fmt.Printf("  MIME:   %s", r.MIME)
-				fmt.Println()
-			}
-			fmt.Println()
-		}
-	}
 
 	return nil
 }

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/supunhg/filo-go/internal/version"
 )
 
 // Format represents export format type.
@@ -202,7 +204,7 @@ func buildSARIF(results []SARIFResult) map[string]interface{} {
 				"tool": map[string]interface{}{
 					"driver": map[string]interface{}{
 						"name":           "filo-go",
-						"version":        "0.1.0",
+						"version":        version.Version,
 						"informationUri": "https://github.com/supunhg/filo-go",
 						"rules": []map[string]interface{}{
 							{

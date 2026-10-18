@@ -6,13 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-)
 
-// expectedVersion is the version string that `filo version` must report.
-// Kept as a const so a missed bump at release time fails the build loudly
-// (TestVersionCommand asserts on this literal). Bump it in lockstep with
-// the `version` constant in root.go for every release.
-const expectedVersion = "0.5.1"
+	"github.com/supunhg/filo-go/internal/version"
+)
 
 func TestRootCommand(t *testing.T) {
 	// Test that root command exists
@@ -35,15 +31,11 @@ func TestVersionCommand(t *testing.T) {
 		t.Fatalf("version command failed: %v", err)
 	}
 
-	// Regression guard: the version string reported by `filo version` must
-	// contain the literal expectedVersion from the top of this file. This is
-	// the assertion that would have caught the historical 0.4.0-vs-0.5.0
-	// drift between the hardcoded value in root.go and what was actually
-	// released. Bump expectedVersion in lockstep with the `version` constant
-	// in root.go for every release.
+	// The version is injected at build time, so assert on whatever this
+	// test binary was built with rather than a hand-maintained literal.
 	out := buf.String()
-	if !strings.Contains(out, expectedVersion) {
-		t.Errorf("expected version output to contain %q, got %q", expectedVersion, out)
+	if !strings.Contains(out, version.Version) {
+		t.Errorf("expected version output to contain %q, got %q", version.Version, out)
 	}
 }
 
@@ -509,8 +501,8 @@ func TestExecutableCommand(t *testing.T) {
 	elfData[1] = 0x45
 	elfData[2] = 0x4C
 	elfData[3] = 0x46
-	elfData[4] = 0x01 // 32-bit
-	elfData[5] = 0x01 // little-endian
+	elfData[4] = 0x01  // 32-bit
+	elfData[5] = 0x01  // little-endian
 	elfData[18] = 0x03 // x86 machine type
 	if err := os.WriteFile(testFile, elfData, 0644); err != nil {
 		t.Fatal(err)

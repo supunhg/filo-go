@@ -27,7 +27,7 @@ func buildZip(t *testing.T, entries map[string]string) []byte {
 }
 
 const (
-	docxCT  = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+	docxCT = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
@@ -138,7 +138,7 @@ func TestDetectOOXMLBytesXLSX(t *testing.T) {
 
 func TestDetectOOXMLBytesPPTX(t *testing.T) {
 	data := buildZip(t, map[string]string{
-		"[Content_Types].xml": pptxCT,
+		"[Content_Types].xml":  pptxCT,
 		"ppt/presentation.xml": "<presentation/>",
 	})
 	if got := DetectOOXMLBytes(data); got != "pptx" {
@@ -361,9 +361,9 @@ func TestAnalyzeOOXMLBytesPPTX(t *testing.T) {
   <dc:creator>Slide User</dc:creator>
 </coreProperties>`
 	data := buildZip(t, map[string]string{
-		"[Content_Types].xml": pptxCT,
+		"[Content_Types].xml":  pptxCT,
 		"ppt/presentation.xml": "<presentation/>",
-		"docProps/core.xml":   coreMinimal,
+		"docProps/core.xml":    coreMinimal,
 	})
 	r := Analyze(data, "deck.pptx")
 	if r == nil {

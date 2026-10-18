@@ -90,10 +90,11 @@ func TestUserConfigDir(t *testing.T) {
 	original := os.Getenv("XDG_CONFIG_HOME")
 	defer os.Setenv("XDG_CONFIG_HOME", original)
 
-	os.Setenv("XDG_CONFIG_HOME", "/tmp/test-config")
+	base := filepath.Join(t.TempDir(), "test-config")
+	os.Setenv("XDG_CONFIG_HOME", base)
 	dir := UserConfigDir()
-	if dir != "/tmp/test-config/filo" {
-		t.Errorf("Expected /tmp/test-config/filo, got %s", dir)
+	if want := filepath.Join(base, "filo"); dir != want {
+		t.Errorf("Expected %s, got %s", want, dir)
 	}
 
 	// Test without XDG_CONFIG_HOME
