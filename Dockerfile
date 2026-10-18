@@ -1,52 +1,27 @@
-# Build stage
+# syntax=docker/dockerfile:1
+
 FROM golang:1.24-alpine AS builder
-
-RUN apk add --no-cache git
-
-WORKDIR /build
-
-# Copy go mod files
+WORKDIR /src
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
-
-# Copy source code
 COPY . .
+ARG VERSION=dev
+ARG COMMIT=""
+RUN CGO_ENABLED=0 go build -trimpath \
+      -ldflags="-s -w -X github.com/supunhg/filo-go/internal/version.Version=${VERSION} -X github.com/supunhg/filo-go/internal/version.Commit=${COMMIT}" \
+      -o /out/filo ./cmd/filo
 
-# Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /build/filo ./cmd/filo/
-
-# Runtime stage
-FROM alpine:3.19
-
-RUN apk add --no-cache ca-certificates tzdata
-
-# Create non-root user
-RUN adduser -D -u 1000 filo
-
-# Copy binary from builder
-COPY --from=builder /build/filo /usr/local/bin/filo
-
-# Copy format definitions
-COPY --from=builder /build/formats /etc/filo/formats
-
-# Create directories for data
-RUN mkdir -p /data /output && chown -R filo:filo /data /output
-
-# Switch to non-root user
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates && adduser -D -u 1000 filo \
+    && mkdir -p /data && chown filo:filo /data
+COPY --from=builder /out/filo /usr/local/bin/filo
+COPY --from=builder /src/formats /etc/filo/formats
 USER filo
-
-# Set working directory
 WORKDIR /data
-
-# Default entrypoint
 ENTRYPOINT ["filo"]
-
-# Default command
 CMD ["--help"]
 
-# Labels
-LABEL maintainer="sanchithahewagamage@gmail.com"
-LABEL description="filo-go - Forensic Intelligence & Learning Operator"
-LABEL version="0.4.0"
+LABEL org.opencontainers.image.title="filo" \
+      org.opencontainers.image.description="Fast, single-binary file forensics: identify, scan, carve and analyze files" \
+      org.opencontainers.image.source="https://github.com/supunhg/filo-go" \
+      org.opencontainers.image.licenses="Apache-2.0"

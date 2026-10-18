@@ -1,27 +1,29 @@
-version: "3.8"
+# REST API server for files in ./data.
+#
+#   export FILO_API_TOKEN=$(openssl rand -hex 32)
+#   docker compose up -d
+#   curl -H "Authorization: Bearer $FILO_API_TOKEN" localhost:8080/api/analyze -d '{"path":"sample.bin"}'
+#
+# The port is published on 127.0.0.1 only. For the MCP server, run the image
+# directly instead: docker run -i --rm -v "$PWD:/data:ro" filo mcp --root /data
 
 services:
   filo:
     build: .
-    container_name: filo-go
+    image: filo
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
-      - ./data:/data
-      - ./output:/output
-    command: ["api", "--addr", ":8080"]
+      - ./data:/data:ro
+    environment:
+      FILO_API_TOKEN: ${FILO_API_TOKEN:?set FILO_API_TOKEN to a random secret}
+    command: ["api", "--addr", "0.0.0.0:8080", "--root", "/data"]
+    read_only: true
+    tmpfs:
+      - /tmp
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/api/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
-      start_period: 5s
-
-  # MCP server (for AI integration)
-  filo-mcp:
-    build: .
-    container_name: filo-mcp
-    stdin_open: true
-    command: ["mcp"]
-    restart: unless-stopped

@@ -40,8 +40,9 @@ func TestHandleRequest_Initialize(t *testing.T) {
 		t.Fatal("Expected result to be a map")
 	}
 
-	if result["protocolVersion"] != "2024-11-05" {
-		t.Errorf("Expected protocol version 2024-11-05, got %v", result["protocolVersion"])
+	// Without a requested version the newest supported one is offered.
+	if result["protocolVersion"] != supportedVersions[0] {
+		t.Errorf("Expected protocol version %s, got %v", supportedVersions[0], result["protocolVersion"])
 	}
 }
 
@@ -73,8 +74,8 @@ func TestHandleRequest_ToolsList(t *testing.T) {
 		t.Fatal("Expected tools to be a slice of Tool")
 	}
 
-	if len(tools) != 9 {
-		t.Errorf("Expected 9 tools, got %d", len(tools))
+	if len(tools) != 10 {
+		t.Errorf("Expected 10 tools, got %d", len(tools))
 	}
 
 	// Check that all expected tools exist
@@ -161,8 +162,8 @@ func TestGetTools(t *testing.T) {
 	server := NewServer()
 	tools := server.getTools()
 
-	if len(tools) != 9 {
-		t.Errorf("Expected 9 tools, got %d", len(tools))
+	if len(tools) != 10 {
+		t.Errorf("Expected 10 tools, got %d", len(tools))
 	}
 
 	// Check tool properties
@@ -651,8 +652,8 @@ func TestToolCallAnalyzeNonexistent(t *testing.T) {
 		t.Fatal("Expected non-nil response")
 	}
 
-	if resp.Error == nil {
-		t.Error("Expected error for nonexistent file")
+	if !isToolError(resp) {
+		t.Errorf("Expected an isError tool result for a nonexistent file, got %+v", resp)
 	}
 }
 
@@ -676,8 +677,8 @@ func TestToolCallHashNonexistent(t *testing.T) {
 		t.Fatal("Expected non-nil response")
 	}
 
-	if resp.Error == nil {
-		t.Error("Expected error for nonexistent file")
+	if !isToolError(resp) {
+		t.Errorf("Expected an isError tool result for a nonexistent file, got %+v", resp)
 	}
 }
 
@@ -701,8 +702,8 @@ func TestToolCallStringsNonexistent(t *testing.T) {
 		t.Fatal("Expected non-nil response")
 	}
 
-	if resp.Error == nil {
-		t.Error("Expected error for nonexistent file")
+	if !isToolError(resp) {
+		t.Errorf("Expected an isError tool result for a nonexistent file, got %+v", resp)
 	}
 }
 
@@ -726,8 +727,8 @@ func TestToolCallCryptoNonexistent(t *testing.T) {
 		t.Fatal("Expected non-nil response")
 	}
 
-	if resp.Error == nil {
-		t.Error("Expected error for nonexistent file")
+	if !isToolError(resp) {
+		t.Errorf("Expected an isError tool result for a nonexistent file, got %+v", resp)
 	}
 }
 
@@ -751,8 +752,8 @@ func TestToolCallMetadataNonexistent(t *testing.T) {
 		t.Fatal("Expected non-nil response")
 	}
 
-	if resp.Error == nil {
-		t.Error("Expected error for nonexistent file")
+	if !isToolError(resp) {
+		t.Errorf("Expected an isError tool result for a nonexistent file, got %+v", resp)
 	}
 }
 
@@ -776,8 +777,8 @@ func TestToolCallStegoNonexistent(t *testing.T) {
 		t.Fatal("Expected non-nil response")
 	}
 
-	if resp.Error == nil {
-		t.Error("Expected error for nonexistent file")
+	if !isToolError(resp) {
+		t.Errorf("Expected an isError tool result for a nonexistent file, got %+v", resp)
 	}
 }
 
@@ -801,8 +802,8 @@ func TestToolCallContainerNonexistent(t *testing.T) {
 		t.Fatal("Expected non-nil response")
 	}
 
-	if resp.Error == nil {
-		t.Error("Expected error for nonexistent file")
+	if !isToolError(resp) {
+		t.Errorf("Expected an isError tool result for a nonexistent file, got %+v", resp)
 	}
 }
 
@@ -826,8 +827,8 @@ func TestToolCallSQLiteNonexistent(t *testing.T) {
 		t.Fatal("Expected non-nil response")
 	}
 
-	if resp.Error == nil {
-		t.Error("Expected error for nonexistent file")
+	if !isToolError(resp) {
+		t.Errorf("Expected an isError tool result for a nonexistent file, got %+v", resp)
 	}
 }
 
@@ -861,4 +862,14 @@ func TestServerRun(t *testing.T) {
 	if output.Len() == 0 {
 		t.Error("Expected output from server")
 	}
+}
+
+// isToolError reports whether resp is a successful JSON-RPC response that
+// carries a tool execution error, as the MCP specification requires.
+func isToolError(resp *Response) bool {
+	if resp == nil || resp.Error != nil {
+		return false
+	}
+	m, ok := resp.Result.(map[string]interface{})
+	return ok && m["isError"] == true
 }

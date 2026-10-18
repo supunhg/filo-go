@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This release focuses on accuracy: every finding filo reports should be one an
 analyst can trust.
 
+### Security
+
+- **REST API:** the server listened on all interfaces with no authentication
+  and served any file on the machine, including through `/api/strings`. It
+  now listens on `127.0.0.1` by default, refuses non-loopback addresses
+  without a bearer token (`--token` / `FILO_API_TOKEN`, or
+  `--insecure-no-auth` behind a proxy), and serves file-path endpoints only
+  under `--root`.
+- **REST API:** the root check compared string prefixes, so a root of
+  `/data` also allowed `/data-secret`, and symlinks were not resolved.
+  Paths are now resolved through symlinks and checked component-wise.
+- **REST API:** `/api/batch` did not validate its directory at all.
+- **REST API:** uploads had no size limit beyond the multipart buffer.
+  `--max-upload` (default 64 MiB) is enforced, and uploaded files are no
+  longer copied to a temporary file.
+- **MCP:** `filo mcp --root DIR` confines every tool to one directory, to
+  limit what an agent steered by malicious content can read.
+
 ### Added
 
 - New signature engine (`internal/signature`) behind `scan`, `extract` and
@@ -29,6 +47,11 @@ analyst can trust.
 - Global `--color auto|always|never` flag; `NO_COLOR` and `FORCE_COLOR` are
   honoured, and colors are disabled automatically when output is piped.
 - `filo --version`, and build metadata (commit, date) in `filo version`.
+- MCP: `scan` tool, `ping`, protocol version negotiation (2024-11-05,
+  2025-03-26, 2025-06-18), tool titles and read-only annotations, and server
+  instructions for the model.
+- REST API: `POST /api/scan`, graceful shutdown on SIGINT/SIGTERM, and
+  security headers on every response.
 
 ### Changed
 
@@ -64,6 +87,13 @@ analyst can trust.
 - ANSI color codes were written to pipes and files.
 - Tests failed on Windows because of hard-coded `/` paths, and one test
   created directories under `C:\nonexistent`.
+- **MCP:** `filo mcp` printed a banner to stdout before starting, which
+  corrupted the JSON-RPC stream so MCP clients could not connect.
+- **MCP:** the server replied to notifications, stopped processing input
+  after the first malformed message, and returned tool failures as JSON-RPC
+  errors instead of `isError` results the model can read.
+- **Docker:** the compose file ran the MCP server as a detached service
+  (it needs an attached client) and published the API on all interfaces.
 
 ## [0.5.1] - 2026-06-12
 

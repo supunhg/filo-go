@@ -169,107 +169,96 @@ filo firmware -x rootfs.squashfs
 
 ## 🔌 REST API
 
-filo-go includes a built-in REST API server for remote analysis.
+`filo api` serves the analyzers over HTTP. It is locked down by default:
 
-### Starting the Server
-
-```bash
-# Start on default port (8080)
-filo api
-
-# Start on custom port
-filo api --addr :9090
-```
-
-### Available Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/health` | Health check |
-| `GET` | `/api/version` | Version info |
-| `POST` | `/api/analyze` | Analyze file |
-| `POST` | `/api/hash` | Compute hashes |
-| `POST` | `/api/strings` | Extract strings |
-| `POST` | `/api/crypto` | Detect encryption |
-| `POST` | `/api/stego` | Detect steganography |
-| `POST` | `/api/metadata` | Extract metadata |
-| `POST` | `/api/batch` | Batch analysis |
-| `POST` | `/api/upload` | Upload and analyze |
-
-### Example Usage
+- it listens on `127.0.0.1:8080`;
+- listening on any other address requires a bearer token (`--token` or `FILO_API_TOKEN`);
+- endpoints that take a file path only work with `--root DIR`, and only for files inside it
+  (symlinks and `../` cannot escape); `/api/upload` always works.
 
 ```bash
-# Analyze a file
-curl -X POST http://localhost:8080/api/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"path": "/path/to/file.bin"}'
+filo api --root ./evidence
 
-# Compute hashes
-curl -X POST http://localhost:8080/api/hash \
-  -H "Content-Type: application/json" \
-  -d '{"path": "/path/to/file.bin", "algorithms": ["sha256", "md5"]}'
+curl -s localhost:8080/api/analyze -d '{"path": "sample.bin"}'
+curl -s localhost:8080/api/scan    -d '{"path": "firmware.bin", "formats": ["squashfs"]}'
+curl -s localhost:8080/api/hash    -d '{"path": "sample.bin", "algorithms": ["sha256"]}'
+curl -s localhost:8080/api/upload  -F file=@sample.bin
 
-# Upload and analyze
-curl -X POST http://localhost:8080/api/upload \
-  -F "file=@/path/to/file.bin"
+# Remote access
+FILO_API_TOKEN=$(openssl rand -hex 32) filo api --addr 0.0.0.0:8080 --root /data
+curl -H "Authorization: Bearer $FILO_API_TOKEN" host:8080/api/analyze -d '{"path": "sample.bin"}'
 ```
+
+| Method | Endpoint | Body |
+|--------|----------|------|
+| `GET` | `/api/health` | (no auth required) |
+| `GET` | `/api/version` | |
+| `POST` | `/api/analyze` | `{"path"}` |
+| `POST` | `/api/scan` | `{"path", "formats"?, "nested"?}` |
+| `POST` | `/api/hash` | `{"path", "algorithms"?}` |
+| `POST` | `/api/strings` | `{"path", "min_length"?, "max_count"?}` |
+| `POST` | `/api/crypto` | `{"path"}` |
+| `POST` | `/api/stego` | `{"path"}` |
+| `POST` | `/api/metadata` | `{"path"}` |
+| `POST` | `/api/batch` | `{"directory", "workers"?, "recursive"?}` |
+| `POST` | `/api/upload` | multipart form field `file` (limit: `--max-upload`, default 64 MiB) |
+
+Paths are relative to `--root` (absolute paths inside it also work).
 
 ---
 
 ## 🐳 Docker
 
-filo-go includes Docker support for production deployment.
-
-### Quick Start
-
 ```bash
-# Build and run with Docker Compose
-docker-compose up -d
+docker build -t filo .
+docker run --rm -v "$PWD:/data:ro" filo scan /data/firmware.bin
 
-# Or build manually
-docker build -t filo-go .
-docker run -p 8080:8080 filo-go api --addr :8080
+# REST API for ./data, published on localhost only
+export FILO_API_TOKEN=$(openssl rand -hex 32)
+docker compose up -d
 ```
-
-### Docker Compose Services
-
-| Service | Description | Port |
-|---------|-------------|------|
-| `filo` | REST API server | 8080 |
-| `filo-mcp` | MCP server (stdin/stdout) | - |
 
 ---
 
 ## 🔌 MCP Integration
 
-filo-go includes a built-in MCP (Model Context Protocol) server for AI-assisted analysis.
-
-### Available Tools
+`filo mcp` runs a [Model Context Protocol](https://modelcontextprotocol.io) server on stdio, so
+AI agents such as Claude can analyze files directly. All tools are read-only.
 
 | Tool | Description |
 |------|-------------|
-| `analyze` | Analyze file format and security |
-| `hash` | Compute cryptographic hashes |
-| `strings` | Extract printable strings |
-| `crypto` | Detect encryption indicators |
-| `stego` | Detect steganography |
-| `metadata` | Extract image metadata |
-| `container` | Analyze archive contents |
-| `sqlite` | Analyze SQLite databases |
-| `batch` | Batch analyze directories |
+| `analyze` | Identify the format and report hashes, entropy, embedded files, structural issues |
+| `scan` | Find embedded files and filesystems, with offsets and sizes |
+| `hash` | MD5, SHA-1, SHA-2 and SHA-3 digests |
+| `strings` | Printable strings with offsets |
+| `crypto` | Encryption containers and a randomness verdict |
+| `stego` | Steganography indicators in images |
+| `metadata` | EXIF, XMP and IPTC metadata |
+| `container` | List archive contents |
+| `sqlite` | Tables and schema of SQLite databases |
+| `batch` | Analyze every file in a directory |
 
-### Claude Desktop Configuration
+Claude Code:
+
+```bash
+claude mcp add filo -- filo mcp --root /path/to/case
+```
+
+Claude Desktop (`claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
     "filo": {
       "command": "/path/to/filo",
-      "args": ["mcp"]
+      "args": ["mcp", "--root", "/path/to/case"]
     }
   }
 }
 ```
+
+`--root` limits the files the agent can read. Use it whenever the agent may process untrusted
+content, which could try to steer it into reading other files.
 
 ---
 
