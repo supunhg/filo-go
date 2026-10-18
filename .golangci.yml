@@ -1,19 +1,55 @@
 version: "2"
 
+run:
+  timeout: 5m
+
 linters:
   default: none
   enable:
+    - errcheck
+    - errorlint
+    - gosec
     - govet
     - ineffassign
-    - staticcheck
     - misspell
+    - staticcheck
     - unconvert
+    - unused
   settings:
     staticcheck:
       checks:
         - all
-        - -QF1012
-        - -ST1000
-        - -ST1003
+        - -QF1012 # prefer fmt.Fprintf: style only
+        - -ST1000 # package comments: being added incrementally
+        - -ST1003 # naming of initialisms: would rename exported API
         - -ST1020
         - -ST1022
+    gosec:
+      excludes:
+        - G115 # integer conversions: binary format parsers bounds-check before converting
+        - G304 # file path from variable: reading user-supplied files is the tool's purpose
+        - G703 # path from CLI flags/args: writing where the user asked is the tool's purpose
+        - G401 # MD5/SHA-1: used for forensic identification (NSRL, VirusTotal), not security
+        - G501
+        - G505
+  exclusions:
+    rules:
+      # Tests may ignore errors from setup helpers and use math/rand.
+      - path: _test\.go
+        linters: [errcheck, gosec]
+      # Writes to stdout/stderr in Print helpers cannot meaningfully fail.
+      - linters: [errcheck]
+        text: "Error return value of `fmt\\.Fprint"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/supunhg/filo-go
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0

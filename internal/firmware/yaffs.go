@@ -53,7 +53,7 @@ func DetectYAFFS(filePath string) bool {
 	if err != nil {
 		return false
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Read first 4KB to check for YAFFS patterns
 	header := make([]byte, 4096)
@@ -211,7 +211,7 @@ func ParseYAFFS(filePath string) (*YAFFSSuperblock, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Read first chunk to determine YAFFS version
 	header := make([]byte, 4096)
@@ -289,7 +289,7 @@ func ExtractYAFFS(srcPath, destDir string) (*ExtractionResult, error) {
 	}
 
 	// Create destination directory
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0o750); err != nil {
 		return nil, err
 	}
 
@@ -320,7 +320,7 @@ func ExtractYAFFS(srcPath, destDir string) (*ExtractionResult, error) {
 	info += fmt.Sprintf("Total Blocks: %d\n", sb.TotalBlocks)
 	info += fmt.Sprintf("Object Count: %d\n", sb.ObjectCount)
 
-	if err := os.WriteFile(infoPath, []byte(info), 0644); err != nil {
+	if err := os.WriteFile(infoPath, []byte(info), 0o600); err != nil {
 		return nil, err
 	}
 

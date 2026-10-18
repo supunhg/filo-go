@@ -118,17 +118,15 @@ func parseChunk(data []byte) []Event {
 	offset := 128 // Skip chunk header
 
 	for offset+24 <= len(data) {
+		var rec [24]byte
+		copy(rec[:], data[offset:])
 		// Look for event records
-		if data[offset] == 0x2A && data[offset+1] == 0x00 {
-			// Found an event record
-			if offset+24 < len(data) {
-				event := Event{
-					EventID:   binary.LittleEndian.Uint16(data[offset+4 : offset+6]),
-					Level:     data[offset+8],
-					LevelName: levelName(data[offset+8]),
-				}
-				events = append(events, event)
-			}
+		if rec[0] == 0x2A && rec[1] == 0x00 && offset+24 < len(data) {
+			events = append(events, Event{
+				EventID:   binary.LittleEndian.Uint16(rec[4:6]),
+				Level:     rec[8],
+				LevelName: levelName(rec[8]),
+			})
 		}
 		offset += 8
 	}

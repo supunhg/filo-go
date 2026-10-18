@@ -127,7 +127,7 @@ func (s *Server) Run() error {
 		if len(bytes.TrimSpace(line)) > 0 {
 			s.handleLine(line)
 		}
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			return nil
 		}
 		if err != nil {

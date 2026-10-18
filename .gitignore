@@ -38,9 +38,11 @@ repaired/
 # Agent instruction files (local only)
 AGENTS.md
 CLAUDE.md
+.claude/
 .cursor/
 .cursorrules
 .github/copilot-instructions.md
+docs/agents/
 
 # AI session logs (local only)
 session-*.md
@@ -73,3 +75,6 @@ coverage.out
 
 # Custom
 ocs.md
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

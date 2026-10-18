@@ -43,7 +43,7 @@ func DetectJFFS2(filePath string) bool {
 	if err != nil {
 		return false
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Read first 2 bytes
 	var magic uint16
@@ -60,7 +60,7 @@ func ParseJFFS2(filePath string) (*JFFS2Superblock, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Read superblock
 	sb := &JFFS2Superblock{}
@@ -90,7 +90,7 @@ func ExtractJFFS2(srcPath, destDir string) (*ExtractionResult, error) {
 	}
 
 	// Create destination directory
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0o750); err != nil {
 		return nil, err
 	}
 
@@ -114,7 +114,7 @@ func ExtractJFFS2(srcPath, destDir string) (*ExtractionResult, error) {
 	info := "JFFS2 Filesystem Info\n"
 	info += fmt.Sprintf("Magic: 0x%04X\n", sb.Magic)
 
-	if err := os.WriteFile(infoPath, []byte(info), 0644); err != nil {
+	if err := os.WriteFile(infoPath, []byte(info), 0o600); err != nil {
 		return nil, err
 	}
 

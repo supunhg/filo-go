@@ -2,130 +2,98 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
   pull_request:
-    branches: [main, dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        go-version: ['1.24']
-    
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ matrix.go-version }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y bzip2 xz-utils
+      - name: Verify modules
+        run: go mod verify
 
-    - name: Download dependencies
-      run: go mod download
+      - name: Vet
+        run: go vet ./...
 
-    - name: Verify dependencies
-      run: go mod verify
+      - name: Test
+        if: runner.os != 'Linux'
+        run: go test ./...
 
-    - name: Run vet
-      run: go vet ./...
+      - name: Test with race detector and coverage
+        if: runner.os == 'Linux'
+        run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
 
-    - name: Run tests
-      run: go test -race ./...
-
-    - name: Run tests with coverage
-      run: go test -coverprofile=coverage.out ./...
-      if: matrix.go-version == '1.24'
-
-    - name: Display coverage
-      run: go tool cover -func=coverage.out
-      if: matrix.go-version == '1.24'
-
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.out
-        flags: unittests
-      if: matrix.go-version == '1.24'
+      - name: Upload coverage
+        if: runner.os == 'Linux'
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.out
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v7
+          go-version-file: go.mod
+      - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.12.2
-          args: --timeout=5m
 
-  build:
+  release-check:
+    name: release dry run
     runs-on: ubuntu-latest
-    needs: [test]
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: anchore/sbom-action/download-syft@v0
+      - name: Build every release artifact without publishing
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --snapshot --clean
+      - name: Smoke-test the linux/amd64 binary
+        run: |
+          bin=$(find dist -type f -path '*linux_amd64*' -name filo | head -n1)
+          "$bin" version
+          "$bin" scan "$bin" | head -n 5
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.24'
-
-    - name: Build
-      run: go build -o filo ./cmd/filo
-
-    - name: Test binary
-      run: ./filo version
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: filo-linux-amd64
-        path: filo
-
-  release:
+  docker:
     runs-on: ubuntu-latest
-    needs: [build]
-    if: startsWith(github.ref, 'refs/tags/v')
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: '1.24'
-
-    - name: Build for multiple platforms
-      run: |
-        GOOS=linux GOARCH=amd64 go build -o filo-linux-amd64 ./cmd/filo
-        GOOS=linux GOARCH=arm64 go build -o filo-linux-arm64 ./cmd/filo
-        GOOS=darwin GOARCH=amd64 go build -o filo-darwin-amd64 ./cmd/filo
-        GOOS=darwin GOARCH=arm64 go build -o filo-darwin-arm64 ./cmd/filo
-        GOOS=windows GOARCH=amd64 go build -o filo-windows-amd64.exe ./cmd/filo
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          filo-linux-amd64
-          filo-linux-arm64
-          filo-darwin-amd64
-          filo-darwin-arm64
-          filo-windows-amd64.exe
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: filo:ci
+      - name: Smoke-test image
+        run: docker run --rm filo:ci version

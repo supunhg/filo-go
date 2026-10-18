@@ -121,7 +121,7 @@ func fileError(path string, err error) error {
 	}
 	var pe *fs.PathError
 	if errors.As(err, &pe) {
-		return fmt.Errorf("%s: %v", path, pe.Err)
+		return fmt.Errorf("%s: %w", path, pe.Err)
 	}
 	return err
 }

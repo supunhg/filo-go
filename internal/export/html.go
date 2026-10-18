@@ -144,7 +144,7 @@ func GenerateHTMLReport(results *AnalysisResults, outputPath string) error {
 	html := generateHTML(report)
 
 	// Write to file
-	if err := os.WriteFile(outputPath, []byte(html), 0644); err != nil {
+	if err := os.WriteFile(outputPath, []byte(html), 0o600); err != nil {
 		return err
 	}
 

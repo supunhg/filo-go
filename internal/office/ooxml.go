@@ -9,6 +9,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/supunhg/filo-go/internal/safeio"
 )
 
 // OOXMLDocument represents an Office Open XML document
@@ -203,8 +205,8 @@ func ExtractVBAProjectBytes(data []byte) []byte {
 			if err != nil {
 				return nil
 			}
-			d, err := io.ReadAll(rc)
-			rc.Close()
+			d, err := safeio.ReadAll(rc, 0)
+			_ = rc.Close()
 			if err != nil {
 				return nil
 			}
@@ -257,7 +259,7 @@ func DetectOOXML(filePath string) string {
 	if err != nil {
 		return ""
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Read first 4 bytes (ZIP header)
 	header := make([]byte, 4)
@@ -275,7 +277,7 @@ func DetectOOXML(filePath string) string {
 	if err != nil {
 		return ""
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	// Check for [Content_Types].xml
 	hasContentTypes := false
@@ -327,7 +329,7 @@ func ExtractOOXML(filePath string) (*OOXMLDocument, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open ZIP: %w", err)
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	doc := &OOXMLDocument{
 		Type:        docType,
@@ -369,7 +371,7 @@ func ExtractVBAProject(filePath string) []byte {
 	if err != nil {
 		return nil
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	data, err := io.ReadAll(f)
 	if err != nil {
 		return nil
@@ -444,9 +446,9 @@ func readZipFile(f *zip.File) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 
-	return io.ReadAll(rc)
+	return safeio.ReadAll(rc, 0)
 }
 
 // parseISO8601 parses an ISO 8601 date string

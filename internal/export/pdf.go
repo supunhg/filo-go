@@ -105,7 +105,7 @@ func GeneratePDFReport(results *AnalysisResults, outputPath string) error {
 	pdfContent := generatePDF(report)
 
 	// Write to file
-	return os.WriteFile(outputPath, pdfContent, 0644)
+	return os.WriteFile(outputPath, pdfContent, 0o600)
 }
 
 // generatePDF generates a simple PDF file

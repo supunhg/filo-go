@@ -37,7 +37,7 @@ func NewTracker(dbPath string) (*Tracker, error) {
 		return err
 	})
 	if err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, err
 	}
 

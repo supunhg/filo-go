@@ -5,11 +5,14 @@ import (
 	"archive/zip"
 	"bytes"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/supunhg/filo-go/internal/safeio"
 )
 
 // Result holds container analysis results.
@@ -98,10 +101,10 @@ func detectContainerFormat(data []byte) string {
 				header := make([]byte, 262)
 				n, _ := io.ReadAtLeast(reader, header, 262)
 				if n >= 262 && bytes.HasPrefix(header[257:], []byte("ustar")) {
-					reader.Close()
+					_ = reader.Close()
 					return "tar.gz"
 				}
-				reader.Close()
+				_ = reader.Close()
 			}
 		}
 		return "gzip"
@@ -139,8 +142,8 @@ func analyzeZIP(data []byte, result *Result, maxDepth, currentDepth int) (*Resul
 				if err != nil {
 					continue
 				}
-				nestedData, err := io.ReadAll(rc)
-				rc.Close()
+				nestedData, err := safeio.ReadAll(rc, 0)
+				_ = rc.Close()
 				if err != nil {
 					continue
 				}
@@ -166,7 +169,7 @@ func analyzeTarGz(data []byte, result *Result, maxDepth, currentDepth int) (*Res
 	if err != nil {
 		return result, err
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	return analyzeTarFromReader(reader, result, maxDepth, currentDepth)
 }
@@ -210,7 +213,7 @@ func analyzeGzip(data []byte, result *Result, maxDepth int) (*Result, error) {
 	if err != nil {
 		return result, err
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	// Read first few bytes to detect inner format
 	peek := make([]byte, 512)
@@ -313,31 +316,34 @@ func extractZIP(data []byte, destDir string) error {
 	}
 
 	for _, file := range reader.File {
-		path := filepath.Join(destDir, file.Name)
-
-		if file.FileInfo().IsDir() {
-			os.MkdirAll(path, 0755)
-			continue
+		// safeio.Join also rejects these; the inline check keeps the guard
+		// visible to static analysis (CodeQL go/zipslip).
+		if strings.Contains(file.Name, "..") {
+			return fmt.Errorf("unsafe archive entry name %q", file.Name)
 		}
-
-		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		path, err := safeio.Join(destDir, file.Name)
+		if err != nil {
 			return err
 		}
-
+		mode := file.FileInfo().Mode()
+		if mode.IsDir() {
+			if err := os.MkdirAll(path, 0o750); err != nil {
+				return err
+			}
+			continue
+		}
+		if !mode.IsRegular() {
+			continue // never materialise symlinks or devices from an archive
+		}
+		if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
+			return err
+		}
 		rc, err := file.Open()
 		if err != nil {
 			return err
 		}
-
-		outFile, err := os.Create(path)
-		if err != nil {
-			rc.Close()
-			return err
-		}
-
-		_, err = io.Copy(outFile, rc)
-		rc.Close()
-		outFile.Close()
+		err = writeFile(path, rc)
+		_ = rc.Close()
 		if err != nil {
 			return err
 		}
@@ -346,42 +352,59 @@ func extractZIP(data []byte, destDir string) error {
 	return nil
 }
 
+// writeFile creates path exclusively and fills it from r, bounded by
+// safeio.DefaultMaxExtract.
+func writeFile(path string, r io.Reader) error {
+	out, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {
+		return err
+	}
+	_, err = safeio.Copy(out, r, 0)
+	if cerr := out.Close(); err == nil {
+		err = cerr
+	}
+	return err
+}
+
 func extractTarGz(data []byte, destDir string) error {
 	reader, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return err
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	tarReader := tar.NewReader(reader)
 	for {
 		header, err := tarReader.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
 			return err
 		}
 
-		path := filepath.Join(destDir, header.Name)
+		if strings.Contains(header.Name, "..") {
+			return fmt.Errorf("unsafe archive entry name %q", header.Name)
+		}
+		path, err := safeio.Join(destDir, header.Name)
+		if err != nil {
+			return err
+		}
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			os.MkdirAll(path, 0755)
+			if err := os.MkdirAll(path, 0o750); err != nil {
+				return err
+			}
 		case tar.TypeReg:
-			if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 				return err
 			}
-			outFile, err := os.Create(path)
-			if err != nil {
-				return err
-			}
-			_, err = io.Copy(outFile, tarReader)
-			outFile.Close()
-			if err != nil {
+			if err := writeFile(path, tarReader); err != nil {
 				return err
 			}
 		}
+		// Symlinks, hard links and device nodes are skipped on purpose.
 	}
 
 	return nil

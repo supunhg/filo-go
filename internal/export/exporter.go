@@ -68,7 +68,7 @@ func exportJSON(data interface{}, outputPath string) error {
 		return nil
 	}
 
-	return os.WriteFile(outputPath, jsonData, 0644)
+	return os.WriteFile(outputPath, jsonData, 0o600)
 }
 
 // SARIFResult represents a SARIF result entry.
@@ -242,7 +242,7 @@ func writeSARIF(sarif map[string]interface{}, outputPath string) error {
 		return nil
 	}
 
-	return os.WriteFile(outputPath, jsonData, 0644)
+	return os.WriteFile(outputPath, jsonData, 0o600)
 }
 
 func exportCSVResult(data interface{}, outputPath string) error {
@@ -301,7 +301,7 @@ func writeCSV(records [][]string, outputPath string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	writer := csv.NewWriter(file)
 	defer writer.Flush()

@@ -623,8 +623,7 @@ func TestParseSectionsHighEntropy(t *testing.T) {
 	optOff := uint32(peDOSHeaderSize) + peSignatureSize + peCOFFHeaderSize
 
 	const sectionDataOffset = 0x400
-	const sectionDataSize = 0x200 // 512 bytes, above the 1024-byte threshold check
-	// Wait — the threshold is RawSize > 1024. Let's use 2048.
+	// The packing check flags sections with RawSize > 1024.
 	const largeSectionDataSize = 0x1000
 	totalSize := optOff + 0xE0 + 40 + sectionDataOffset + largeSectionDataSize
 	buf := make([]byte, totalSize)

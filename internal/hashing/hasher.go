@@ -85,7 +85,7 @@ func ComputeFile(path string, algorithms []Algorithm) (*Result, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	info, err := f.Stat()
 	if err != nil {
 		return nil, err
@@ -172,7 +172,7 @@ func newHashes(algorithms []Algorithm) []hash.Hash {
 // parallel feeds b to every hash concurrently.
 func parallel(hs []hash.Hash, b []byte) {
 	if len(hs) == 1 {
-		hs[0].Write(b)
+		_, _ = hs[0].Write(b) // hash.Hash.Write never returns an error
 		return
 	}
 	var wg sync.WaitGroup

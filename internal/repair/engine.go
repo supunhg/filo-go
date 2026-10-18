@@ -79,7 +79,7 @@ func Repair(data []byte, filePath string, opts *Options) (*Result, error) {
 	// Create backup if not disabled
 	if !opts.NoBackup && !opts.DryRun {
 		backupPath := filePath + ".bak"
-		if err := os.WriteFile(backupPath, data, 0644); err == nil {
+		if err := os.WriteFile(backupPath, data, 0o600); err == nil {
 			result.BackupCreated = true
 			result.Changes = append(result.Changes, fmt.Sprintf("Backup created: %s", backupPath))
 		}
@@ -91,7 +91,7 @@ func Repair(data []byte, filePath string, opts *Options) (*Result, error) {
 		if outputPath == "" {
 			outputPath = filePath
 		}
-		if err := os.WriteFile(outputPath, repaired, 0644); err != nil {
+		if err := os.WriteFile(outputPath, repaired, 0o600); err != nil {
 			return result, fmt.Errorf("failed to write repaired file: %w", err)
 		}
 	}

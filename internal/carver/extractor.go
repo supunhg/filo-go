@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/supunhg/filo-go/internal/safeio"
+
 	"github.com/ulikunitz/xz"
 )
 
@@ -79,7 +81,7 @@ func (e *Extractor) Extract(data []byte, filePath string, opts *ExtractorOptions
 	}
 
 	// Create output directory
-	if err := os.MkdirAll(opts.OutputDir, 0755); err != nil {
+	if err := os.MkdirAll(opts.OutputDir, 0o750); err != nil {
 		return nil, fmt.Errorf("failed to create output directory: %w", err)
 	}
 
@@ -140,11 +142,11 @@ func (e *Extractor) ExtractSpecific(data []byte, format string, offset, length i
 		outputPath = filepath.Join(e.OutputDir, fmt.Sprintf("%s_%d.%s", format, offset, format))
 	}
 
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0o750); err != nil {
 		return nil, err
 	}
 
-	if err := os.WriteFile(outputPath, chunk, 0644); err != nil {
+	if err := os.WriteFile(outputPath, chunk, 0o600); err != nil {
 		return nil, err
 	}
 
@@ -233,16 +235,16 @@ func (e *Extractor) extractGzip(data []byte, offset int64, outputPath string) (*
 	if err != nil {
 		return nil, err
 	}
-	defer gr.Close()
+	defer func() { _ = gr.Close() }()
 
 	outputPath += ".gz"
 	out, err := os.Create(outputPath)
 	if err != nil {
 		return nil, err
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
-	written, err := io.Copy(out, gr)
+	written, err := safeio.Copy(out, gr, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -264,9 +266,9 @@ func (e *Extractor) extractBzip2(data []byte, offset int64, outputPath string) (
 	if err != nil {
 		return nil, err
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
-	written, err := io.Copy(out, br)
+	written, err := safeio.Copy(out, br, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -291,9 +293,9 @@ func (e *Extractor) extractXZ(data []byte, offset int64, outputPath string) (*Ex
 	if err != nil {
 		return nil, err
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
-	written, err := io.Copy(out, xr)
+	written, err := safeio.Copy(out, xr, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +311,7 @@ func (e *Extractor) extractXZ(data []byte, offset int64, outputPath string) (*Ex
 
 func (e *Extractor) extractRaw(data []byte, format string, offset int64, outputPath string) (*ExtractedFile, error) {
 	outputPath += "." + format
-	if err := os.WriteFile(outputPath, data, 0644); err != nil {
+	if err := os.WriteFile(outputPath, data, 0o600); err != nil {
 		return nil, err
 	}
 
@@ -369,7 +371,7 @@ func findGzipEnd(data []byte, offset int64) int64 {
 	if err != nil {
 		return offset + 1024
 	}
-	defer gr.Close()
+	defer func() { _ = gr.Close() }()
 
 	// Read all to find end
 	buf := make([]byte, 1024*1024)
@@ -555,11 +557,11 @@ func DD(inputPath, outputPath string, offset, count int64) error {
 
 	chunk := data[offset:end]
 
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0o750); err != nil {
 		return err
 	}
 
-	return os.WriteFile(outputPath, chunk, 0644)
+	return os.WriteFile(outputPath, chunk, 0o600)
 }
 
 // DDFromReader extracts bytes from a reader.
@@ -579,7 +581,7 @@ func DDFromReader(reader io.Reader, outputPath string, offset, count int64) erro
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	_, err = io.Copy(out, reader2)
 	return err
@@ -685,11 +687,11 @@ func (d *DDCommand) Run() error {
 
 	chunk := data[offset:end]
 
-	if err := os.MkdirAll(filepath.Dir(d.OutputPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(d.OutputPath), 0o750); err != nil {
 		return err
 	}
 
-	return os.WriteFile(d.OutputPath, chunk, 0644)
+	return os.WriteFile(d.OutputPath, chunk, 0o600)
 }
 
 // ParseDDOptions parses dd-style options.
@@ -713,13 +715,13 @@ func ParseDDOptions(args []string) *DDCommand {
 		case "of":
 			cmd.OutputPath = value
 		case "bs":
-			fmt.Sscanf(value, "%d", &cmd.BlockSize)
+			_, _ = fmt.Sscanf(value, "%d", &cmd.BlockSize)
 		case "count":
-			fmt.Sscanf(value, "%d", &cmd.Count)
+			_, _ = fmt.Sscanf(value, "%d", &cmd.Count)
 		case "skip":
-			fmt.Sscanf(value, "%d", &cmd.Skip)
+			_, _ = fmt.Sscanf(value, "%d", &cmd.Skip)
 		case "seek":
-			fmt.Sscanf(value, "%d", &cmd.Seek)
+			_, _ = fmt.Sscanf(value, "%d", &cmd.Seek)
 		}
 	}
 
