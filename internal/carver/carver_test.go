@@ -3,9 +3,13 @@ package carver
 import (
 	"bytes"
 	"compress/gzip"
+	"image"
+	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/supunhg/filo-go/internal/term"
 )
 
 func TestCarve(t *testing.T) {
@@ -236,51 +240,39 @@ func TestHexDumpColored(t *testing.T) {
 	}
 }
 
-func TestScanSignatures(t *testing.T) {
-	tests := []struct {
-		name     string
-		data     []byte
-		expected string
-	}{
-		{"png", []byte{0x89, 0x50, 0x4E, 0x47}, "png"},
-		{"jpeg", []byte{0xFF, 0xD8, 0xFF}, "jpeg"},
-		{"pdf", []byte{0x25, 0x50, 0x44, 0x46}, "pdf"},
-		{"zip", []byte{0x50, 0x4B, 0x03, 0x04}, "zip"},
-		{"gzip", []byte{0x1F, 0x8B}, "gzip"},
-		{"elf", []byte{0x7F, 0x45, 0x4C, 0x46}, "elf"},
-		{"pe", []byte{0x4D, 0x5A}, "pe"},
-		{"unknown", []byte{0x00, 0x00, 0x00, 0x00}, ""},
+func TestScanSignaturesRejectsBareMagic(t *testing.T) {
+	// A magic number alone is not a file. These used to be reported as
+	// matches, which flooded scans of binary data with false positives.
+	bare := map[string][]byte{
+		"png":  {0x89, 0x50, 0x4E, 0x47},
+		"jpeg": {0xFF, 0xD8, 0xFF},
+		"pdf":  {0x25, 0x50, 0x44, 0x46},
+		"zip":  {0x50, 0x4B, 0x03, 0x04},
+		"gzip": {0x1F, 0x8B},
+		"elf":  {0x7F, 0x45, 0x4C, 0x46},
+		"pe":   {0x4D, 0x5A},
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			results := ScanSignatures(tt.data)
-			if tt.expected == "" {
-				if len(results) > 0 {
-					t.Errorf("Expected no results, got %d", len(results))
-				}
-			} else {
-				if len(results) == 0 {
-					t.Error("Expected at least one result")
-				} else if results[0].Format != tt.expected {
-					t.Errorf("Expected format '%s', got '%s'", tt.expected, results[0].Format)
-				}
-			}
-		})
+	for name, data := range bare {
+		if got := ScanSignatures(data); len(got) != 0 {
+			t.Errorf("%s: bare magic reported as %+v", name, got)
+		}
 	}
 }
 
-func TestScanSignaturesWithOffset(t *testing.T) {
-	data := make([]byte, 100)
-	copy(data[50:], []byte{0x89, 0x50, 0x4E, 0x47})
+func TestScanSignaturesFindsEmbeddedPNG(t *testing.T) {
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, image.NewGray(image.Rect(0, 0, 2, 2))); err != nil {
+		t.Fatal(err)
+	}
+	data := append(make([]byte, 50), buf.Bytes()...)
+	data = append(data, make([]byte, 50)...)
 
 	results := ScanSignatures(data)
-	if len(results) == 0 {
-		t.Error("Expected at least one result")
+	if len(results) != 1 {
+		t.Fatalf("got %d results, want 1: %+v", len(results), results)
 	}
-
-	if results[0].Offset != 50 {
-		t.Errorf("Expected offset 50, got %d", results[0].Offset)
+	if r := results[0]; r.Offset != 50 || r.Format != "png" || r.Size != int64(buf.Len()) {
+		t.Errorf("got %+v, want png at 50 with size %d", r, buf.Len())
 	}
 }
 
@@ -608,6 +600,8 @@ func TestParseDDOptionsInvalid(t *testing.T) {
 }
 
 func TestColorByte(t *testing.T) {
+	term.SetMode(term.Always)
+	t.Cleanup(func() { term.SetMode(term.Auto) })
 	tests := []struct {
 		name     string
 		byte     byte
@@ -757,8 +751,13 @@ func TestDDFromReaderWithOffset(t *testing.T) {
 }
 
 func TestExtractWithInvalidOutputDir(t *testing.T) {
+	// A regular file can never be used as a parent directory, on any OS.
+	blocker := filepath.Join(t.TempDir(), "blocker")
+	if err := os.WriteFile(blocker, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
 	ext := NewExtractor(&ExtractorOptions{
-		OutputDir: "/nonexistent/path/that/should/fail",
+		OutputDir: filepath.Join(blocker, "out"),
 	})
 
 	testData := []byte{0x00, 0x00, 0x00, 0x00}

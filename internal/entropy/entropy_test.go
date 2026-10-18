@@ -34,7 +34,7 @@ func TestInterpret(t *testing.T) {
 		{2.0, "Low"},
 		{4.0, "Medium"},
 		{6.0, "High"},
-		{7.5, "Very high"},
+		{7.5, "Near maximum"},
 	}
 
 	for _, tt := range tests {

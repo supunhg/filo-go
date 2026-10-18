@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+This release focuses on accuracy: every finding filo reports should be one an
+analyst can trust.
+
+### Added
+
+- New signature engine (`internal/signature`) behind `scan`, `extract` and
+  `analyze`. It recognises 44 formats (images, audio/video, documents,
+  archives, compression streams, executables, SQLite, SquashFS, CramFS,
+  JFFS2, UBI, U-Boot, device trees, ...), validates each candidate against
+  the format's header structure and checksums, computes the embedded file's
+  size where possible, and scans at about 1 GB/s in a single pass.
+- `scan` prints a binwalk-style table and supports `--json`, `--format`,
+  `--nested` and `--limit`.
+- `analyze` reports a human-readable description of the file
+  (`PE32+ executable, x86-64, console`), data appended after the end of a
+  file, and the size and description of each embedded object.
+- `hash` accepts several files, prints coreutils-compatible lines when one
+  algorithm is selected (`filo hash -a sha256 * > SHA256SUMS`), supports
+  `--json`, and hashes with all algorithms in parallel.
+- Global `--color auto|always|never` flag; `NO_COLOR` and `FORCE_COLOR` are
+  honoured, and colors are disabled automatically when output is piped.
+- `filo --version`, and build metadata (commit, date) in `filo version`.
+
+### Changed
+
+- **Breaking:** encryption detection no longer guesses ciphers. It reports
+  known containers (OpenSSL, OpenPGP, age, LUKS, BitLocker, KeePass, ...) and
+  a chi-square randomness test that separates encrypted or random data from
+  compressed data. The JSON fields `cipher_hints`, `block_size`,
+  `ecb_detected` and `padding` were replaced by `verdict`, `chi_square`,
+  `container`, `details` and `ecb_suspected`.
+- **Breaking:** removed the `analyze` flags `--deep`, `--no-ml`,
+  `--all-evidence`, `--all-embedded` and `--yara`, which had no effect.
+  `--nested` replaces `--all-embedded`.
+- `analyze` shows the full SHA-256 instead of the first 16 characters.
+- Entropy labels no longer describe ordinary text as "weak encryption".
+- The version is injected at build time from the git tag instead of being
+  hard-coded in several places.
+
+### Fixed
+
+- Errors were never printed: `filo analyze missing.bin` exited silently.
+- Any file whose size was a multiple of 16 bytes was reported as
+  "AES encrypted" (including filo's own binary).
+- Valid PNG files were reported as missing their IEND chunk.
+- Small PDF files were always reported as missing `%%EOF`.
+- Embedded-object detection in `analyze` could never find anything.
+- `scan` reported each signature at most once, reported 2-byte magic numbers
+  in random data as gzip, ICO and BMP files, and listed duplicates.
+- `hash` printed algorithms in random order and silently computed SHA-256
+  for unknown algorithm names; the MCP server and REST API passed such names
+  through unchecked.
+- `analyze` printed encryption results twice.
+- Metadata fields were printed in random order.
+- ANSI color codes were written to pipes and files.
+- Tests failed on Windows because of hard-coded `/` paths, and one test
+  created directories under `C:\nonexistent`.
+
 ## [0.5.1] - 2026-06-12
 
 ### Fixed

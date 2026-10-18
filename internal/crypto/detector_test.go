@@ -1,199 +1,125 @@
 package crypto
 
 import (
+	"bytes"
+	"compress/flate"
+	"crypto/aes"
+	"crypto/cipher"
+	"math/rand"
+	"strings"
 	"testing"
 )
 
-func TestAnalyzeEmptyData(t *testing.T) {
-	result := Analyze([]byte{})
-	if result.Detected {
-		t.Error("expected no detection for empty data")
-	}
-	if result.Entropy != 0 {
-		t.Errorf("expected 0 entropy, got %f", result.Entropy)
-	}
+func randomBytes(n int, seed int64) []byte {
+	b := make([]byte, n)
+	rand.New(rand.NewSource(seed)).Read(b)
+	return b
 }
 
-func TestAnalyzeSmallData(t *testing.T) {
-	result := Analyze([]byte{0x01, 0x02, 0x03})
-	if result.Detected {
-		t.Error("expected no detection for small data")
-	}
-}
-
-func TestAnalyzeTextData(t *testing.T) {
-	// Low entropy, printable text
-	data := []byte("Hello, World! This is a test message. ")
-	result := Analyze(data)
-
-	if result.Detected {
-		t.Error("expected no detection for text data")
-	}
-	if len(result.CipherHints) > 0 {
-		t.Errorf("expected no cipher hints for text, got %v", result.CipherHints)
-	}
-}
-
-func TestAnalyzeHighEntropyData(t *testing.T) {
-	// High entropy data (looks like encrypted)
-	data := make([]byte, 256)
-	for i := range data {
-		data[i] = byte(i * 37 % 256) // Pseudo-random pattern
-	}
-	result := Analyze(data)
-
-	if !result.Detected {
-		t.Error("expected detection for high entropy data")
-	}
-	if result.Entropy < 5.0 {
-		t.Errorf("expected high entropy, got %f", result.Entropy)
-	}
-}
-
-func TestAnalyzeOpenSSLFormat(t *testing.T) {
-	// OpenSSL "Salted__" format
-	data := append([]byte("Salted__"), make([]byte, 64)...)
-	result := Analyze(data)
-
-	if !result.Detected {
-		t.Error("expected detection for OpenSSL format")
-	}
-
-	foundOpenSSL := false
-	for _, h := range result.CipherHints {
-		if h == "OpenSSL enc format" {
-			foundOpenSSL = true
-			break
+func TestEmptyAndSmallInputs(t *testing.T) {
+	for _, d := range [][]byte{nil, []byte("short")} {
+		r := Analyze(d)
+		if r.Detected || r.Verdict != VerdictTooSmall {
+			t.Errorf("Analyze(%q) = %+v, want undetected too-small", d, r)
 		}
 	}
-	if !foundOpenSSL {
-		t.Error("expected OpenSSL enc format hint")
+}
+
+func TestTextIsStructured(t *testing.T) {
+	text := []byte(strings.Repeat("The quick brown fox jumps over the lazy dog. ", 200))
+	r := Analyze(text)
+	if r.Detected || r.Verdict != VerdictStructured {
+		t.Errorf("text: %+v", r)
 	}
 }
 
-func TestAnalyzePGPFormat(t *testing.T) {
-	// PGP format (needs to be long enough and have high entropy)
-	data := make([]byte, 100)
-	copy(data, "-----BEGIN PGP")
-	// Fill rest with high entropy data
-	for i := 14; i < 100; i++ {
-		data[i] = byte(i * 37 % 256)
+func TestRandomDataIsRandom(t *testing.T) {
+	r := Analyze(randomBytes(64<<10, 1))
+	if !r.Detected || r.Verdict != VerdictRandom {
+		t.Fatalf("random: %+v", r)
 	}
-	result := Analyze(data)
+	if r.Container != "" || r.ECBSuspected {
+		t.Errorf("random data must not claim a container or ECB: %+v", r)
+	}
+}
 
-	foundPGP := false
-	for _, h := range result.CipherHints {
-		if h == "PGP/GPG encrypted" {
-			foundPGP = true
-			break
+func TestBlockAlignedSizeIsNotEvidence(t *testing.T) {
+	// Regression: any file whose length was a multiple of 16 used to be
+	// reported as "AES". A structured file of aligned length is not encrypted.
+	d := bytes.Repeat([]byte{0, 1, 2, 3, 'A', 'B', 'C', 'D'}, 512) // 4096 bytes
+	r := Analyze(d)
+	if r.Detected || r.Container != "" {
+		t.Errorf("aligned structured data reported as encrypted: %+v", r)
+	}
+}
+
+func TestCompressedDataIsNotRandom(t *testing.T) {
+	// English-like text compressed with deflate keeps a skewed histogram.
+	var src bytes.Buffer
+	words := strings.Fields("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu")
+	rng := rand.New(rand.NewSource(3))
+	for src.Len() < 1<<20 {
+		src.WriteString(words[rng.Intn(len(words))])
+		src.WriteByte(' ')
+	}
+	var out bytes.Buffer
+	w, _ := flate.NewWriter(&out, flate.BestCompression)
+	w.Write(src.Bytes())
+	w.Close()
+	r := Analyze(out.Bytes())
+	if r.Verdict == VerdictRandom {
+		t.Errorf("deflate output classified as random: entropy %.3f chi %.1f", r.Entropy, r.ChiSquare)
+	}
+}
+
+func TestECBDetection(t *testing.T) {
+	block, _ := aes.NewCipher(bytes.Repeat([]byte{7}, 16))
+	// Plaintext with repeating 16-byte blocks mixed with random blocks.
+	plain := randomBytes(32<<10, 9)
+	rep := randomBytes(16, 10)
+	for i := 0; i < len(plain); i += 16 * 8 {
+		copy(plain[i:], rep)
+	}
+	enc := make([]byte, len(plain))
+	for i := 0; i < len(plain); i += 16 {
+		block.Encrypt(enc[i:i+16], plain[i:i+16])
+	}
+	r := Analyze(enc)
+	if !r.ECBSuspected || r.RepeatedBlocks == 0 {
+		t.Errorf("ECB ciphertext not flagged: %+v", r)
+	}
+
+	// The same plaintext in CTR mode has no repeated blocks.
+	ctr := make([]byte, len(plain))
+	cipher.NewCTR(block, make([]byte, 16)).XORKeyStream(ctr, plain)
+	if r := Analyze(ctr); r.ECBSuspected {
+		t.Errorf("CTR ciphertext flagged as ECB: %+v", r)
+	}
+}
+
+func TestContainers(t *testing.T) {
+	cases := map[string][]byte{
+		"OpenSSL enc":        append([]byte("Salted__12345678"), randomBytes(64, 2)...),
+		"OpenPGP message":    []byte("-----BEGIN PGP MESSAGE-----\n\nhQEMA..."),
+		"age encrypted file": []byte("age-encryption.org/v1\n-> X25519 abc\n"),
+		"LUKS":               append([]byte("LUKS\xba\xbe\x00\x02"), make([]byte, 100)...),
+		"BitLocker":          append([]byte("\xeb\x58\x90-FVE-FS-"), make([]byte, 100)...),
+	}
+	for want, d := range cases {
+		r := Analyze(d)
+		if !r.Detected || !strings.Contains(r.Container, want) {
+			t.Errorf("%s: got %+v", want, r)
 		}
 	}
-	if !foundPGP {
-		t.Error("expected PGP/GPG hint")
-	}
 }
 
-func TestAnalyzeBlockAlignment(t *testing.T) {
-	// Data aligned to 16-byte blocks (AES)
-	data := make([]byte, 128) // 8 * 16 bytes
-	for i := range data {
-		data[i] = byte(i)
+func TestChiSquareOfUniformData(t *testing.T) {
+	// A perfectly uniform histogram has a statistic of exactly zero.
+	d := make([]byte, 256*16)
+	for i := range d {
+		d[i] = byte(i)
 	}
-	result := Analyze(data)
-
-	foundAES := false
-	for _, h := range result.CipherHints {
-		if h == "AES" {
-			foundAES = true
-			break
-		}
-	}
-	if !foundAES {
-		t.Error("expected AES hint for 16-byte aligned data")
-	}
-}
-
-func TestAnalyzeDESAlignment(t *testing.T) {
-	// Data aligned to 8-byte blocks (DES)
-	data := make([]byte, 64) // 8 * 8 bytes
-	for i := range data {
-		data[i] = byte(i)
-	}
-	result := Analyze(data)
-
-	foundDES := false
-	for _, h := range result.CipherHints {
-		if h == "DES/Blowfish" {
-			foundDES = true
-			break
-		}
-	}
-	if !foundDES {
-		t.Error("expected DES/Blowfish hint for 8-byte aligned data")
-	}
-}
-
-func TestDetectECB(t *testing.T) {
-	// Create data with repeating blocks (ECB mode)
-	block := []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-		0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10}
-	data := make([]byte, 0)
-	for i := 0; i < 10; i++ {
-		data = append(data, block...)
-	}
-
-	result := Analyze(data)
-
-	if !result.ECBDetected {
-		t.Error("expected ECB detection for repeating blocks")
-	}
-}
-
-func TestDetectPKCS7(t *testing.T) {
-	// Data with valid PKCS#7 padding (must be >= 16 bytes)
-	data := make([]byte, 32)
-	for i := 0; i < 16; i++ {
-		data[i] = byte(i)
-	}
-	// Add PKCS#7 padding (16 bytes of 0x10)
-	for i := 16; i < 32; i++ {
-		data[i] = 0x10
-	}
-
-	result := Analyze(data)
-
-	if result.Padding != "PKCS#7" {
-		t.Errorf("expected PKCS#7 padding, got %s", result.Padding)
-	}
-}
-
-func TestEntropyCalculation(t *testing.T) {
-	// All zeros = 0 entropy
-	data := make([]byte, 100)
-	result := Analyze(data)
-	if result.Entropy != 0 {
-		t.Errorf("expected 0 entropy for all zeros, got %f", result.Entropy)
-	}
-}
-
-func TestCipherHintsEmpty(t *testing.T) {
-	// Text data should have no cipher hints
-	data := []byte("This is just plain text with no encryption.")
-	result := Analyze(data)
-	if len(result.CipherHints) != 0 {
-		t.Errorf("expected no cipher hints for text, got %v", result.CipherHints)
-	}
-}
-
-func TestConfidenceRange(t *testing.T) {
-	// High entropy data
-	data := make([]byte, 256)
-	for i := range data {
-		data[i] = byte(i * 37 % 256)
-	}
-	result := Analyze(data)
-
-	if result.Confidence < 0 || result.Confidence > 1 {
-		t.Errorf("confidence out of range: %f", result.Confidence)
+	if got := chiSquare(d); got != 0 {
+		t.Errorf("chiSquare(uniform) = %v, want 0", got)
 	}
 }

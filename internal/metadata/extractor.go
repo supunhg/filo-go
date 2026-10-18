@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -317,8 +318,13 @@ func Print(r *Result) {
 		fmt.Println("  No metadata found")
 	} else {
 		fmt.Println("  Metadata:")
-		for k, v := range r.Metadata {
-			fmt.Printf("    %-20s %v\n", k, v)
+		keys := make([]string, 0, len(r.Metadata))
+		for k := range r.Metadata {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			fmt.Printf("    %-20s %v\n", k, r.Metadata[k])
 		}
 	}
 

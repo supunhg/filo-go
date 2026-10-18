@@ -131,7 +131,7 @@ func TestEntropyInterpretation(t *testing.T) {
 		{2.0, "Low"},
 		{4.0, "Medium"},
 		{6.0, "High"},
-		{7.5, "Very high"},
+		{7.5, "Near maximum"},
 	}
 
 	for _, tt := range tests {
@@ -391,20 +391,6 @@ func TestBoolToInt(t *testing.T) {
 	}
 }
 
-func TestEstimateSize(t *testing.T) {
-	// Test with empty data
-	size := estimateSize([]byte{}, 0, "png")
-	// Empty data returns 0, which is valid
-	_ = size
-
-	// Test with non-empty data
-	data := make([]byte, 1000)
-	size = estimateSize(data, 0, "png")
-	if size < 0 {
-		t.Errorf("expected non-negative size, got %d", size)
-	}
-}
-
 func TestDetectCrypto(t *testing.T) {
 	// AES key schedule pattern
 	data := make([]byte, 256)
@@ -556,11 +542,11 @@ func TestToJSONWithAllFields(t *testing.T) {
 		Contradictions: []string{"test contradiction"},
 		Architecture:   &ArchInfo{Bits: 64, Endian: "little", Machine: "x86_64", Format: "ELF"},
 		CryptoIndicators: &CryptoInfo{
-			Detected:    true,
-			Confidence:  0.9,
-			CipherHints: []string{"AES"},
-			BlockSize:   16,
-			ECBDetected: false,
+			Detected:   true,
+			Confidence: 0.9,
+			Verdict:    "random",
+			ChiSquare:  250,
+			Container:  "OpenSSL enc (salted)",
 		},
 		ToolFingerprint: &FingerprintInfo{
 			Producer: "test",
@@ -606,9 +592,11 @@ func TestPrintWithAllFields(t *testing.T) {
 		},
 		Architecture: &ArchInfo{Bits: 64, Endian: "little", Machine: "x86_64", Format: "ELF"},
 		CryptoIndicators: &CryptoInfo{
-			Detected:    true,
-			Confidence:  0.9,
-			CipherHints: []string{"AES"},
+			Detected:     true,
+			Confidence:   0.9,
+			Container:    "LUKS encrypted volume",
+			Details:      []string{"version 2"},
+			ECBSuspected: true,
 		},
 		Contradictions: []string{"test contradiction"},
 		EmbeddedObjects: []EmbeddedObject{
@@ -746,8 +734,8 @@ func TestCategorizeFormat(t *testing.T) {
 
 func TestCalculateRiskScore(t *testing.T) {
 	tests := []struct {
-		name   string
-		result *Result
+		name     string
+		result   *Result
 		minScore float64
 		maxScore float64
 	}{
@@ -770,7 +758,7 @@ func TestCalculateRiskScore(t *testing.T) {
 		{
 			name: "with contradictions",
 			result: &Result{
-				Entropy:       5.0,
+				Entropy:        5.0,
 				Contradictions: []string{"issue1", "issue2"},
 			},
 			minScore: 0.2,
@@ -779,7 +767,7 @@ func TestCalculateRiskScore(t *testing.T) {
 		{
 			name: "with crypto",
 			result: &Result{
-				Entropy: 5.0,
+				Entropy:          5.0,
 				CryptoIndicators: &CryptoInfo{Detected: true},
 			},
 			minScore: 0.2,

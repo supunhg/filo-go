@@ -3,7 +3,10 @@ package cli
 import (
 	"fmt"
 
+	"github.com/supunhg/filo-go/internal/version"
+
 	"github.com/spf13/cobra"
+
 	"github.com/supunhg/filo-go/internal/api"
 )
 
@@ -46,6 +49,6 @@ func runAPI(cmd *cobra.Command, args []string) error {
 	fmt.Fprintf(cmd.OutOrStdout(), "Listening on %s\n", apiAddr)
 	fmt.Fprintln(cmd.OutOrStdout())
 
-	server := api.NewServer(apiAddr, version)
+	server := api.NewServer(apiAddr, version.Version)
 	return server.Run()
 }

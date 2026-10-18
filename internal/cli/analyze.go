@@ -2,94 +2,64 @@ package cli
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
+
 	"github.com/supunhg/filo-go/internal/analyzer"
-	"github.com/supunhg/filo-go/internal/crypto"
 	"github.com/supunhg/filo-go/internal/metadata"
 )
 
 var (
 	jsonOutput  bool
-	deepScan    bool
-	noML        bool
-	allEvidence bool
 	allEmbedded bool
 	explainMode bool
 	entropyViz  bool
-	yaraRules   []string
 )
 
 var analyzeCmd = &cobra.Command{
-	Use:   "analyze [file]",
-	Short: "Analyze a file to detect its format",
-	Args:  cobra.ExactArgs(1),
-	RunE:  runAnalyze,
+	Use:   "analyze FILE",
+	Short: "Identify a file and report what is inside it",
+	Long: `Identify a file's format from its structure (not its extension) and report
+hashes, entropy, embedded files, structural problems such as truncation or
+appended data, encryption containers, CPU architecture and metadata.`,
+	Example: `  filo analyze sample.bin
+  filo analyze --json photo.jpg | jq .embedded_objects`,
+	Args: cobra.ExactArgs(1),
+	RunE: runAnalyze,
 }
 
 func init() {
 	analyzeCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
-	analyzeCmd.Flags().BoolVar(&deepScan, "deep", false, "Deep analysis (slower, more thorough)")
-	analyzeCmd.Flags().BoolVar(&noML, "no-ml", false, "Disable ML-based detection")
-	analyzeCmd.Flags().BoolVarP(&allEvidence, "all-evidence", "a", false, "Show all detection evidence")
-	analyzeCmd.Flags().BoolVarP(&allEmbedded, "all-embedded", "e", false, "Show all embedded artifacts")
-	analyzeCmd.Flags().BoolVar(&explainMode, "explain", false, "Show confidence breakdown")
-	analyzeCmd.Flags().BoolVar(&entropyViz, "entropy-viz", false, "Show entropy visualization")
-	analyzeCmd.Flags().StringArrayVar(&yaraRules, "yara", nil, "YARA rule file(s)")
+	analyzeCmd.Flags().BoolVarP(&allEmbedded, "nested", "n", false, "Also report signatures inside other embedded files")
+	analyzeCmd.Flags().BoolVar(&explainMode, "explain", false, "Show how the confidence score was reached")
+	analyzeCmd.Flags().BoolVar(&entropyViz, "entropy-viz", false, "Include per-block entropy (JSON) ")
 }
 
 func runAnalyze(cmd *cobra.Command, args []string) error {
 	filePath := args[0]
-
-	info, err := os.Stat(filePath)
+	data, err := readInput(filePath)
 	if err != nil {
-		return fmt.Errorf("cannot access %s: %w", filePath, err)
-	}
-	if info.IsDir() {
-		return fmt.Errorf("%s is a directory, not a file", filePath)
+		return err
 	}
 
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return fmt.Errorf("cannot read %s: %w", filePath, err)
-	}
-
-	// Core analysis
 	result, err := analyzer.Analyze(data, filePath, &analyzer.Options{
-		DeepScan:    deepScan,
-		NoML:        noML,
-		AllEvidence: allEvidence,
 		AllEmbedded: allEmbedded,
 		ExplainMode: explainMode,
 		EntropyViz:  entropyViz,
-		YaraRules:   yaraRules,
 		FormatsDir:  getFormatsDir(),
 	})
 	if err != nil {
 		return fmt.Errorf("analysis failed: %w", err)
 	}
 
-	// Crypto analysis
-	cryptoResult := crypto.Analyze(data)
-
-	// Metadata extraction (for supported formats)
-	metaResult, _ := metadata.Extract(data, filePath)
-
 	if jsonOutput {
-		fmt.Println(result.JSON())
-	} else {
-		result.Print()
+		fmt.Fprintln(cmd.OutOrStdout(), result.JSON())
+		return nil
+	}
 
-		// Print crypto results
-		if cryptoResult.Detected {
-			crypto.Print(cryptoResult)
-		}
-
-		// Print metadata
-		if metaResult != nil && len(metaResult.Metadata) > 0 {
-			metadata.Print(metaResult)
-		}
+	result.Print()
+	if meta, _ := metadata.Extract(data, filePath); meta != nil && len(meta.Metadata) > 0 {
+		metadata.Print(meta)
 	}
 	return nil
 }

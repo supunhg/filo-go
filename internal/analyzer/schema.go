@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/supunhg/filo-go/internal/version"
 )
 
 // SchemaVersion is the current output schema version.
@@ -114,7 +116,7 @@ func (r *Result) toOutputSchema() *OutputSchema {
 		Meta: AnalysisMeta{
 			SchemaVersion: SchemaVersion,
 			Analyzer:      "filo-go",
-			Version:       "0.2.0",
+			Version:       version.Version,
 			Timestamp:     time.Now(),
 		},
 		File: FileInfo{
